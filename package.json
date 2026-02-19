@@ -1,0 +1,13 @@
+{
+  "name": "sentexa",
+  "version": "1.0.0",
+  "description": "Sentexa adalah aplikasi analisis sentimen berbasis **Natural Language Processing (NLP)** yang dirancang untuk mengklasifikasikan teks ke dalam kategori **positif, negatif, atau netral**.  \r Aplikasi ini dikembangkan sebagai bagian dari Senior Project dan menghadirkan proses preprocessing, pemodelan AI, serta visualisasi hasil analisis melalui antarmuka web yang interaktif dan mudah digunakan. 💡📊",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs"
+}
