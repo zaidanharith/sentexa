@@ -67,7 +67,12 @@ jobs:
         run: npm run lint --if-present
 
       - name: Run tests (if present)
-        run: npm test --if-present
+        run: |
+          if npm run | grep -q "test"; then
+           npm test
+          else
+            echo "No test script found"
+          fi
 
       - name: Build (if present)
         run: npm run build --if-present
