@@ -24,7 +24,7 @@ node_modules/
 npm-debug.log
 yarn-error.log
 yarn-debug.log
-package-lock.json
+
 yarn.lock
 
 # Frontend
@@ -36,7 +36,7 @@ client/build/
 server/node_modules/
 server/dist/
 server/build/
-server/package-lock.json
+server/
 
 # Thumbnails
 ._*
@@ -804,3 +804,8 @@ Thumbs.db
 .env
 .env.local
 .env.*.local
+
+backend/.venv/
+node_modules/
+.env
+.DS_Store
