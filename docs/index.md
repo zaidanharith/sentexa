@@ -4,10 +4,9 @@
 
 - **Nama Kelompok:** Senpruyyy
 - **Anggota dan NIM:**
-
-1. Zaidan Harith - 23/512629/TK/56334 (Project Manager, AI Engineer)
-2. Anggita Salsabilla - 23/516001/TK/56775 (UI/UX Designer)
-3. Dzulfikar Rizqi Ramadhani - 23/522193/TK/57616 (Software Engineer, Cloud Engineer)
+  1. Zaidan Harith - 23/512629/TK/56334 (Project Manager, AI Engineer)
+  2. Anggita Salsabilla - 23/516001/TK/56775 (UI/UX Designer)
+  3. Dzulfikar Rizqi Ramadhani - 23/522193/TK/57616 (Software Engineer, Cloud Engineer)
 
 - **Project:** Project Senior Project TI
 - **Instansi:** Departemen Teknologi Elektro dan Teknologi Informasi, Fakultas Teknik, Universitas Gadjah Mada
@@ -43,32 +42,39 @@ Ide solusi yang diusulkan adalah membangun **Sentexa**, sebuah platform analisis
 
 **Rancangan Fitur:**
 
-1. **Instant Data Ingestion:**
-   - Menyediakan form untuk mengunggah file ulasan berformat CSV atau Excel dari seller center marketplace.
-   - Menyediakan kolom teks (text area) untuk copy-paste ulasan secara langsung.
+1. **User Authentication & Profile:**
+   - Secure User Login: Memberikan akses pribadi bagi pemilik UMKM untuk mengamankan data ulasan mereka menggunakan database Azure.
+   - Account Management: Memungkinkan pengguna untuk mengelola profil dan melihat status langganan aktif mereka (Free/Premium).
 
-2. **AI Sentiment Processor:**
-   - Menggunakan model NLP berbasis Python untuk mengklasifikasikan ulasan ke dalam kategori Positif, Negatif, atau Netral.
-   - Dioptimalkan untuk memahami bahasa ulasan pembeli Indonesia.
+2. **Subscription Tier (Weekly/Monthly/Annual Plan):**
+   - Free Plan: Pengguna Free hanya dapat memasukkan teks secara manual (tanpa unggah CSV/Excel) dan dibatasi 10 pengiriman teks per hari.
+   - Premium Plan (Weekly, Monthly & Annual): Pengguna Premium dapat membuka unggahan berkas multi-format (CSV/Excel), pengiriman tanpa batas, fitur lanjutan seperti filterable analytics dan exportable reports.
 
-3. **Sentiment Visualization Dashboard:**
-   - Menampilkan Pie Chart / Donut Chart untuk distribusi sentimen.
-   - Menampilkan Line Chart untuk memantau tren sentimen berdasarkan waktu.
-   - Menyediakan ringkasan statistik seperti "Total Ulasan" dan "Skor Kepuasan Rata-rata".
+3. **Instant Data Ingestion:**
+   - Multi-Format Upload: Menyediakan form sederhana untuk mengunggah file ulasan berformat CSV atau Excel hasil unduhan dari seller center marketplace.
+   - Manual Text Area: Kolom teks untuk copy-paste ulasan secara langsung guna analisis instan tanpa perlu mengunggah file.
 
-4. **Keyword Word Cloud:**
-   - Mengimplementasikan ekstraksi kata kunci menggunakan AI untuk menampilkan kata yang paling sering muncul dalam ulasan negatif.
-   - Membantu UMKM mengetahui penyebab utama komplain secara cepat.
+4. **AI Sentiment Processor:**
+   - Automated NLP Classification: Menggunakan model Natural Language Processing berbasis Python untuk mengklasifikasikan ulasan ke dalam kategori Positif, Negatif, atau Netral.
+   - Local Language Optimization: Model dirancang khusus untuk memahami bahasa ulasan pembeli di Indonesia (termasuk bahasa slang atau tidak baku) agar hasil akurat.
 
-5. **Smart Filter Table:**
-   - Menampilkan tabel interaktif berisi teks ulasan asli, label sentimen, dan confidence score.
-   - Menyediakan tombol toggle filter cepat untuk melihat daftar ulasan "Negatif" saja.
+5. **Sentiment Visualization Dashboard:**
+   - Visual Distribution: Menampilkan Pie Chart atau Donut Chart untuk gambaran persentase sentimen pelanggan.
+   - Time-Series Trend: Menampilkan Line Chart guna memantau apakah kualitas layanan toko membaik atau menurun dari waktu ke waktu.
+   - Key Metrics: Menyediakan ringkasan statistik seperti "Total Ulasan" dan "Skor Kepuasan Rata-rata" dalam satu tampilan layar.
 
-6. **Exportable Report:**
-   - Menyediakan fitur unduh hasil analisis dan visualisasi ke dalam format PDF/CSV.
-   - Sistem tidak menyimpan data secara permanen di server (tanpa sistem login).
+6. **Keyword Word Cloud:**
+   - Negative Highlight: Mengekstraksi kata kunci yang paling sering muncul dalam ulasan negatif menggunakan AI.
+   - Pain Point Detection: Membantu UMKM mengetahui penyebab utama komplain secara cepat, seperti kata "lambat", "sobek", atau "palsu".
 
----
+7. **Smart Filter Table:**
+   - Interactive Analysis: Tabel yang berisi teks asli, label sentimen, dan confidence score model AI.
+   - Instant Toggle Filter: Tombol filter cepat untuk menampilkan ulasan "Negatif" saja agar bisa segera ditindaklanjuti.
+   - Analysis History: Menyimpan riwayat analisis sebelumnya sehingga data tidak hilang saat browser ditutup.
+
+8. **Exportable Report:**
+   - Professional Archiving: Fitur untuk mengunduh seluruh hasil analisis dan visualisasi ke dalam format dokumen (PDF/CSV).
+   - Premium Reporting: Opsi ekspor laporan yang lebih mendalam untuk kebutuhan presentasi bisnis atau arsip jangka panjang (khusus Premium).
 
 ### Analisis Kompetitor
 
