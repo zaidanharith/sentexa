@@ -1,35 +1,42 @@
-from flask import Flask, jsonify
-from flask_cors import CORS
+from fastapi import FastAPI, Request
+from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse
 import os
 from dotenv import load_dotenv
 
 load_dotenv()
 
-app = Flask(__name__)
-CORS(app)
+app = FastAPI()
 
-app.config['ENV'] = os.getenv('FLASK_ENV', 'development')
-app.config['DEBUG'] = os.getenv('FLASK_DEBUG', False)
+app.add_middleware(
+     CORSMiddleware,
+     allow_origins=["*"],
+     allow_credentials=True,
+     allow_methods=["*"],
+     allow_headers=["*"],
+)
 
-@app.route('/', methods=['GET'])
+@app.get("/")
 def home():
-     return jsonify({'message': 'Welcome to Sentexa Backend'})
+     return {"message": "Welcome to Sentexa Backend"}
 
-@app.route('/health', methods=['GET'])
+@app.get("/health")
 def health():
-     return jsonify({'status': 'healthy'}), 200
+     return {"status": "healthy"}
 
-@app.errorhandler(404)
-def not_found(error):
-     return jsonify({'error': 'Not found'}), 404
+@app.exception_handler(404)
+async def not_found(request: Request, exc):
+     return JSONResponse(status_code=404, content={"error": "Not found"})
 
-@app.errorhandler(500)
-def internal_error(error):
-     return jsonify({'error': 'Internal server error'}), 500
+@app.exception_handler(500)
+async def internal_error(request: Request, exc):
+     return JSONResponse(status_code=500, content={"error": "Internal server error"})
 
-if __name__ == '__main__':
-     app.run(
-          host=os.getenv('HOST', '0.0.0.0'),
-          port=int(os.getenv('PORT', 5000)),
-          debug=app.config['DEBUG']
+if __name__ == "__main__":
+     import uvicorn
+     uvicorn.run(
+          "main:app",
+          host=os.getenv("HOST", "0.0.0.0"),
+          port=int(os.getenv("PORT", 5000)),
+          reload=os.getenv("FLASK_ENV", "development") == "development"
      )
