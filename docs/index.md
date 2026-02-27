@@ -47,8 +47,8 @@ Ide solusi yang diusulkan adalah membangun **Sentexa**, sebuah platform analisis
    - Account Management: Memungkinkan pengguna untuk mengelola profil dan melihat status langganan aktif mereka (Free/Premium).
 
 2. **Subscription Tier (Weekly/Monthly/Annual Plan):**
-   - Free Plan: Pengguna Free hanya dapat memasukkan teks secara manual (tanpa unggah CSV/Excel) dan dibatasi 10 pengiriman teks per hari.
-   - Premium Plan (Weekly, Monthly & Annual): Pengguna Premium dapat membuka unggahan berkas multi-format (CSV/Excel), pengiriman tanpa batas, fitur lanjutan seperti filterable analytics dan exportable reports.
+   - Free Plan: Pengguna Free hanya dapat memasukkan teks secara manual (tanpa unggah CSV/Excel), dibatasi 5 pengiriman teks per hari, tidak memiliki akses ke exportable reports.
+   - Premium Plan (Weekly, Monthly & Annual): Pengguna Premium dapat membuka unggahan berkas multi-format (CSV/Excel), melakukan pengiriman teks tanpa batas, dan mengakses fitur exportable reports.
 
 3. **Instant Data Ingestion:**
    - Multi-Format Upload: Menyediakan form sederhana untuk mengunggah file ulasan berformat CSV atau Excel hasil unduhan dari seller center marketplace.
@@ -73,8 +73,7 @@ Ide solusi yang diusulkan adalah membangun **Sentexa**, sebuah platform analisis
    - Analysis History: Menyimpan riwayat analisis sebelumnya sehingga data tidak hilang saat browser ditutup.
 
 8. **Exportable Report:**
-   - Professional Archiving: Fitur untuk mengunduh seluruh hasil analisis dan visualisasi ke dalam format dokumen (PDF/CSV).
-   - Premium Reporting: Opsi ekspor laporan yang lebih mendalam untuk kebutuhan presentasi bisnis atau arsip jangka panjang (khusus Premium).
+   - Premium Reporting: Fitur untuk mengunduh seluruh hasil analisis dan visualisasi ke dalam format dokumen (PDF/CSV).
 
 ### Analisis Kompetitor
 
