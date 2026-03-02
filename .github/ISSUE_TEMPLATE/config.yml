@@ -1,45 +1,5 @@
-name: "Subproyek Sentexa"
-description: "Form untuk menambah item Subproyek (Actionable / Deliverable / Keterangan)"
-title: "{{judul_subproyek}} — {{actionable}}"
-labels: ["planning"]
-body:
-  - type: markdown
-    attributes:
-      value: "Isi field di bawah untuk membuat issue Subproyek. Pilih Judul Subproyek, jelaskan Actionable, Deliverable, dan Keterangan."
-  - type: dropdown
-    id: judul_subproyek
-    attributes:
-      label: "Judul Subproyek"
-      options:
-        - "Inisiasi & Scope Produk"
-        - "Desain UX/UI (Dashboard & Alur Analisis)"
-        - "Arsitektur & Kontrak API"
-        - "Autentikasi & Profil"
-        - "Subscription Tier & Quota (Gating)"
-        - "Data Ingestion (Manual & File Upload)"
-        - "NLP Sentiment Processor"
-        - "Penyimpanan Data & Riwayat Analisis"
-        - "Dashboard Visualisasi"
-        - "Keyword Word Cloud"
-        - "Smart Filter Table"
-        - "Exportable Report (Premium)"
-        - "Keamanan, HTTPS/SSL, & Cloud (Azure)"
-        - "Testing, QA, & Dokumentasi"
-      required: true
-  - type: input
-    id: actionable
-    attributes:
-      label: "Actionable (langkah yang harus dilakukan)"
-      placeholder: "Contoh: Membuat input manual text untuk analisis instan"
-      required: true
-  - type: textarea
-    id: deliverable
-    attributes:
-      label: "Deliverable (output)"
-      placeholder: "Contoh: UI form + endpoint submit text"
-      required: true
-  - type: textarea
-    id: keterangan
-    attributes:
-      label: "Keterangan (opsional)"
-      placeholder: "Contoh: Validasi: panjang teks, empty input, sanitasi"
+blank_issues_enabled: false
+contact_links:
+  - name: "Project Backlog"
+    url: "https://github.com/zaidanharith/projects"
+    about: "Link ke Project Sentexa"
