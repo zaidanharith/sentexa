@@ -1,5 +1,6 @@
 name: "Subproyek Baru"
 description: "Form untuk menambah Subproyek baru dengan mengisi Actionable, Deliverable, dan Keterangan serta akan menghasilkan issue markdown terformat"
+title: "[Subproyek] "
 projects: ["sentexa"]
 
 body:
