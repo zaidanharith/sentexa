@@ -1,0 +1,61 @@
+name: Format Subproject Issue
+
+on:
+  issues:
+    types: [opened]
+
+jobs:
+  format:
+    runs-on: ubuntu-latest
+    permissions:
+      issues: write
+    steps:
+      - name: Format issue title and body
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const body = context.payload.issue.body || '';
+
+            // Only process issues that contain all four expected form sections
+            const hasAllFields =
+              body.includes('### Judul Subproyek') &&
+              body.includes('### Actionable') &&
+              body.includes('### Deliverable') &&
+              body.includes('### Keterangan');
+
+            if (!hasAllFields) return;
+
+            // Parse a form field value by its label heading
+            const parse = (label) => {
+              const regex = new RegExp(`### ${label}\\s*\\n+([\\s\\S]*?)(?=\\n### |$)`);
+              const match = body.match(regex);
+              return match ? match[1].trim() : '';
+            };
+
+            const judulSubproyek = parse('Judul Subproyek');
+            const actionable    = parse('Actionable');
+            const deliverable   = parse('Deliverable');
+            const keterangan    = parse('Keterangan');
+
+            if (!judulSubproyek || !actionable) return;
+
+            const newTitle = `${judulSubproyek} \u2014 ${actionable}`;
+
+            const newBody = [
+              '## Deskripsi',
+              '',
+              `- **Deliverable:** ${deliverable}`,
+              `- **Keterangan:** ${keterangan}`,
+              '',
+              '## Related',
+              '',
+              '- Project: **Sentexa**',
+            ].join('\n');
+
+            await github.rest.issues.update({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.payload.issue.number,
+              title: newTitle,
+              body: newBody,
+            });
