@@ -1,21 +1,9 @@
-name: "Subproyek Sentexa"
-description: "Form untuk menambah Subproyek — mengisi Actionable / Deliverable / Keterangan dan menghasilkan issue markdown terformat"
-title: "{{judul_subproyek}} — {{actionable}}"
+name: "Subproyek Baru"
+description: "Form untuk menambah Subproyek baru dengan mengisi Actionable, Deliverable, dan Keterangan serta akan menghasilkan issue markdown terformat"
+title: "Tambah Subproyek Baru"
 projects: ["sentexa"]
 
 body:
-  - type: markdown
-    attributes:
-      value: |
-        ## Deskripsi
-
-        - **Deliverable:** {{deliverable}}
-        - **Keterangan:** {{keterangan}}
-
-        ## Related
-
-        - Project: **Sentexa**
-
   - type: input
     id: judul_subproyek
     attributes:
