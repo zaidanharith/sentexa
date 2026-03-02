@@ -21,6 +21,7 @@ body:
     attributes:
       label: "Judul Subproyek"
       placeholder: "Contoh: Inisiasi & Scope Produk"
+    validations:
       required: true
 
   - type: input
@@ -28,6 +29,7 @@ body:
     attributes:
       label: "Actionable"
       placeholder: "Contoh: Membuat input manual text untuk analisis instan"
+    validations:
       required: true
 
   - type: textarea
@@ -35,6 +37,7 @@ body:
     attributes:
       label: "Deliverable"
       placeholder: "Contoh: UI form + endpoint submit text"
+    validations:
       required: true
 
   - type: textarea
@@ -42,3 +45,5 @@ body:
     attributes:
       label: "Keterangan"
       placeholder: "Contoh: Validasi: panjang teks, empty input, sanitasi"
+    validations:
+      required: true
