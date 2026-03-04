@@ -1,8 +1,16 @@
-# **Sentexa** by Senpruyyy
+# 🎯 **Sentexa** by Senpruyyy
 
 Sentexa adalah aplikasi berbasis web untuk melakukan analisis sentimen berbasis **Natural Language Processing (NLP)** yang dirancang untuk mengklasifikasikan teks ke dalam kategori **positif, negatif, atau netral**. Aplikasi ini dikembangkan sebagai bagian dari Senior Project dan menghadirkan proses preprocessing, pemodelan AI, serta visualisasi hasil analisis melalui antarmuka web yang interaktif dan mudah digunakan.
 
-## 👨‍💻 Developer
+## ✨ Fitur Utama
+
+- 🤖 Analisis sentimen real-time dengan AI
+- 📊 Visualisasi data interaktif
+- 🎨 UI/UX yang user-friendly
+- ⚡ Performa optimal dengan teknologi cloud
+- 🔄 Preprocessing teks otomatis
+
+## 👨‍💻 Tim Developer
 
 | Nama                      | NIM                | Peran                             |
 | ------------------------- | ------------------ | --------------------------------- |
