@@ -192,5 +192,7 @@ __pycache__/
 *.pyc
 .env
 
+# SSL certificates
+backend/deployments/docker/nginx/ssl/*
 *.pem
 *.key

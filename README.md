@@ -10,7 +10,34 @@ Sentexa adalah aplikasi berbasis web untuk melakukan analisis sentimen berbasis 
 - ⚡ Performa optimal dengan teknologi cloud
 - 🔄 Preprocessing teks otomatis
 
-## 👨‍💻 Tim Developer
+## ⚙️ Cara Menjalankan Program
+
+1. Pastikan file `.env` sudah ada di folder `/backend` dan file `.env.local` sudah ada di folder `/frontend`. Jika belum, silakan buat dengan _template_ di `.env.example` di setiap foldernya.
+
+2. _Clone_ Repository GitHub ini.
+
+   ```bash
+   git clone https://github.com/zaidanharith/sentexa.git
+   cd sentexa
+   ```
+
+3. Jalankan _command prompt_ berikut di folder root (`/sentexa`).
+
+   ```bash
+   docker compose -f backend/deployments/docker/docker-compose.yml up -d --build
+   cd frontend
+   npm install
+   npm run dev
+   ```
+
+4. Akses aplikasi:
+
+- **Frontend**: [http://localhost:3000](http://localhost:3000)
+- **Backend API**: [http://localhost:8000](http://localhost:8000)
+
+## 👨‍💻 Developer Tergacor Sedunia
+
+Tak kenal maka tak kenalin. Yuk kenalan sama yang buat program gacor ini dulu ga sih🤗
 
 | Nama                      | NIM                | Peran                             |
 | ------------------------- | ------------------ | --------------------------------- |
