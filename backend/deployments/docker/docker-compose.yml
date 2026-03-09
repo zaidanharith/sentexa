@@ -1,0 +1,65 @@
+services:
+  redis:
+    image: redis:7-alpine
+    container_name: sentexa_redis
+    restart: unless-stopped
+    volumes:
+      - redis_data:/data
+    networks:
+      - sentexa_network
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  backend:
+    build:
+      context: ../../
+      dockerfile: deployments/docker/Dockerfile
+    container_name: sentexa_backend
+    restart: unless-stopped
+    env_file:
+      - ../../.env
+    environment:
+      ENVIRONMENT: ${ENVIRONMENT:-production}
+      REDIS_URL: redis://redis:6379
+    ports:
+      - "8000:8000"
+    depends_on:
+      redis:
+        condition: service_healthy
+    networks:
+      - sentexa_network
+    volumes:
+      - ../../uploads:/app/uploads
+    security_opt:
+      - no-new-privileges:true
+
+  nginx:
+    image: nginx:alpine
+    container_name: sentexa_nginx
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./nginx/ssl:/etc/nginx/ssl:ro
+    depends_on:
+      - backend
+    networks:
+      - sentexa_network
+    read_only: true
+    tmpfs:
+      - /var/run
+      - /var/cache/nginx
+      - /tmp
+
+volumes:
+  redis_data:
+    driver: local
+
+networks:
+  sentexa_network:
+    driver: bridge

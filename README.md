@@ -1,7 +1,19 @@
-#KERENIFY  
-Kerenkan hidupmu  
-Kelompok Keren  
-Ketua Kelompok:  
-Anggota 1: Zaidan Harith   23/512629/TK/56334
-Anggota 2: Dzulfikar Rizqi Ramadhani   23/522193/TK/57616
-Anggota 3:
+# 🎯 **Sentexa** by Senpruyyy
+
+Sentexa adalah aplikasi berbasis web untuk melakukan analisis sentimen berbasis **Natural Language Processing (NLP)** yang dirancang untuk mengklasifikasikan teks ke dalam kategori **positif, negatif, atau netral**. Aplikasi ini dikembangkan sebagai bagian dari Senior Project dan menghadirkan proses preprocessing, pemodelan AI, serta visualisasi hasil analisis melalui antarmuka web yang interaktif dan mudah digunakan.
+
+## ✨ Fitur Utama
+
+- 🤖 Analisis sentimen real-time dengan AI
+- 📊 Visualisasi data interaktif
+- 🎨 UI/UX yang user-friendly
+- ⚡ Performa optimal dengan teknologi cloud
+- 🔄 Preprocessing teks otomatis
+
+## 👨‍💻 Tim Developer
+
+| Nama                      | NIM                | Peran                             |
+| ------------------------- | ------------------ | --------------------------------- |
+| Zaidan Harith             | 23/512629/TK/56334 | Project Manager, AI Engineer      |
+| Anggita Salsabilla        | 23/516001/TK/56775 | UI/UX Designer                    |
+| Dzulfikar Rizqi Ramadhani | 23/522193/TK/57616 | Software Engineer, Cloud Engineer |

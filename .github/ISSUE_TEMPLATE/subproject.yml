@@ -1,0 +1,37 @@
+name: "Subproyek Baru"
+description: "Form untuk menambah Subproyek baru dengan mengisi Actionable, Deliverable, dan Keterangan serta akan menghasilkan issue markdown terformat"
+title: "[Subproyek] "
+projects: ["sentexa"]
+
+body:
+  - type: input
+    id: judul_subproyek
+    attributes:
+      label: "Judul Subproyek"
+      placeholder: "Contoh: Inisiasi & Scope Produk"
+    validations:
+      required: true
+
+  - type: input
+    id: actionable
+    attributes:
+      label: "Actionable"
+      placeholder: "Contoh: Membuat input manual text untuk analisis instan"
+    validations:
+      required: true
+
+  - type: textarea
+    id: deliverable
+    attributes:
+      label: "Deliverable"
+      placeholder: "Contoh: UI form + endpoint submit text"
+    validations:
+      required: true
+
+  - type: textarea
+    id: keterangan
+    attributes:
+      label: "Keterangan"
+      placeholder: "Contoh: Validasi: panjang teks, empty input, sanitasi"
+    validations:
+      required: true
