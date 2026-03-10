@@ -8,6 +8,7 @@ python-dotenv==1.0.0
 SQLAlchemy==2.0.19
 alembic==1.13.1
 asyncpg==0.29.0
+psycopg2-binary==2.9.9
 
 # Validation & Settings
 pydantic==2.5.0
