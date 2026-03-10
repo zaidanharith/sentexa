@@ -9,7 +9,7 @@ on:
 
 jobs:
   backend:
-    name: Backend CI (Python)
+    name: Backend
     runs-on: ubuntu-latest
 
     defaults:
@@ -38,7 +38,7 @@ jobs:
           fi
 
   frontend:
-    name: Frontend CI (Node)
+    name: Frontend
     runs-on: ubuntu-latest
 
     defaults:
@@ -59,7 +59,7 @@ jobs:
         run: npm ci
 
       - name: Run lint
-        run: npm run lint --if-present
+        run: npm run lint
 
       - name: Build
         run: npm run build

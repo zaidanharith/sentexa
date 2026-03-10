@@ -25,30 +25,30 @@ export default function Navbar() {
           <ul className="hidden md:flex items-center gap-3 text-md font-medium text-gray-700">
             {navLinks.map((link) => (
               <li key={link.href}>
-                <a
+                <Link
                   href={link.href}
                   className="hover:text-sky-500 transition-colors"
                 >
                   {link.label}
-                </a>
+                </Link>
               </li>
             ))}
           </ul>
         </div>
 
         <div className="hidden md:flex items-center gap-3 text-md ">
-          <a
+          <Link
             href="/login"
             className="border border-gray-300 text-gray-700 px-5 py-2 rounded-lg text-sm font-semibold hover:border-sky-500 hover:text-sky-500 transition-colors"
           >
             Masuk
-          </a>
-          <a
+          </Link>
+          <Link
             href="/register"
             className="bg-sky-500 text-white text-sm font-semibold px-5 py-2 rounded-lg hover:bg-sky-600 transition-colors"
           >
             Daftar
-          </a>
+          </Link>
         </div>
 
         <button
@@ -95,18 +95,18 @@ export default function Navbar() {
             ))}
           </ul>
           <div className="flex flex-col gap-2 pt-2 border-t border-gray-100">
-            <a
+            <Link
               href="/login"
               className="block text-center border border-gray-300 text-gray-700 px-5 py-2.5 rounded-lg text-sm font-semibold hover:border-sky-500 hover:text-sky-500 transition-colors"
             >
               Masuk
-            </a>
-            <a
+            </Link>
+            <Link
               href="/register"
               className="block text-center bg-sky-500 text-white text-sm font-semibold px-5 py-2.5 rounded-lg hover:bg-sky-600 transition-colors"
             >
               Daftar
-            </a>
+            </Link>
           </div>
         </div>
       </div>
