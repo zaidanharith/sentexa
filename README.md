@@ -35,6 +35,10 @@ Sentexa adalah aplikasi berbasis web untuk melakukan analisis sentimen berbasis 
 - **Frontend**: [http://localhost:3000](http://localhost:3000)
 - **Backend API**: [http://localhost:8000](http://localhost:8000)
 
+## 📋 Daftar API Endpoints
+
+Untuk melihat dokumentasi lengkap API endpoints, silakan akses [di sini](./backend/README.md).
+
 ## 👨‍💻 Developer Tergacor Sedunia
 
 Tak kenal maka tak kenalin. Yuk kenalan sama yang buat program gacor ini dulu ga sih🤗
