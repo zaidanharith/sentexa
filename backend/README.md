@@ -1,6 +1,6 @@
 # 📋 Daftar API Endpoints
 
-Akses Backend dapat melalui [**http://localhost:3000**](http://localhost:3000)
+Akses Backend dapat melalui [**http://localhost:8000**](http://localhost:8000)
 
 🌐 : **Public Endpoint** (Endpoint yang bisa diakses tanpa login)
 
