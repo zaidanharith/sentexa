@@ -3,7 +3,7 @@ export default function Hero() {
     <>
       {/* ══ HERO SECTION ══ */}
       <section className="border-b border-gray-200 py-12 md:py-20 bg-gray-50">
-        <div className="max-w-6xl mx-auto px-4 grid md:grid-cols-2 gap-8 items-center">
+        <div className="mx-auto px-4 grid md:grid-cols-2 gap-8 items-center">
           <div>
             <p color="dark">Khusus Pelaku UMKM</p>
             <h1 className="mt-3 mb-4 text-gray-800">
