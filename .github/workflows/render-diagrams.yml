@@ -13,10 +13,10 @@ jobs:
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v4.2.2
 
       - name: Setup Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v4.4.0
         with:
           node-version: 20
 
@@ -26,10 +26,11 @@ jobs:
       - name: Render diagrams
         run: |
           mkdir -p docs/diagrams/render
+          echo '{"args":["--no-sandbox"]}' > /tmp/puppeteer-config.json
           for file in docs/diagrams/*.mmd; do
             name=$(basename "${file%.mmd}")
             output="docs/diagrams/render/${name}.svg"
-            mmdc -i "$file" -o "$output" -b transparent --puppeteerArgs '--no-sandbox'
+            mmdc -i "$file" -o "$output" -b transparent -p /tmp/puppeteer-config.json
             echo "Rendered: $file → $output"
           done
 
