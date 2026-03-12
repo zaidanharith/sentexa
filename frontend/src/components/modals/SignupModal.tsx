@@ -18,14 +18,12 @@ export default function SignUpModal({
 
   return (
     <>
-      {/* Overlay - Membuat background gelap */}
       <div
         className="fixed inset-0 bg-black/60  z-40 transition-opacity duration-300"
         onClick={onClose}
       />
 
-      {/* Modal */}
-      <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+      <div className="fixed inset-0 z-9999 flex items-center justify-center p-4">
         <div className="bg-white rounded-lg shadow-xl w-full max-w-md max-h-[90vh] overflow-y-auto">
           {/* Header dengan tombol close */}
           <div className="top-0 bg-white border-b border-gray-200 p-4 relative flex justify-center items-center">
@@ -40,7 +38,6 @@ export default function SignUpModal({
             </button>
           </div>
 
-          {/* Form Content */}
           <div className="p-6">
             <h2 className="text-2xl font-bold text-gray-800 text-center mb-2">
               Selamat Datang di Sentexa
@@ -50,7 +47,6 @@ export default function SignUpModal({
             </p>
 
             <form className="space-y-4">
-              {/* Nama Depan & Belakang */}
               <div className="grid grid-cols-2 gap-3">
                 <input
                   type="text"
@@ -71,14 +67,12 @@ export default function SignUpModal({
                 className="w-full border border-gray-300 rounded px-3 py-2 text-sm focus:outline-none focus:border-sky-500"
               />
 
-              {/* Kata Sandi */}
               <input
                 type="password"
                 placeholder="Min. 8 karakter"
                 className="w-full border border-gray-300 rounded px-3 py-2 text-sm focus:outline-none focus:border-sky-500"
               />
 
-              {/* Konfirmasi Kata Sandi */}
               <input
                 type="password"
                 placeholder="Ulangi kata sandi"

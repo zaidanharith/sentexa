@@ -1,0 +1,25 @@
+flowchart LR
+    UF(["User Free"])
+    UP(["User Premium"])
+
+    subgraph Free["Fitur Gratis"]
+        UC1(["Login / Register"])
+        UC2(["Input Data Ulasan (Limited)"])
+        UC3(["Analisis Sentimen AI"])
+        UC4(["Upgrade Status"])
+        UC5(["Keyword Word Cloud"])
+        UC6(["Lihat Dashboard Standar"])
+        UC3 --- UC6
+    end
+
+    subgraph Premium["Fitur Premium"]
+        UC7(["Unlimited Ingestion"])
+        UC8(["Advanced Time-Series Trend"])
+        UC9(["Export Professional Report"])
+        UC10(["Full Analysis History"])
+        UC8 --- UC10
+    end
+
+    UF --- Free
+    UP --- Free
+    UP --- Premium

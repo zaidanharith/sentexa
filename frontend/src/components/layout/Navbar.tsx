@@ -19,7 +19,7 @@ export default function Navbar() {
 
   return (
     <>
-      <nav className="fixed w-full z-50 backdrop-blur-md select-none bg-white/80 border-b border-gray-200">
+      <nav className="fixed w-full z-50 backdrop-blur-md select-none bg-white/70 border-b border-gray-200">
         <div className="mx-auto max-w-7xl px-5 py-4 flex items-center justify-between">
           <div className="flex items-center gap-10">
             <Link href="/" className="flex items-center gap-2">
@@ -49,7 +49,7 @@ export default function Navbar() {
               Masuk
             </button>
             <button
-              onClick={() => setDaftarOpen(true)} // Open modal
+              onClick={() => setDaftarOpen(true)}
               className="bg-sky-500 text-white text-sm font-semibold px-5 py-2 rounded-lg hover:bg-sky-600 transition-colors cursor-pointer"
             >
               Daftar

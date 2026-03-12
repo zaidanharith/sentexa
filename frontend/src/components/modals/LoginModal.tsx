@@ -1,11 +1,12 @@
 "use client";
 
 import { useState } from "react";
+import Image from "next/image";
 
 interface LoginModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onOpenSignUp?: () => void; // Untuk switch ke modal daftar
+  onOpenSignUp?: () => void;
 }
 
 export default function LoginModal({
@@ -24,37 +25,33 @@ export default function LoginModal({
 
   return (
     <>
-      {/* Overlay - Membuat background redup */}
       <div
-        className="fixed inset-0 bg-black bg-opacity-30 z-40 transition-opacity duration-300"
+        className="fixed inset-0 bg-black/40 z-9998 transition-opacity duration-300"
         onClick={onClose}
       />
 
-      {/* Modal */}
-      <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+      <div className="fixed inset-0 z-9999 flex items-center justify-center p-4">
         <div className="bg-white rounded-lg shadow-xl w-full max-w-md border border-gray-200">
-          {/* Header */}
-          <div className="border-b border-gray-200 p-6 flex justify-between items-start">
-            <div>
-              <h2 className="text-2xl font-bold text-gray-800 mb-1">
-                Selamat Datang di Sentexa
-              </h2>
-              <p className="text-sm text-gray-500 italic">
-                Hadir untuk membantu mengembangkan bisnismu
-              </p>
+          <div className="sticky top-0 bg-white border-b border-gray-200 p-4 flex justify-between items-center">
+            <div className="text-center flex-1">
+              <Image src="/logo1.svg" alt="Logo" width={30} height={30} />
             </div>
             <button
               onClick={onClose}
-              className="text-gray-400 hover:text-gray-600 text-2xl leading-none"
+              className="text-gray-500 hover:text-gray-700 text-2xl leading-none cursor-pointer"
             >
               ✕
             </button>
           </div>
 
-          {/* Form Content */}
           <div className="p-6">
+            <h2 className="text-2xl font-bold text-gray-800 text-center mb-2">
+              Selamat Datang di Sentexa
+            </h2>
+            <p className="text-sm text-gray-500 italic text-center mb-6">
+              Hadir untuk membantu mengembangkan bisnismu
+            </p>
             <form className="space-y-4">
-              {/* Email */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1.5">
                   Alamat Email
@@ -66,7 +63,6 @@ export default function LoginModal({
                 />
               </div>
 
-              {/* Password */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1.5">
                   Kata Sandi
@@ -78,7 +74,6 @@ export default function LoginModal({
                 />
               </div>
 
-              {/* Remember & Forgot Password */}
               <div className="flex items-center justify-between text-sm">
                 <label className="flex items-center gap-2 text-gray-600 cursor-pointer">
                   <input
@@ -97,7 +92,6 @@ export default function LoginModal({
                 </a>
               </div>
 
-              {/* Login Button */}
               <button
                 type="submit"
                 className="w-full bg-gray-800 hover:bg-gray-900 text-white font-semibold py-2.5 rounded-lg transition-colors"
@@ -106,22 +100,6 @@ export default function LoginModal({
               </button>
             </form>
 
-            {/* Divider */}
-            <div className="flex items-center gap-3 my-5">
-              <div className="flex-1 border-t border-gray-300" />
-              <span className="text-xs text-gray-400">
-                atau masuk dengan email
-              </span>
-              <div className="flex-1 border-t border-gray-300" />
-            </div>
-
-            {/* Google Login */}
-            <button className="w-full border border-gray-300 text-gray-700 font-semibold py-2.5 rounded-lg hover:bg-gray-50 transition-colors flex items-center justify-center gap-2">
-              <span className="text-lg">G</span>
-              Masuk dengan Google
-            </button>
-
-            {/* Sign Up Link */}
             <p className="text-center text-sm text-gray-600 mt-5">
               Belum punya akun?{" "}
               <button

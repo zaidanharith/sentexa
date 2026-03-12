@@ -1,0 +1,20 @@
+erDiagram
+    Users {
+        int user_id PK
+        string nama_toko
+        string email
+        string password
+        datetime created_at
+    }
+
+    Reviews {
+        int review_id PK
+        int user_id FK
+        string teks_ulasan
+        int rating_bintang
+        date tanggal_ulasan
+        string ai_sentiment
+        float ai_confidence
+    }
+
+    Users ||--o{ Reviews : "memiliki"
