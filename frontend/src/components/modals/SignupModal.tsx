@@ -19,13 +19,12 @@ export default function SignUpModal({
   return (
     <>
       <div
-        className="fixed inset-0 bg-black/60  z-40 transition-opacity duration-300"
+        className="fixed inset-0 bg-black/60 z-9998 transition-opacity duration-300"
         onClick={onClose}
       />
 
       <div className="fixed inset-0 z-9999 flex items-center justify-center p-4">
-        <div className="bg-white rounded-lg shadow-xl w-full max-w-md max-h-[90vh] overflow-y-auto">
-          {/* Header dengan tombol close */}
+        <div className="bg-white rounded-xl shadow-xl w-full max-w-md max-h-[90vh] overflow-hidden">
           <div className="top-0 bg-white border-b border-gray-200 p-4 relative flex justify-center items-center">
             <div className="flex justify-center">
               <Image src="/logo1.svg" alt="Logo" width={35} height={35} />
@@ -50,20 +49,19 @@ export default function SignUpModal({
               <div className="grid grid-cols-2 gap-3">
                 <input
                   type="text"
-                  placeholder="Zaidan"
+                  placeholder="John"
                   className="border border-gray-300 rounded px-3 py-2 text-sm focus:outline-none focus:border-sky-500"
                 />
                 <input
                   type="text"
-                  placeholder="Harith"
+                  placeholder="Doe"
                   className="border border-gray-300 rounded px-3 py-2 text-sm focus:outline-none focus:border-sky-500"
                 />
               </div>
 
-              {/* Email */}
               <input
                 type="email"
-                placeholder="contoh@email.com"
+                placeholder="johndoe@email.com"
                 className="w-full border border-gray-300 rounded px-3 py-2 text-sm focus:outline-none focus:border-sky-500"
               />
 
@@ -79,7 +77,6 @@ export default function SignUpModal({
                 className="w-full border border-gray-300 rounded px-3 py-2 text-sm focus:outline-none focus:border-sky-500"
               />
 
-              {/* Checkbox */}
               <label className="flex items-start gap-2 text-xs text-gray-600">
                 <input type="checkbox" className="mt-0.5 cursor-pointer" />
                 <span>
@@ -95,7 +92,6 @@ export default function SignUpModal({
                 </span>
               </label>
 
-              {/* Tombol Submit */}
               <button
                 type="submit"
                 className="w-full bg-sky-500 text-white font-semibold py-2.5 rounded-lg hover:bg-sky-600 transition-colors cursor-pointer"
@@ -104,20 +100,17 @@ export default function SignUpModal({
               </button>
             </form>
 
-            {/* Divider */}
             <div className="flex items-center gap-3 my-4">
               <div className="flex-1 border-t border-gray-300" />
               <span className="text-xs text-gray-400">atau</span>
               <div className="flex-1 border-t border-gray-300" />
             </div>
 
-            {/* Google Login */}
             <button className="w-full border border-gray-300 text-gray-700 font-semibold py-2 rounded-lg hover:bg-gray-100 transition-colors flex items-center justify-center gap-2 cursor-pointer">
-              <Image src="/search.png" alt="G" width={20} height={20} />
+              <Image src="/google.png" alt="Google" width={20} height={20} />
               Daftar dengan Google
             </button>
 
-            {/* Login Link */}
             <p className="text-center text-sm text-gray-600 mt-4">
               Sudah punya akun?{" "}
               <button
