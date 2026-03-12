@@ -1,0 +1,51 @@
+
+graph TD
+    %% Start & Auth
+    Start((Mulai)) --> LP[Landing Page]
+    LP --> Auth{Sudah Login?}
+    Auth -- Belum --> Reg[Register / Login API]
+    Reg --> Dash
+    Auth -- Sudah --> Dash[Main Dashboard API]
+
+    %% Subscription Check
+    Dash --> SubCheck{Cek Status & Kuota}
+    SubCheck -- Habis/Free Limit --> Upgrade[Prompt Upgrade / Plans API]
+    Upgrade --> Pay[Pembayaran / Subscribe API]
+    Pay --> Dash
+
+    %% Method Selection
+    SubCheck -- Aman --> Method{Pilih Metode Input}
+
+    %% Single Text Path
+    Method -- Single Text --> Clean[Text Clean API]
+    Clean --> Predict[Sentiment Predict API]
+    Predict --> Result[Dashboard Visual Instan]
+
+    %% Batch / File Path (Premium Focus)
+    Method -- Unggah CSV/Excel --> Upload[Upload File API]
+    Upload --> Batch[Sentiment Predict Batch API]
+    Batch --> JobID[Dapatkan Job ID]
+    JobID --> Monitor[Job Monitor / Progress API]
+    
+    %% Processing Loop
+    Monitor --> IsDone{Status Selesai?}
+    IsDone -- Belum --> Monitor
+    IsDone -- Ya --> Summary[Dashboard Summary & Trends API]
+
+    %% Output & Action
+    Result --> History[Tabel Riwayat & Feedback API]
+    Summary --> History
+    
+    History --> Export{Klik Export?}
+    Export -- Premium --> Download[Unduh PDF/CSV API]
+    Export -- Free --> Upgrade
+
+    %% Feedback Loop
+    History --> Feedback[Koreksi Label API]
+    Feedback --> History
+
+    %% Styling
+    style Start fill:#f9f,stroke:#333,stroke-width:2px
+    style Upgrade fill:#ff9966,stroke:#333,stroke-width:2px
+    style Batch fill:#3399ff,stroke:#fff,stroke-width:2px
+    style Monitor fill:#3399ff,stroke:#fff,stroke-width:2px 
