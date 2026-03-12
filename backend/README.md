@@ -22,6 +22,10 @@ Akses Backend dapat melalui [**http://localhost:8000**](http://localhost:8000)
 
 - 🌐 `POST /api/auth/register` : Mendaftarkan akun pengguna baru
 
+- 🌐 `GET /api/auth/google` : Mengarahkan pengguna ke halaman login Google (OAuth 2.0 redirect)
+
+- 🌐 `GET /api/auth/google/callback` : Menerima callback dari Google setelah autentikasi berhasil, lalu mengembalikan token akses
+
 - 🔒 `POST /api/auth/logout` : Menghapus sesi dan token aktif pengguna
 
 - 🔒 `GET /api/auth/me` : Mengambil data profil dan status langganan pengguna yang sedang login
