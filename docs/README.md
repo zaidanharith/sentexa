@@ -6,7 +6,7 @@ Kumpulan dokumentasi teknis aplikasi Sentexa, mencakup diagram arsitektur, alur 
 
 Alur perjalanan pengguna dari landing page hingga ekspor laporan.
 
-![User Flow](diagrams/render/user-flows.svg)
+![User Flow](diagrams/render/user-flow.svg)
 
 ## Use Case Diagram
 
