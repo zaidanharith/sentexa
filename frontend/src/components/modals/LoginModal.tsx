@@ -26,19 +26,19 @@ export default function LoginModal({
   return (
     <>
       <div
-        className="fixed inset-0 bg-black/40 z-9998 transition-opacity duration-300"
+        className="fixed inset-0 bg-black/60 z-9998 transition-opacity duration-300"
         onClick={onClose}
       />
 
       <div className="fixed inset-0 z-9999 flex items-center justify-center p-4">
-        <div className="bg-white rounded-lg shadow-xl w-full max-w-md border border-gray-200">
-          <div className="sticky top-0 bg-white border-b border-gray-200 p-4 flex justify-between items-center">
-            <div className="text-center flex-1">
-              <Image src="/logo1.svg" alt="Logo" width={30} height={30} />
+        <div className="bg-white rounded-xl shadow-xl w-full max-w-md border border-gray-200 overflow-hidden">
+          <div className="top-0 bg-white border-b border-gray-200 p-4 relative flex justify-center items-center">
+            <div className="flex justify-center">
+              <Image src="/logo1.svg" alt="Logo" width={35} height={35} />
             </div>
             <button
               onClick={onClose}
-              className="text-gray-500 hover:text-gray-700 text-2xl leading-none cursor-pointer"
+              className="absolute right-4 text-gray-500 hover:text-red-500 text-2xl cursor-pointer"
             >
               ✕
             </button>
@@ -58,7 +58,7 @@ export default function LoginModal({
                 </label>
                 <input
                   type="email"
-                  placeholder="contoh@email.com"
+                  placeholder="johndoe@email.com"
                   className="w-full border border-gray-300 rounded px-3 py-2.5 text-sm focus:outline-none focus:border-sky-500 focus:ring-1 focus:ring-sky-200 transition"
                 />
               </div>
@@ -94,11 +94,24 @@ export default function LoginModal({
 
               <button
                 type="submit"
-                className="w-full bg-gray-800 hover:bg-gray-900 text-white font-semibold py-2.5 rounded-lg transition-colors"
+                className="w-full bg-sky-500 text-white font-semibold py-2.5 rounded-lg hover:bg-sky-600 transition-colors cursor-pointer"
               >
                 Masuk
               </button>
             </form>
+
+            <div className="flex items-center gap-3 my-5">
+              <div className="flex-1 border-t border-gray-300" />
+              <span className="text-xs text-gray-400">
+                atau masuk dengan email
+              </span>
+              <div className="flex-1 border-t border-gray-300" />
+            </div>
+
+            <button className="w-full border border-gray-300 text-gray-700 font-semibold py-2.5 rounded-lg hover:bg-gray-50 transition-colors flex items-center justify-center gap-2">
+              <Image src="/google.png" alt="Google" width={20} height={20} />
+              Masuk dengan Google
+            </button>
 
             <p className="text-center text-sm text-gray-600 mt-5">
               Belum punya akun?{" "}

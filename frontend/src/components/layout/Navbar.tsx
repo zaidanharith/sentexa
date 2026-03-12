@@ -21,13 +21,13 @@ export default function Navbar() {
     <>
       <nav className="fixed w-full z-50 backdrop-blur-md select-none bg-white/70 border-b border-gray-200">
         <div className="mx-auto max-w-7xl px-5 py-4 flex items-center justify-between">
-          <div className="flex items-center gap-10">
+          <div className="flex items-center gap-8">
             <Link href="/" className="flex items-center gap-2">
               <Image src="/logo1.svg" alt="Logo" width={30} height={30} />
               <h1 className="text-2xl font-bold text-sky-500">Sentexa</h1>
             </Link>
 
-            <ul className="hidden md:flex items-center gap-3 text-md font-medium text-gray-700">
+            <ul className="hidden md:flex items-center gap-4 text-sm font-medium text-gray-700">
               {navLinks.map((link) => (
                 <li key={link.href}>
                   <Link

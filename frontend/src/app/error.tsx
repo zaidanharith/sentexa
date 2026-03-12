@@ -41,7 +41,7 @@ export default function ErrorPage({ error, reset }: ErrorPageProps) {
 
           <div className="w-12 h-1 rounded-full bg-sky-400 mx-auto" />
 
-          <div className="bg-gray-50 border border-gray-200 rounded-xl px-6 py-4 text-left">
+          <div className="bg-gray-50 border border-gray-200 rounded-xl px-6 py-4">
             <p className="text-xs font-semibold text-gray-400 uppercase tracking-widest mb-1">
               Detail
             </p>
