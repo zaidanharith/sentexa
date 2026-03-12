@@ -19,19 +19,20 @@ export default function SignUpModal({
   return (
     <>
       <div
-        className="fixed inset-0 bg-black/40 z-9998 transition-opacity duration-300"
+        className="fixed inset-0 bg-black/60  z-40 transition-opacity duration-300"
         onClick={onClose}
       />
 
       <div className="fixed inset-0 z-9999 flex items-center justify-center p-4">
         <div className="bg-white rounded-lg shadow-xl w-full max-w-md max-h-[90vh] overflow-y-auto">
-          <div className="sticky top-0 bg-white border-b border-gray-200 p-4 flex justify-between items-center">
-            <div className="text-center flex-1">
-              <Image src="/logo1.svg" alt="Logo" width={30} height={30} />
+          {/* Header dengan tombol close */}
+          <div className="top-0 bg-white border-b border-gray-200 p-4 relative flex justify-center items-center">
+            <div className="flex justify-center">
+              <Image src="/logo1.svg" alt="Logo" width={35} height={35} />
             </div>
             <button
               onClick={onClose}
-              className="text-gray-500 hover:text-gray-700 text-2xl leading-none cursor-pointer"
+              className="absolute right-4 text-gray-500 hover:text-red-500 text-2xl cursor-pointer"
             >
               ✕
             </button>
@@ -59,12 +60,7 @@ export default function SignUpModal({
                 />
               </div>
 
-              <input
-                type="text"
-                placeholder="Toko Saya"
-                className="w-full border border-gray-300 rounded px-3 py-2 text-sm focus:outline-none focus:border-sky-500"
-              />
-
+              {/* Email */}
               <input
                 type="email"
                 placeholder="contoh@email.com"
@@ -83,14 +79,45 @@ export default function SignUpModal({
                 className="w-full border border-gray-300 rounded px-3 py-2 text-sm focus:outline-none focus:border-sky-500"
               />
 
+              {/* Checkbox */}
+              <label className="flex items-start gap-2 text-xs text-gray-600">
+                <input type="checkbox" className="mt-0.5 cursor-pointer" />
+                <span>
+                  Saya menyetujui{" "}
+                  <a href="#" className="text-sky-500 hover:underline">
+                    Syarat & Ketentuan
+                  </a>{" "}
+                  dan{" "}
+                  <a href="#" className="text-sky-500 hover:underline">
+                    Kebijakan Privasi
+                  </a>{" "}
+                  Sentexa
+                </span>
+              </label>
+
+              {/* Tombol Submit */}
               <button
                 type="submit"
-                className="w-full bg-sky-500 text-white font-semibold py-2.5 rounded-lg hover:bg-sky-600 transition-colors"
+                className="w-full bg-sky-500 text-white font-semibold py-2.5 rounded-lg hover:bg-sky-600 transition-colors cursor-pointer"
               >
                 Buat Akun Gratis
               </button>
             </form>
 
+            {/* Divider */}
+            <div className="flex items-center gap-3 my-4">
+              <div className="flex-1 border-t border-gray-300" />
+              <span className="text-xs text-gray-400">atau</span>
+              <div className="flex-1 border-t border-gray-300" />
+            </div>
+
+            {/* Google Login */}
+            <button className="w-full border border-gray-300 text-gray-700 font-semibold py-2 rounded-lg hover:bg-gray-100 transition-colors flex items-center justify-center gap-2 cursor-pointer">
+              <Image src="/search.png" alt="G" width={20} height={20} />
+              Daftar dengan Google
+            </button>
+
+            {/* Login Link */}
             <p className="text-center text-sm text-gray-600 mt-4">
               Sudah punya akun?{" "}
               <button
