@@ -23,10 +23,18 @@ class User(Base):
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), default=datetime.utcnow, nullable=False
     )
+    subscription: Mapped[str] = mapped_column(
+        String(50), nullable=False, default="free", server_default="free"
+    )
+    subscription_quota_remaining: Mapped[int] = mapped_column(
+        Integer, nullable=False, default=100, server_default="100"
+    )
+    subscription_expires_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True
+    )
 
     reviews: Mapped[list["Review"]] = relationship(
         "Review", back_populates="user", cascade="all, delete-orphan"
     )
-
 
 from app.models.review import Review

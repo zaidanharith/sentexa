@@ -8,6 +8,7 @@ from app.core.config import settings
 from app.core.metrics import metrics_state
 from app.api.router import api_router
 from app.middleware.error_handler import register_error_handlers
+from app.middleware.request_context import register_request_context_middleware
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -28,6 +29,8 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+register_request_context_middleware(app)
 
 @app.middleware("http")
 async def collect_metrics(request, call_next):

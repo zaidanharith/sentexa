@@ -18,6 +18,7 @@ class UserOut(BaseModel):
 	id: int
 	name: str
 	email: EmailStr
+	subscription: str
 	created_at: datetime
 
 	model_config = ConfigDict(from_attributes=True)
