@@ -2,7 +2,7 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { useState } from "react";
 import {
   HiOutlineHome,
@@ -16,6 +16,8 @@ import {
   HiChevronDoubleLeft,
   HiChevronDoubleRight,
 } from "react-icons/hi";
+
+import { useAuth } from "@/hooks/useAuth";
 
 const navItems = [
   {
@@ -61,7 +63,30 @@ const bottomItems = [
 
 export default function Sidebar() {
   const pathname = usePathname();
+  const router = useRouter();
   const [collapsed, setCollapsed] = useState(false);
+  const [isLoggingOut, setIsLoggingOut] = useState(false);
+  const { user, logout } = useAuth();
+
+  const displayName = user?.name?.trim() || "Pengguna";
+  const displayPlan = user?.subscription || "Paket Gratis";
+  const avatarInitial = displayName.charAt(0).toUpperCase();
+
+  const handleLogout = async () => {
+    if (isLoggingOut) {
+      return;
+    }
+
+    setIsLoggingOut(true);
+
+    try {
+      await logout();
+      router.push("/");
+      router.refresh();
+    } finally {
+      setIsLoggingOut(false);
+    }
+  };
 
   return (
     <>
@@ -160,24 +185,32 @@ export default function Sidebar() {
           })}
 
           {!collapsed && (
-            <div className="mt-2 flex items-center gap-3 rounded-lg px-3 py-2.5 hover:bg-gray-100 transition-colors cursor-pointer">
+            <button
+              type="button"
+              onClick={handleLogout}
+              disabled={isLoggingOut}
+              className="mt-2 flex items-center gap-3 rounded-lg px-3 py-2.5 hover:bg-gray-100 transition-colors cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed"
+            >
               <div className="w-7 h-7 rounded-full bg-sky-100 flex items-center justify-center text-sky-600 text-xs font-bold shrink-0">
-                U
+                {avatarInitial}
               </div>
-              <div className="flex-1 min-w-0">
+              <div className="flex-1 min-w-0 text-left">
                 <p className="text-xs font-semibold text-gray-800 truncate">
-                  Pengguna
+                  {displayName}
                 </p>
-                <p className="text-xs text-gray-400 truncate">Paket Gratis</p>
+                <p className="text-xs text-gray-400 truncate">{displayPlan}</p>
               </div>
               <HiOutlineLogout className="w-3.5 h-3.5 text-gray-400 shrink-0" />
-            </div>
+            </button>
           )}
 
           {collapsed && (
             <button
+              type="button"
               title="Keluar"
-              className="mt-1 mx-auto w-8 h-8 flex items-center justify-center rounded-md text-gray-400 hover:bg-gray-100 hover:text-gray-600 transition-colors cursor-pointer"
+              onClick={handleLogout}
+              disabled={isLoggingOut}
+              className="mt-1 mx-auto w-8 h-8 flex items-center justify-center rounded-md text-gray-400 hover:bg-gray-100 hover:text-gray-600 transition-colors cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed"
             >
               <HiOutlineLogout className="w-4 h-4" />
             </button>

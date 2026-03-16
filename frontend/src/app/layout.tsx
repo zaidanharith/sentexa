@@ -1,5 +1,8 @@
 import type { Metadata } from "next";
 import { Plus_Jakarta_Sans } from "next/font/google";
+
+import SessionAuthProvider from "@/components/providers/SessionAuthProvider";
+
 import "./globals.css";
 
 const plusJakartaSans = Plus_Jakarta_Sans({
@@ -22,7 +25,9 @@ export default function RootLayout({
   return (
     <html lang="id">
       <body className={`${plusJakartaSans.variable} antialiased`}>
-        <div className="min-h-screen flex flex-col">{children}</div>
+        <SessionAuthProvider>
+          <div className="min-h-screen flex flex-col">{children}</div>
+        </SessionAuthProvider>
       </body>
     </html>
   );

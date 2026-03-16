@@ -1,10 +1,20 @@
-import Sidebar from "@/components/layout/dashboard/Sidebar";
+import { redirect } from "next/navigation";
+import { getServerSession } from "next-auth";
 
-export default function DashboardLayout({
+import Sidebar from "@/components/layout/dashboard/Sidebar";
+import { authOptions } from "@/lib/auth";
+
+export default async function DashboardLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
+  const session = await getServerSession(authOptions);
+
+  if (!session) {
+    redirect("/");
+  }
+
   return (
     <div className="flex min-h-screen bg-gray-50">
       <Sidebar />

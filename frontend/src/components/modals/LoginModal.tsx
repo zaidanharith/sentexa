@@ -2,6 +2,10 @@
 
 import { useState } from "react";
 import Image from "next/image";
+import { useRouter } from "next/navigation";
+
+import { ApiError } from "@/lib/api";
+import { useAuth } from "@/hooks/useAuth";
 
 interface LoginModalProps {
   isOpen: boolean;
@@ -14,13 +18,44 @@ export default function LoginModal({
   onClose,
   onOpenSignUp,
 }: LoginModalProps) {
+  const router = useRouter();
+  const { login } = useAuth();
+
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
   const [rememberMe, setRememberMe] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   if (!isOpen) return null;
 
   const handleSwitchToSignUp = () => {
     onClose();
     onOpenSignUp?.();
+  };
+
+  const handleLoginSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    setErrorMessage(null);
+    setSubmitting(true);
+
+    try {
+      await login({ email, password });
+
+      setEmail("");
+      setPassword("");
+      onClose();
+      router.push("/dashboard");
+      router.refresh();
+    } catch (error) {
+      if (error instanceof ApiError) {
+        setErrorMessage(error.detail ?? "Email atau kata sandi tidak valid.");
+      } else {
+        setErrorMessage("Terjadi kesalahan saat login. Coba lagi.");
+      }
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   return (
@@ -51,14 +86,18 @@ export default function LoginModal({
             <p className="text-sm text-gray-500 italic text-center mb-6">
               Hadir untuk membantu mengembangkan bisnismu
             </p>
-            <form className="space-y-4">
+            <form className="space-y-4" onSubmit={handleLoginSubmit}>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1.5">
                   Alamat Email
                 </label>
                 <input
                   type="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
                   placeholder="johndoe@email.com"
+                  required
+                  autoComplete="email"
                   className="w-full border border-gray-300 rounded px-3 py-2.5 text-sm focus:outline-none focus:border-sky-500 focus:ring-1 focus:ring-sky-200 transition"
                 />
               </div>
@@ -69,10 +108,20 @@ export default function LoginModal({
                 </label>
                 <input
                   type="password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
                   placeholder="••••••••"
+                  required
+                  autoComplete="current-password"
                   className="w-full border border-gray-300 rounded px-3 py-2.5 text-sm focus:outline-none focus:border-sky-500 focus:ring-1 focus:ring-sky-200 transition"
                 />
               </div>
+
+              {errorMessage ? (
+                <p className="text-sm text-red-500" role="alert">
+                  {errorMessage}
+                </p>
+              ) : null}
 
               <div className="flex items-center justify-between text-sm">
                 <label className="flex items-center gap-2 text-gray-600 cursor-pointer">
@@ -94,9 +143,10 @@ export default function LoginModal({
 
               <button
                 type="submit"
-                className="w-full bg-sky-500 text-white font-semibold py-2.5 rounded-lg hover:bg-sky-600 transition-colors cursor-pointer"
+                disabled={submitting}
+                className="w-full bg-sky-500 text-white font-semibold py-2.5 rounded-lg hover:bg-sky-600 transition-colors cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed"
               >
-                Masuk
+                {submitting ? "Memproses..." : "Masuk"}
               </button>
             </form>
 
@@ -116,6 +166,7 @@ export default function LoginModal({
             <p className="text-center text-sm text-gray-600 mt-5">
               Belum punya akun?{" "}
               <button
+                type="button"
                 onClick={handleSwitchToSignUp}
                 className="text-sky-500 font-semibold hover:underline bg-none border-none cursor-pointer"
               >

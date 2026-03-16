@@ -2,20 +2,43 @@
 
 import Image from "next/image";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useState } from "react";
+
 import SignupModal from "@/components/modals/SignupModal";
 import LoginModal from "@/components/modals/LoginModal";
+import { useAuth } from "@/hooks/useAuth";
 
 const navLinks = [
-  { href: "#fitur", label: "Fitur" },
-  { href: "#cara-kerja", label: "Cara Kerja" },
-  { href: "#harga", label: "Harga" },
+  { href: "/about", label: "Tentang" },
+  { href: "/pricing", label: "Paket Harga" },
 ];
 
 export default function Navbar() {
+  const router = useRouter();
+  const { isAuthenticated, loading, logout } = useAuth();
+
   const [menuOpen, setMenuOpen] = useState(false);
   const [daftarOpen, setDaftarOpen] = useState(false);
   const [loginOpen, setLoginOpen] = useState(false);
+  const [isLoggingOut, setIsLoggingOut] = useState(false);
+
+  const handleLogout = async () => {
+    if (isLoggingOut) {
+      return;
+    }
+
+    setIsLoggingOut(true);
+
+    try {
+      await logout();
+      setMenuOpen(false);
+      router.push("/");
+      router.refresh();
+    } finally {
+      setIsLoggingOut(false);
+    }
+  };
 
   return (
     <>
@@ -42,18 +65,41 @@ export default function Navbar() {
           </div>
 
           <div className="hidden md:flex items-center gap-3 text-md ">
-            <button
-              onClick={() => setLoginOpen(true)}
-              className="border border-gray-300 text-gray-700 px-5 py-2 rounded-lg text-sm font-semibold hover:border-sky-500 hover:text-sky-500 transition-colors cursor-pointer"
-            >
-              Masuk
-            </button>
-            <button
-              onClick={() => setDaftarOpen(true)}
-              className="bg-sky-500 text-white text-sm font-semibold px-5 py-2 rounded-lg hover:bg-sky-600 transition-colors cursor-pointer"
-            >
-              Daftar
-            </button>
+            {!loading && !isAuthenticated ? (
+              <>
+                <button
+                  onClick={() => setLoginOpen(true)}
+                  className="border border-gray-300 text-gray-700 px-5 py-2 rounded-lg text-sm font-semibold hover:border-sky-500 hover:text-sky-500 transition-colors cursor-pointer"
+                >
+                  Masuk
+                </button>
+                <button
+                  onClick={() => setDaftarOpen(true)}
+                  className="bg-sky-500 text-white text-sm font-semibold px-5 py-2 rounded-lg hover:bg-sky-600 transition-colors cursor-pointer"
+                >
+                  Daftar
+                </button>
+              </>
+            ) : null}
+
+            {!loading && isAuthenticated ? (
+              <>
+                <Link
+                  href="/dashboard"
+                  className="border border-gray-300 text-gray-700 px-5 py-2 rounded-lg text-sm font-semibold hover:border-sky-500 hover:text-sky-500 transition-colors"
+                >
+                  Dashboard
+                </Link>
+                <button
+                  type="button"
+                  onClick={handleLogout}
+                  disabled={isLoggingOut}
+                  className="bg-sky-500 text-white text-sm font-semibold px-5 py-2 rounded-lg hover:bg-sky-600 transition-colors cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed"
+                >
+                  {isLoggingOut ? "Keluar..." : "Logout"}
+                </button>
+              </>
+            ) : null}
           </div>
 
           <button
@@ -99,20 +145,50 @@ export default function Navbar() {
                 </li>
               ))}
             </ul>
-            <div className="flex flex-col gap-2 pt-2 border-t border-gray-100">
-              <Link
-                href="/login"
-                className="block text-center border border-gray-300 text-gray-700 px-5 py-2.5 rounded-lg text-sm font-semibold hover:border-sky-500 hover:text-sky-500 transition-colors"
-              >
-                Masuk
-              </Link>
-              <Link
-                href="/register"
-                className="block text-center bg-sky-500 text-white text-sm font-semibold px-5 py-2.5 rounded-lg hover:bg-sky-600 transition-colors"
-              >
-                Daftar
-              </Link>
-            </div>
+            {!loading && !isAuthenticated ? (
+              <div className="flex flex-col gap-2 pt-2 border-t border-gray-100">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setMenuOpen(false);
+                    setLoginOpen(true);
+                  }}
+                  className="block text-center border border-gray-300 text-gray-700 px-5 py-2.5 rounded-lg text-sm font-semibold hover:border-sky-500 hover:text-sky-500 transition-colors"
+                >
+                  Masuk
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setMenuOpen(false);
+                    setDaftarOpen(true);
+                  }}
+                  className="block text-center bg-sky-500 text-white text-sm font-semibold px-5 py-2.5 rounded-lg hover:bg-sky-600 transition-colors"
+                >
+                  Daftar
+                </button>
+              </div>
+            ) : null}
+
+            {!loading && isAuthenticated ? (
+              <div className="flex flex-col gap-2 pt-2 border-t border-gray-100">
+                <Link
+                  href="/dashboard"
+                  onClick={() => setMenuOpen(false)}
+                  className="block text-center border border-gray-300 text-gray-700 px-5 py-2.5 rounded-lg text-sm font-semibold hover:border-sky-500 hover:text-sky-500 transition-colors"
+                >
+                  Dashboard
+                </Link>
+                <button
+                  type="button"
+                  onClick={handleLogout}
+                  disabled={isLoggingOut}
+                  className="block text-center bg-sky-500 text-white text-sm font-semibold px-5 py-2.5 rounded-lg hover:bg-sky-600 transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
+                >
+                  {isLoggingOut ? "Keluar..." : "Logout"}
+                </button>
+              </div>
+            ) : null}
           </div>
         </div>
       </nav>
