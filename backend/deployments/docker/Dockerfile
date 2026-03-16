@@ -30,7 +30,7 @@ COPY . .
 RUN python -m nltk.downloader stopwords punkt averaged_perceptron_tagger -d /usr/local/share/nltk_data
 
 RUN chown -R appuser:appuser /app && \
-    chmod +x /app/entrypoint.sh
+     chmod +x /app/entrypoint.sh
 USER appuser
 
 ENV PYTHONDONTWRITEBYTECODE=1 \
@@ -40,6 +40,6 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
 EXPOSE 8000
 
 HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
-     CMD curl -f http://localhost:8000/health || exit 1
+     CMD curl -f http://localhost:8000/api/health || exit 1
 
-ENTRYPOINT ["/app/entrypoint.sh"]
+ENTRYPOINT ["./entrypoint.sh"]
