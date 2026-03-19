@@ -11,17 +11,8 @@ import Link from "next/link";
 export default function Home() {
   return (
     <>
-      <section className="relative overflow-hidden border-b border-gray-200 py-20 md:py-28 bg-white">
-        <div
-          aria-hidden
-          className="pointer-events-none absolute inset-0 bg-[linear-gradient(to_right,#e2e8f022_1px,transparent_1px),linear-gradient(to_bottom,#e2e8f022_1px,transparent_1px)] bg-size-[40px_40px]"
-        />
-        <div
-          aria-hidden
-          className="pointer-events-none absolute -top-32 -right-32 w-96 h-96 rounded-full bg-sky-100/60 blur-3xl"
-        />
-
-        <div className="relative mx-auto max-w-7xl grid md:grid-cols-2 gap-12 items-center">
+      <section className="border-b border-gray-200 bg-white w-full pb-16">
+        <div className="relative mx-auto grid md:grid-cols-2 gap-12 items-center max-w-7xl">
           <div>
             <span className="inline-flex items-center gap-1.5 bg-sky-50 border border-sky-200 text-sky-600 text-xs font-semibold px-3 py-1 rounded-full mb-5">
               <HiSparkles className="text-sky-400" />
@@ -125,7 +116,7 @@ export default function Home() {
       </section>
 
       <section className="border-b border-gray-200 py-8 bg-white">
-        <div className="mx-auto max-w-7xl px-6 grid grid-cols-3 gap-4 text-center flex-wrap">
+        <div className="mx-auto px-6 grid grid-cols-3 gap-4 text-center flex-wrap">
           {[
             {
               val: "10.000+",
@@ -149,8 +140,11 @@ export default function Home() {
         </div>
       </section>
 
-      <section id="fitur" className="py-16 border-b border-gray-200 bg-gray-50">
-        <div className="mx-auto max-w-7xl px-6">
+      <section
+        id="fitur"
+        className="py-16 border-b border-gray-200 bg-gray-50 w-full"
+      >
+        <div className="mx-auto max-w-7xl">
           <div className="text-center mb-10">
             <span className="inline-block bg-sky-50 border border-sky-200 text-sky-600 text-xs font-semibold px-3 py-1 rounded-full mb-3">
               Fitur Unggulan
@@ -218,7 +212,7 @@ export default function Home() {
         id="cara-kerja"
         className="py-16 border-b border-gray-200 bg-white"
       >
-        <div className="mx-auto max-w-7xl px-6">
+        <div className="mx-auto max-w-7xl">
           <div className="text-center mb-10">
             <span className="inline-block bg-sky-50 border border-sky-200 text-sky-600 text-xs font-semibold px-3 py-1 rounded-full mb-3">
               Cara Kerja

@@ -9,7 +9,7 @@ export default function RootLayout({
   return (
     <>
       <Navbar />
-      <main className="container mx-auto max-w-7xl flex flex-col items-center pt-24 px-4 flex-1">
+      <main className="w-full flex flex-col items-center pt-28 px-4 md:px-0">
         {children}
       </main>
       <Footer />

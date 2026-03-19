@@ -43,7 +43,7 @@ export default function Navbar() {
   return (
     <>
       <nav className="fixed w-full z-50 backdrop-blur-md select-none bg-white/70 border-b border-gray-200">
-        <div className="mx-auto max-w-7xl px-5 py-4 flex items-center justify-between">
+        <div className="mx-auto max-w-7xl py-4 flex items-center justify-between">
           <div className="flex items-center gap-8">
             <Link href="/" className="flex items-center gap-2">
               <Image src="/logo1.svg" alt="Logo" width={30} height={30} />
