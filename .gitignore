@@ -612,7 +612,6 @@ build/
 # Docker
 docker-compose.override.yml
 Dockerfile.override
-.dockerignore
 
 # Kubernetes
 # Add Kubernetes-specific ignores here

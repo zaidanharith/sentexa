@@ -10,8 +10,9 @@ import LoginModal from "@/components/modals/LoginModal";
 import { useAuth } from "@/hooks/useAuth";
 
 const navLinks = [
-  { href: "/about", label: "Tentang" },
-  { href: "/pricing", label: "Paket Harga" },
+  { href: "/#features", label: "Fitur" },
+  { href: "/#how-it-works", label: "Tutorial" },
+  { href: "/#pricing", label: "Harga" },
 ];
 
 export default function Navbar() {
@@ -46,7 +47,13 @@ export default function Navbar() {
         <div className="mx-auto max-w-7xl py-4 flex items-center justify-between">
           <div className="flex items-center gap-8">
             <Link href="/" className="flex items-center gap-2">
-              <Image src="/logo1.svg" alt="Logo" width={30} height={30} />
+              <Image
+                src="/logo1.svg"
+                alt="Logo"
+                width={30}
+                height={30}
+                style={{ height: "auto" }}
+              />
               <h1 className="text-2xl font-bold text-sky-500">Sentexa</h1>
             </Link>
 

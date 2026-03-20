@@ -48,6 +48,22 @@ export interface RegisterPayload {
   password: string;
 }
 
+export interface DurationOption {
+  code: "weekly" | "monthly" | "annual";
+  name: string;
+  price: number;
+  currency: string;
+  duration_days: number;
+}
+
+export interface SubscriptionPlan {
+  code: "free" | "premium";
+  name: string;
+  quota: number;
+  features: string[];
+  duration_options: DurationOption[];
+}
+
 function mapAxiosError(error: unknown): ApiError {
   if (!(error instanceof AxiosError)) {
     return new ApiError("Terjadi kesalahan yang tidak terduga.", 500);
@@ -111,6 +127,19 @@ export const backendAuthApi = {
           },
         },
       );
+    } catch (error) {
+      throw mapAxiosError(error);
+    }
+  },
+};
+
+export const backendSubscriptionApi = {
+  async getSubscriptionPlans(): Promise<SubscriptionPlan[]> {
+    try {
+      const response = await apiClient.get<SubscriptionPlan[]>(
+        "/subscription/plans",
+      );
+      return response.data;
     } catch (error) {
       throw mapAxiosError(error);
     }

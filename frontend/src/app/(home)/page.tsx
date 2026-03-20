@@ -7,8 +7,25 @@ import {
 import { MdAutoAwesome } from "react-icons/md";
 import { HiSparkles } from "react-icons/hi2";
 import Link from "next/link";
+import { backendSubscriptionApi, SubscriptionPlan } from "@/lib/api";
 
-export default function Home() {
+function formatIdr(value: number) {
+  return new Intl.NumberFormat("id-ID", {
+    style: "currency",
+    currency: "IDR",
+    maximumFractionDigits: 0,
+  }).format(value);
+}
+
+export default async function Home() {
+  let plans: SubscriptionPlan[] = [];
+
+  try {
+    plans = await backendSubscriptionApi.getSubscriptionPlans();
+  } catch {
+    plans = [];
+  }
+
   return (
     <>
       <section className="border-b border-gray-200 bg-white w-full pb-16">
@@ -141,7 +158,7 @@ export default function Home() {
       </section>
 
       <section
-        id="fitur"
+        id="feature"
         className="py-16 border-b border-gray-200 bg-gray-50 w-full"
       >
         <div className="mx-auto max-w-7xl">
@@ -209,7 +226,7 @@ export default function Home() {
       </section>
 
       <section
-        id="cara-kerja"
+        id="how-it-works"
         className="py-16 border-b border-gray-200 bg-white"
       >
         <div className="mx-auto max-w-7xl">
@@ -258,6 +275,112 @@ export default function Home() {
                 </p>
               </div>
             ))}
+          </div>
+        </div>
+      </section>
+
+      <section
+        id="pricing"
+        className="py-16 border-b border-gray-200 bg-gray-50 w-full"
+      >
+        <div className="mx-auto max-w-7xl">
+          <div className="text-center mb-10">
+            <span className="inline-block bg-sky-50 border border-sky-200 text-sky-600 text-xs font-semibold px-3 py-1 rounded-full mb-3">
+              Harga Langganan
+            </span>
+            <h2 className="text-3xl font-bold text-gray-900">
+              Pilih Paket Sesuai Kebutuhan Bisnis
+            </h2>
+            <p className="text-sm text-gray-500 mt-2 max-w-xl mx-auto">
+              Data paket dan harga di bawah ini diambil langsung dari API
+              subscription Sentexa.
+            </p>
+          </div>
+
+          {plans.length === 0 ? (
+            <div className="rounded-xl border border-amber-200 bg-amber-50 px-5 py-4 text-sm text-amber-800">
+              Paket langganan belum dapat dimuat saat ini. Silakan coba beberapa
+              saat lagi.
+            </div>
+          ) : (
+            <div className="grid md:grid-cols-2 gap-6">
+              {plans.map((plan) => {
+                const minPrice =
+                  plan.duration_options.length > 0
+                    ? Math.min(...plan.duration_options.map((d) => d.price))
+                    : null;
+
+                return (
+                  <div
+                    key={plan.code}
+                    className="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm"
+                  >
+                    <div className="flex items-start justify-between gap-3 mb-5">
+                      <div>
+                        <h3 className="text-2xl font-bold text-gray-900">
+                          {plan.name}
+                        </h3>
+                        <p className="text-sm text-gray-500 mt-1">
+                          Kuota analisis:{" "}
+                          {plan.quota >= 999999 ? "Unlimited" : plan.quota}
+                        </p>
+                      </div>
+                      <span className="inline-flex items-center rounded-full border border-sky-200 bg-sky-50 px-3 py-1 text-xs font-semibold text-sky-700 capitalize">
+                        {plan.code}
+                      </span>
+                    </div>
+
+                    <div className="mb-5">
+                      {minPrice === null ? (
+                        <p className="text-lg font-semibold text-gray-800">
+                          Gratis
+                        </p>
+                      ) : (
+                        <p className="text-lg font-semibold text-gray-800">
+                          Mulai dari {formatIdr(minPrice)}
+                        </p>
+                      )}
+                    </div>
+
+                    <ul className="space-y-2 mb-6">
+                      {plan.features.map((feature) => (
+                        <li key={feature} className="text-sm text-gray-600">
+                          • {feature}
+                        </li>
+                      ))}
+                    </ul>
+
+                    {plan.duration_options.length > 0 && (
+                      <div className="space-y-2 border-t border-gray-100 pt-4">
+                        {plan.duration_options.map((duration) => (
+                          <div
+                            key={duration.code}
+                            className="flex items-center justify-between text-sm"
+                          >
+                            <span className="text-gray-600">
+                              {duration.name}
+                            </span>
+                            <span className="font-semibold text-gray-900">
+                              {formatIdr(duration.price)}
+                            </span>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          )}
+
+          <div className="mt-10 text-center">
+            <Link
+              href="/dashboard"
+              className="inline-flex items-center gap-2 bg-sky-500 hover:bg-sky-600 text-white font-semibold px-6 py-3 rounded-lg transition-colors shadow-md shadow-sky-100"
+            >
+              Cek Langganan
+              <FiArrowRight className="text-sm" />
+            </Link>
           </div>
         </div>
       </section>

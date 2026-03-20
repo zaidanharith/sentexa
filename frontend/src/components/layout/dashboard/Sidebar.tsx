@@ -15,6 +15,7 @@ import {
   HiOutlineLogout,
   HiChevronDoubleLeft,
   HiChevronDoubleRight,
+  HiOutlineCreditCard,
 } from "react-icons/hi";
 
 import { useAuth } from "@/hooks/useAuth";
@@ -24,6 +25,11 @@ const navItems = [
     label: "Beranda",
     href: "/dashboard",
     icon: <HiOutlineHome className="w-4 h-4" />,
+  },
+  {
+    label: "Langganan",
+    href: "/dashboard/subscription",
+    icon: <HiOutlineCreditCard className="w-4 h-4" />,
   },
   {
     label: "Analisis",
@@ -102,13 +108,25 @@ export default function Sidebar() {
         >
           {!collapsed && (
             <Link href="/" className="flex items-center gap-2">
-              <Image src="/logo1.svg" alt="Sentexa" width={24} height={24} />
+              <Image
+                src="/logo1.svg"
+                alt="Sentexa"
+                width={24}
+                height={24}
+                style={{ height: "auto" }}
+              />
               <span className="text-xl font-bold text-sky-500">Sentexa</span>
             </Link>
           )}
           {collapsed && (
             <Link href="/">
-              <Image src="/logo1.svg" alt="Sentexa" width={24} height={24} />
+              <Image
+                src="/logo1.svg"
+                alt="Sentexa"
+                width={24}
+                height={24}
+                style={{ height: "auto" }}
+              />
             </Link>
           )}
           <button
@@ -198,7 +216,10 @@ export default function Sidebar() {
                 <p className="text-xs font-semibold text-gray-800 truncate">
                   {displayName}
                 </p>
-                <p className="text-xs text-gray-400 truncate">{displayPlan}</p>
+                <p className="text-xs text-gray-400 truncate">
+                  {displayPlan.charAt(0).toUpperCase() +
+                    displayPlan.slice(1).toLowerCase()}
+                </p>
               </div>
               <HiOutlineLogout className="w-3.5 h-3.5 text-gray-400 shrink-0" />
             </button>

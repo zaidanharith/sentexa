@@ -53,6 +53,7 @@ export default function Footer() {
                 alt="Logo Sentexa"
                 width={28}
                 height={28}
+                style={{ height: "auto" }}
               />
               <span className="text-2xl font-bold text-sky-500">Sentexa</span>
             </Link>

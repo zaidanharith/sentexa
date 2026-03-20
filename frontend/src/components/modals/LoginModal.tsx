@@ -69,7 +69,13 @@ export default function LoginModal({
         <div className="bg-white rounded-xl shadow-xl w-full max-w-md border border-gray-200 overflow-hidden">
           <div className="top-0 bg-white border-b border-gray-200 p-4 relative flex justify-center items-center">
             <div className="flex justify-center">
-              <Image src="/logo1.svg" alt="Logo" width={35} height={35} />
+              <Image
+                src="/logo1.svg"
+                alt="Logo"
+                width={35}
+                height={35}
+                style={{ height: "auto" }}
+              />
             </div>
             <button
               onClick={onClose}
