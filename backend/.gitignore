@@ -196,3 +196,7 @@ __pycache__/
 backend/deployments/docker/nginx/ssl/*
 *.pem
 *.key
+
+# NLP raw data
+app/nlp/data/raw/
+data/raw/
