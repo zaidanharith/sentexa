@@ -74,12 +74,12 @@ nlp/
 - Mengelola versi model dan artifact.
 - Menentukan model aktif yang dipakai endpoint API.
 
-## 🔄 Alur Kerja Ringkas 💡
+## 🔄 Alur Kerja
 
-1. data -> load dan split dataset.
-2. preprocessing -> bersihkan dan normalisasi teks.
-3. features -> ubah teks menjadi representasi numerik.
-4. training -> latih model.
-5. evaluation -> hitung metrik dan pilih model terbaik.
-6. registry -> simpan model dan metadata versi.
-7. inference -> gunakan model terdaftar untuk prediksi di API.
+1. `data` -> load dan split dataset.
+2. `preprocessing` -> bersihkan dan normalisasi teks.
+3. `features` -> ubah teks menjadi representasi numerik.
+4. `training` -> latih model.
+5. `evaluation` -> hitung metrik dan pilih model terbaik.
+6. `registry` -> simpan model dan metadata versi.
+7. `inference` -> gunakan model terdaftar untuk prediksi di API.
