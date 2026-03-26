@@ -181,9 +181,14 @@ pyrightconfig.json
 [Ll]ib
 [Ll]ib64
 [Ll]ocal
-[Ss]cripts
 pyvenv.cfg
 pip-selfcheck.json
+
+# Only ignore Scripts directories inside common virtualenv folders.
+.venv/[Ss]cripts/
+venv/[Ss]cripts/
+env/[Ss]cripts/
+ENV/[Ss]cripts/
 
 # End of https://www.toptal.com/developers/gitignore/api/python,venv
 
@@ -197,6 +202,3 @@ backend/deployments/docker/nginx/ssl/*
 *.pem
 *.key
 
-# NLP raw data
-app/nlp/data/raw/
-data/raw/

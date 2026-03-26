@@ -32,7 +32,8 @@ services:
     networks:
       - sentexa_network
     volumes:
-      - ../../uploads:/app/uploads
+      - ../../app/nlp/data/raw:/app/app/nlp/data/raw:ro
+      - ../../app/nlp/data/processed:/app/app/nlp/data/processed
     security_opt:
       - no-new-privileges:true
 

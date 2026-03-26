@@ -1,0 +1,41 @@
+{
+  "input_file": "app/nlp/data/raw/train_preprocess_ori.tsv",
+  "num_rows": 10933,
+  "split_mode": "train-val-test",
+  "label_to_id": {
+    "negative": 0,
+    "neutral": 1,
+    "positive": 2
+  },
+  "distribution": {
+    "negative": 0.31208268544772705,
+    "neutral": 0.10408853928473429,
+    "positive": 0.5838287752675386
+  },
+  "splits": {
+    "train": {
+      "rows": 7652,
+      "distribution": {
+        "negative": 0.31220595922634603,
+        "neutral": 0.10402509147935181,
+        "positive": 0.5837689492943021
+      }
+    },
+    "validation": {
+      "rows": 1094,
+      "distribution": {
+        "negative": 0.3117001828153565,
+        "neutral": 0.10420475319926874,
+        "positive": 0.5840950639853748
+      }
+    },
+    "test": {
+      "rows": 2187,
+      "distribution": {
+        "negative": 0.3118427069044353,
+        "neutral": 0.10425240054869685,
+        "positive": 0.5839048925468678
+      }
+    }
+  }
+}
