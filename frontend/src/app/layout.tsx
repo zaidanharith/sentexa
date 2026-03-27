@@ -23,7 +23,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="id" className="scroll-smooth data-scroll-beh">
+    <html lang="id" className="scroll-smooth" data-scroll-behavior="smooth">
       <body className={`${plusJakartaSans.variable} antialiased`}>
         <SessionAuthProvider>
           <div className="min-h-screen flex flex-col">{children}</div>
