@@ -132,8 +132,8 @@ export default async function Home() {
         </div>
       </section>
 
-      <section className="border-b border-gray-200 py-8 bg-white">
-        <div className="mx-auto px-6 grid grid-cols-3 gap-4 text-center flex-wrap">
+      <section className="border-b border-gray-200 py-8 bg-white w-full">
+        <div className="mx-auto w-fit px-6 grid grid-cols-3 gap-4 text-center flex-wrap">
           {[
             {
               val: "10.000+",
@@ -227,7 +227,7 @@ export default async function Home() {
 
       <section
         id="how-it-works"
-        className="py-16 border-b border-gray-200 bg-white"
+        className="py-16 border-b border-gray-200 bg-white w-full"
       >
         <div className="mx-auto max-w-7xl">
           <div className="text-center mb-10">

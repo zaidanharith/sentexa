@@ -2,8 +2,8 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
+import { useEffect, useState } from "react";
 
 import SignupModal from "@/components/modals/SignupModal";
 import LoginModal from "@/components/modals/LoginModal";
@@ -17,12 +17,24 @@ const navLinks = [
 
 export default function Navbar() {
   const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
   const { isAuthenticated, loading, logout } = useAuth();
 
   const [menuOpen, setMenuOpen] = useState(false);
   const [daftarOpen, setDaftarOpen] = useState(false);
   const [loginOpen, setLoginOpen] = useState(false);
   const [isLoggingOut, setIsLoggingOut] = useState(false);
+
+  useEffect(() => {
+    const shouldOpenLogin =
+      pathname === "/" && searchParams.get("login") === "1";
+
+    if (!loading && !isAuthenticated && shouldOpenLogin) {
+      setLoginOpen(true);
+      router.replace("/", { scroll: false });
+    }
+  }, [isAuthenticated, loading, pathname, router, searchParams]);
 
   const handleLogout = async () => {
     if (isLoggingOut) {
@@ -190,7 +202,7 @@ export default function Navbar() {
                   type="button"
                   onClick={handleLogout}
                   disabled={isLoggingOut}
-                  className="block text-center bg-sky-500 text-white text-sm font-semibold px-5 py-2.5 rounded-lg hover:bg-sky-600 transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
+                  className="block text-center bg-red-500 text-white text-sm font-semibold px-5 py-2.5 rounded-lg hover:bg-red-600 transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
                 >
                   {isLoggingOut ? "Keluar..." : "Logout"}
                 </button>
@@ -199,7 +211,6 @@ export default function Navbar() {
           </div>
         </div>
       </nav>
-      {/* Tambahkan component */}
       <LoginModal
         isOpen={loginOpen}
         onClose={() => setLoginOpen(false)}
