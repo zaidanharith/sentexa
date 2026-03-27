@@ -2,7 +2,7 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { usePathname, useRouter, useSearchParams } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 
 import SignupModal from "@/components/modals/SignupModal";
@@ -18,7 +18,6 @@ const navLinks = [
 export default function Navbar() {
   const router = useRouter();
   const pathname = usePathname();
-  const searchParams = useSearchParams();
   const { isAuthenticated, loading, logout } = useAuth();
 
   const [menuOpen, setMenuOpen] = useState(false);
@@ -27,14 +26,14 @@ export default function Navbar() {
   const [isLoggingOut, setIsLoggingOut] = useState(false);
 
   useEffect(() => {
-    const shouldOpenLogin =
-      pathname === "/" && searchParams.get("login") === "1";
+    const params = new URLSearchParams(window.location.search);
+    const shouldOpenLogin = pathname === "/" && params.get("login") === "1";
 
     if (!loading && !isAuthenticated && shouldOpenLogin) {
       setLoginOpen(true);
       router.replace("/", { scroll: false });
     }
-  }, [isAuthenticated, loading, pathname, router, searchParams]);
+  }, [isAuthenticated, loading, pathname, router]);
 
   const handleLogout = async () => {
     if (isLoggingOut) {
