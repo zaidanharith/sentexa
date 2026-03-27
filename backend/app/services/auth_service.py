@@ -89,6 +89,48 @@ def issue_tokens(user: User) -> TokenResponse:
 
 	return TokenResponse(access_token=access_token, refresh_token=refresh_token)
 
+async def update_user(
+	db: AsyncSession,
+	user_id: int,
+	*,
+	name: Optional[str] = None,
+	email: Optional[str] = None,
+) -> User:
+	"""Update user profile (name and email)"""
+	user = await get_user_by_id(db, user_id)
+	if not user:
+		raise HTTPException(
+			status_code=status.HTTP_404_NOT_FOUND,
+			detail="User not found"
+		)
+
+	if email and email != user.email:
+		existing = await get_user_by_email(db, email)
+		if existing:
+			raise HTTPException(
+				status_code=status.HTTP_409_CONFLICT,
+				detail="Email already in use"
+			)
+		user.email = email
+
+	if name:
+		user.name = name
+
+	db.add(user)
+	try:
+		await db.flush()
+		await db.commit()
+		await db.refresh(user)
+	except IntegrityError as exc:
+		logger.warning("Integrity error updating user: %s", exc)
+		await db.rollback()
+		raise HTTPException(
+			status_code=status.HTTP_409_CONFLICT,
+			detail="Failed to update user"
+		) from exc
+
+	return user
+
 def verify_refresh_token(token: str) -> Optional[dict]:
 	try:
 		payload = security.verify_refresh_token(token)
