@@ -1,7 +1,77 @@
 import type { NextAuthOptions } from "next-auth";
+import type { JWT } from "next-auth/jwt";
 import Credentials from "next-auth/providers/credentials";
 
 import { ApiError, backendAuthApi } from "@/lib/api";
+
+type JwtPayload = {
+  exp?: number;
+};
+
+function parseJwtPayload(token: string): JwtPayload | null {
+  const parts = token.split(".");
+  if (parts.length < 2) {
+    return null;
+  }
+
+  try {
+    const normalizedPayload = parts[1].replace(/-/g, "+").replace(/_/g, "/");
+    const padding = (4 - (normalizedPayload.length % 4 || 4)) % 4;
+    const paddedPayload = `${normalizedPayload}${"=".repeat(padding)}`;
+    const json = Buffer.from(paddedPayload, "base64").toString("utf8");
+    return JSON.parse(json) as JwtPayload;
+  } catch {
+    return null;
+  }
+}
+
+function getAccessTokenExpiryMs(
+  accessToken: string | null | undefined,
+): number {
+  if (!accessToken) {
+    return Date.now();
+  }
+
+  const payload = parseJwtPayload(accessToken);
+  if (typeof payload?.exp === "number") {
+    return payload.exp * 1000;
+  }
+
+  // Fallback when token payload cannot be parsed.
+  return Date.now() + 25 * 60 * 1000;
+}
+
+async function refreshAccessToken(token: JWT): Promise<JWT> {
+  if (
+    typeof token.refreshToken !== "string" ||
+    token.refreshToken.length === 0
+  ) {
+    return {
+      ...token,
+      accessToken: undefined,
+      accessTokenExpires: Date.now(),
+      error: "RefreshTokenMissing",
+    };
+  }
+
+  try {
+    const refreshed = await backendAuthApi.refresh(token.refreshToken);
+    return {
+      ...token,
+      accessToken: refreshed.access_token,
+      refreshToken: refreshed.refresh_token ?? token.refreshToken,
+      accessTokenExpires: getAccessTokenExpiryMs(refreshed.access_token),
+      error: undefined,
+    };
+  } catch {
+    return {
+      ...token,
+      accessToken: undefined,
+      accessTokenExpires: Date.now(),
+      error: "RefreshAccessTokenError",
+    };
+  }
+}
 
 export const authOptions: NextAuthOptions = {
   session: {
@@ -52,9 +122,21 @@ export const authOptions: NextAuthOptions = {
         token.subscription = user.subscription;
         token.accessToken = user.accessToken;
         token.refreshToken = user.refreshToken;
+        token.accessTokenExpires = getAccessTokenExpiryMs(user.accessToken);
+        token.error = undefined;
+        return token;
       }
 
-      return token;
+      const accessTokenExpires =
+        typeof token.accessTokenExpires === "number"
+          ? token.accessTokenExpires
+          : Date.now();
+
+      if (Date.now() < accessTokenExpires - 5000) {
+        return token;
+      }
+
+      return refreshAccessToken(token);
     },
     async session({ session, token }) {
       if (session.user) {
@@ -71,6 +153,7 @@ export const authOptions: NextAuthOptions = {
         typeof token.accessToken === "string" ? token.accessToken : undefined;
       session.refreshToken =
         typeof token.refreshToken === "string" ? token.refreshToken : undefined;
+      session.error = typeof token.error === "string" ? token.error : undefined;
 
       return session;
     },

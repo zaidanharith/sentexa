@@ -3,7 +3,6 @@ from datetime import timedelta
 from typing import Optional
 
 from fastapi import HTTPException, status
-from jose import JWTError
 from sqlalchemy import select
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -89,6 +88,41 @@ def issue_tokens(user: User) -> TokenResponse:
 
 	return TokenResponse(access_token=access_token, refresh_token=refresh_token)
 
+
+async def refresh_tokens(
+	db: AsyncSession,
+	*,
+	refresh_token: str,
+) -> TokenResponse:
+	payload = verify_refresh_token(refresh_token)
+
+	sub = payload.get("sub")
+	if not isinstance(sub, (str, int)):
+		raise HTTPException(
+			status_code=status.HTTP_401_UNAUTHORIZED,
+			detail="Invalid token payload",
+			headers={"WWW-Authenticate": "Bearer"},
+		)
+
+	try:
+		user_id = int(sub)
+	except ValueError:
+		raise HTTPException(
+			status_code=status.HTTP_401_UNAUTHORIZED,
+			detail="Invalid token payload",
+			headers={"WWW-Authenticate": "Bearer"},
+		)
+
+	user = await get_user_by_id(db, user_id)
+	if not user:
+		raise HTTPException(
+			status_code=status.HTTP_401_UNAUTHORIZED,
+			detail="User not found",
+			headers={"WWW-Authenticate": "Bearer"},
+		)
+
+	return issue_tokens(user)
+
 async def update_user(
 	db: AsyncSession,
 	user_id: int,
@@ -96,7 +130,6 @@ async def update_user(
 	name: Optional[str] = None,
 	email: Optional[str] = None,
 ) -> User:
-	"""Update user profile (name and email)"""
 	user = await get_user_by_id(db, user_id)
 	if not user:
 		raise HTTPException(
@@ -131,19 +164,13 @@ async def update_user(
 
 	return user
 
-def verify_refresh_token(token: str) -> Optional[dict]:
-	try:
-		payload = security.verify_refresh_token(token)
-		if not payload:
-			raise HTTPException(
-				status_code=status.HTTP_401_UNAUTHORIZED,
-				detail="Invalid token",
-				headers={"WWW-Authenticate": "Bearer"},
-			)
-		return payload
-	except JWTError as exc:
+def verify_refresh_token(token: str) -> dict:
+	payload = security.verify_refresh_token(token)
+	if not payload:
 		raise HTTPException(
 			status_code=status.HTTP_401_UNAUTHORIZED,
-			detail="Invalid token",
+			detail="Invalid or expired refresh token",
 			headers={"WWW-Authenticate": "Bearer"},
-		) from exc
+		)
+
+	return payload

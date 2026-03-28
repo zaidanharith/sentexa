@@ -1,11 +1,12 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Image from "next/image";
-import { useRouter } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 
 import { useAuth } from "@/hooks/useAuth";
 import { ApiError } from "@/lib/api";
+import { appToast } from "@/lib/toast";
 
 interface SignUpModalProps {
   isOpen: boolean;
@@ -19,6 +20,7 @@ export default function SignUpModal({
   onOpenLogin,
 }: SignUpModalProps) {
   const router = useRouter();
+  const pathname = usePathname();
   const { register } = useAuth();
 
   const [firstName, setFirstName] = useState("");
@@ -27,28 +29,32 @@ export default function SignUpModal({
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [submitting, setSubmitting] = useState(false);
-  const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
-  if (!isOpen) return null;
+  useEffect(() => {
+    if (pathname !== "/" && isOpen) {
+      onClose();
+    }
+  }, [isOpen, onClose, pathname]);
+
+  if (!isOpen || pathname !== "/") return null;
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    setErrorMessage(null);
 
     const fullName = `${firstName} ${lastName}`.trim();
 
     if (!fullName) {
-      setErrorMessage("Nama wajib diisi.");
+      appToast.warning("Nama wajib diisi.");
       return;
     }
 
     if (password.length < 8) {
-      setErrorMessage("Kata sandi minimal 8 karakter.");
+      appToast.warning("Kata sandi minimal 8 karakter.");
       return;
     }
 
     if (password !== confirmPassword) {
-      setErrorMessage("Konfirmasi kata sandi tidak cocok.");
+      appToast.warning("Konfirmasi kata sandi tidak cocok.");
       return;
     }
 
@@ -70,11 +76,12 @@ export default function SignUpModal({
       onClose();
       router.push("/dashboard");
       router.refresh();
+      appToast.success("Registrasi berhasil. Selamat datang di Sentexa.");
     } catch (error) {
       if (error instanceof ApiError) {
-        setErrorMessage(error.detail ?? "Gagal membuat akun. Coba lagi.");
+        appToast.error(error.detail ?? "Gagal membuat akun. Coba lagi.");
       } else {
-        setErrorMessage("Terjadi kesalahan saat mendaftar. Coba lagi.");
+        appToast.error("Terjadi kesalahan saat mendaftar. Coba lagi.");
       }
     } finally {
       setSubmitting(false);
@@ -84,12 +91,13 @@ export default function SignUpModal({
   return (
     <>
       <div
-        className="fixed inset-0 bg-black/60 z-9998 transition-opacity duration-300"
+        className="fixed inset-0 z-9999 flex items-center justify-center p-4"
         onClick={onClose}
-      />
-
-      <div className="fixed inset-0 z-9999 flex items-center justify-center p-4">
-        <div className="bg-white rounded-xl shadow-xl w-full max-w-md max-h-[90vh] overflow-hidden">
+      >
+        <div
+          className="bg-white rounded-xl shadow-xl w-full max-w-md max-h-[90vh] overflow-hidden"
+          onClick={(event) => event.stopPropagation()}
+        >
           <div className="top-0 bg-white border-b border-gray-200 p-4 relative flex justify-center items-center">
             <div className="flex justify-center">
               <Image
@@ -168,12 +176,6 @@ export default function SignUpModal({
                 autoComplete="new-password"
                 className="w-full border border-gray-300 rounded px-3 py-2 text-sm focus:outline-none focus:border-sky-500"
               />
-
-              {errorMessage ? (
-                <p className="text-sm text-red-500" role="alert">
-                  {errorMessage}
-                </p>
-              ) : null}
 
               <button
                 type="submit"

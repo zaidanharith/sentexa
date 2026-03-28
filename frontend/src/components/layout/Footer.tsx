@@ -1,6 +1,5 @@
 import Image from "next/image";
 import Link from "next/link";
-import { FaInstagram, FaLinkedinIn, FaXTwitter } from "react-icons/fa6";
 
 const footerLinks = {
   Produk: [
@@ -27,17 +26,17 @@ const socialLinks = [
   {
     label: "Instagram",
     href: "#",
-    icon: FaInstagram,
+    shortLabel: "IG",
   },
   {
     label: "Twitter / X",
     href: "#",
-    icon: FaXTwitter,
+    shortLabel: "X",
   },
   {
     label: "LinkedIn",
     href: "#",
-    icon: FaLinkedinIn,
+    shortLabel: "in",
   },
 ];
 
@@ -63,16 +62,14 @@ export default function Footer() {
             </p>
             <div className="flex items-center gap-2 mt-1">
               {socialLinks.map((s) => {
-                const Icon = s.icon;
-
                 return (
                   <a
                     key={s.label}
                     href={s.href}
                     aria-label={s.label}
-                    className="w-8 h-8 flex items-center justify-center rounded-md border border-gray-200 text-gray-500 hover:border-sky-400 hover:text-sky-500 transition-colors"
+                    className="w-8 h-8 flex items-center justify-center rounded-md border border-gray-200 text-gray-500 hover:border-sky-400 hover:text-sky-500 transition-colors text-[11px] font-semibold"
                   >
-                    <Icon className="w-4 h-4" />
+                    {s.shortLabel}
                   </a>
                 );
               })}

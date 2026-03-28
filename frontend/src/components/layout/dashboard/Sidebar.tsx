@@ -18,6 +18,7 @@ import {
 
 import { useAuth } from "@/hooks/useAuth";
 import { TfiLayoutWidthDefault } from "react-icons/tfi";
+import { appToast } from "@/lib/toast";
 
 type DashboardNavItem = {
   label: string;
@@ -66,6 +67,9 @@ export default function Sidebar({
       await logout();
       router.push("/");
       router.refresh();
+      appToast.success("Logout berhasil.");
+    } catch {
+      appToast.error("Logout gagal. Silakan coba lagi.");
     } finally {
       setIsLoggingOut(false);
     }

@@ -109,6 +109,17 @@ export const backendAuthApi = {
     }
   },
 
+  async refresh(refreshToken: string): Promise<TokenResponse> {
+    try {
+      const response = await apiClient.post<TokenResponse>("/auth/refresh", {
+        refresh_token: refreshToken,
+      });
+      return response.data;
+    } catch (error) {
+      throw mapAxiosError(error);
+    }
+  },
+
   async me(accessToken: string): Promise<AuthUser> {
     try {
       const response = await apiClient.get<AuthUser>("/auth/me", {
@@ -124,18 +135,14 @@ export const backendAuthApi = {
 
   async updateProfile(
     accessToken: string,
-    payload: UpdateProfilePayload
+    payload: UpdateProfilePayload,
   ): Promise<AuthUser> {
     try {
-      const response = await apiClient.put<AuthUser>(
-        "/auth/me",
-        payload,
-        {
-          headers: {
-            Authorization: `Bearer ${accessToken}`,
-          },
-        }
-      );
+      const response = await apiClient.put<AuthUser>("/auth/me", payload, {
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+        },
+      });
       return response.data;
     } catch (error) {
       throw mapAxiosError(error);

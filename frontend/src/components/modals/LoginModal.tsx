@@ -1,11 +1,12 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Image from "next/image";
-import { useRouter } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 
 import { ApiError } from "@/lib/api";
 import { useAuth } from "@/hooks/useAuth";
+import { appToast } from "@/lib/toast";
 
 interface LoginModalProps {
   isOpen: boolean;
@@ -19,15 +20,21 @@ export default function LoginModal({
   onOpenSignUp,
 }: LoginModalProps) {
   const router = useRouter();
+  const pathname = usePathname();
   const { login } = useAuth();
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [rememberMe, setRememberMe] = useState(false);
   const [submitting, setSubmitting] = useState(false);
-  const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
-  if (!isOpen) return null;
+  useEffect(() => {
+    if (pathname !== "/" && isOpen) {
+      onClose();
+    }
+  }, [isOpen, onClose, pathname]);
+
+  if (!isOpen || pathname !== "/") return null;
 
   const handleSwitchToSignUp = () => {
     onClose();
@@ -36,7 +43,6 @@ export default function LoginModal({
 
   const handleLoginSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    setErrorMessage(null);
     setSubmitting(true);
 
     try {
@@ -47,11 +53,12 @@ export default function LoginModal({
       onClose();
       router.push("/dashboard");
       router.refresh();
+      appToast.success("Login berhasil. Selamat datang kembali.");
     } catch (error) {
       if (error instanceof ApiError) {
-        setErrorMessage(error.detail ?? "Email atau kata sandi tidak valid.");
+        appToast.error(error.detail ?? "Email atau kata sandi tidak valid.");
       } else {
-        setErrorMessage("Terjadi kesalahan saat login. Coba lagi.");
+        appToast.error("Terjadi kesalahan saat login. Coba lagi.");
       }
     } finally {
       setSubmitting(false);
@@ -61,12 +68,13 @@ export default function LoginModal({
   return (
     <>
       <div
-        className="fixed inset-0 bg-black/60 z-9998 transition-opacity duration-300"
+        className="fixed inset-0 z-9999 flex items-center justify-center p-4"
         onClick={onClose}
-      />
-
-      <div className="fixed inset-0 z-9999 flex items-center justify-center p-4">
-        <div className="bg-white rounded-xl shadow-xl w-full max-w-md border border-gray-200 overflow-hidden">
+      >
+        <div
+          className="bg-white rounded-xl shadow-xl w-full max-w-md border border-gray-200 overflow-hidden"
+          onClick={(event) => event.stopPropagation()}
+        >
           <div className="top-0 bg-white border-b border-gray-200 p-4 relative flex justify-center items-center">
             <div className="flex justify-center">
               <Image
@@ -122,12 +130,6 @@ export default function LoginModal({
                   className="w-full border border-gray-300 rounded px-3 py-2.5 text-sm focus:outline-none focus:border-sky-500 focus:ring-1 focus:ring-sky-200 transition"
                 />
               </div>
-
-              {errorMessage ? (
-                <p className="text-sm text-red-500" role="alert">
-                  {errorMessage}
-                </p>
-              ) : null}
 
               <div className="flex items-center justify-between text-sm">
                 <label className="flex items-center gap-2 text-gray-600 cursor-pointer">

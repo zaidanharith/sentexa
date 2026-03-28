@@ -8,6 +8,7 @@ import { useEffect, useState } from "react";
 import SignupModal from "@/components/modals/SignupModal";
 import LoginModal from "@/components/modals/LoginModal";
 import { useAuth } from "@/hooks/useAuth";
+import { appToast } from "@/lib/toast";
 
 const navLinks = [
   { href: "/#features", label: "Fitur" },
@@ -35,6 +36,21 @@ export default function Navbar() {
     }
   }, [isAuthenticated, loading, pathname, router]);
 
+  useEffect(() => {
+    if (pathname !== "/") {
+      setLoginOpen(false);
+      setDaftarOpen(false);
+      setMenuOpen(false);
+    }
+  }, [pathname]);
+
+  useEffect(() => {
+    if (isAuthenticated) {
+      setLoginOpen(false);
+      setDaftarOpen(false);
+    }
+  }, [isAuthenticated]);
+
   const handleLogout = async () => {
     if (isLoggingOut) {
       return;
@@ -47,6 +63,9 @@ export default function Navbar() {
       setMenuOpen(false);
       router.push("/");
       router.refresh();
+      appToast.success("Logout berhasil.");
+    } catch {
+      appToast.error("Logout gagal. Silakan coba lagi.");
     } finally {
       setIsLoggingOut(false);
     }
@@ -211,12 +230,12 @@ export default function Navbar() {
         </div>
       </nav>
       <LoginModal
-        isOpen={loginOpen}
+        isOpen={pathname === "/" && loginOpen}
         onClose={() => setLoginOpen(false)}
         onOpenSignUp={() => setDaftarOpen(true)}
       />
       <SignupModal
-        isOpen={daftarOpen}
+        isOpen={pathname === "/" && daftarOpen}
         onClose={() => setDaftarOpen(false)}
         onOpenLogin={() => setLoginOpen(true)}
       />

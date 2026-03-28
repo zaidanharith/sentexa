@@ -1,13 +1,9 @@
-import { redirect } from "next/navigation";
-import { getServerSession } from "next-auth";
-
 import Breadcrumbs from "@/components/layout/dashboard/Breadcrumbs";
 import HeaderProfile from "@/components/layout/dashboard/HeaderProfile";
 import Sidebar from "@/components/layout/dashboard/Sidebar";
 import DashboardFooter from "@/components/layout/dashboard/DashboardFooter";
-import { authOptions } from "@/lib/auth";
 
-export default async function DashboardLayout({
+export default function DashboardLayout({
   children,
 }: {
   children: React.ReactNode;
@@ -39,12 +35,6 @@ export default async function DashboardLayout({
       href: "/dashboard/history",
     },
   ];
-
-  const session = await getServerSession(authOptions);
-
-  if (!session) {
-    redirect("/?login=1");
-  }
 
   return (
     <div className="flex min-h-screen bg-gray-50">
