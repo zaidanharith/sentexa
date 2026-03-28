@@ -48,6 +48,12 @@ export interface RegisterPayload {
   password: string;
 }
 
+export interface UpdateProfilePayload {
+  firstName: string;
+  lastName: string;
+  email: string;
+}
+
 export interface DurationOption {
   code: "weekly" | "monthly" | "annual";
   name: string;
@@ -110,6 +116,26 @@ export const backendAuthApi = {
           Authorization: `Bearer ${accessToken}`,
         },
       });
+      return response.data;
+    } catch (error) {
+      throw mapAxiosError(error);
+    }
+  },
+
+  async updateProfile(
+    accessToken: string,
+    payload: UpdateProfilePayload
+  ): Promise<AuthUser> {
+    try {
+      const response = await apiClient.put<AuthUser>(
+        "/auth/me",
+        payload,
+        {
+          headers: {
+            Authorization: `Bearer ${accessToken}`,
+          },
+        }
+      );
       return response.data;
     } catch (error) {
       throw mapAxiosError(error);

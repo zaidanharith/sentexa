@@ -14,6 +14,12 @@ class LoginRequest(BaseModel):
 	password: str
 
 
+class UpdateProfileRequest(BaseModel):
+	firstName: str
+	lastName: str
+	email: EmailStr
+
+
 class UserOut(BaseModel):
 	id: int
 	name: str
