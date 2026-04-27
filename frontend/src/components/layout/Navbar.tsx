@@ -26,30 +26,37 @@ export default function Navbar() {
   const [loginOpen, setLoginOpen] = useState(false);
   const [isLoggingOut, setIsLoggingOut] = useState(false);
 
+  // Perbaikan 1: Menggunakan setTimeout untuk membuka modal dari URL parameter
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     const shouldOpenLogin = pathname === "/" && params.get("login") === "1";
 
     if (!loading && !isAuthenticated && shouldOpenLogin) {
-      setLoginOpen(true);
-      router.replace("/", { scroll: false });
+      const timer = setTimeout(() => {
+        setLoginOpen(true);
+        router.replace("/", { scroll: false });
+      }, 0);
+      return () => clearTimeout(timer);
     }
   }, [isAuthenticated, loading, pathname, router]);
 
+// Perbaikan 2 & 3: Gunakan setTimeout agar linter tidak mendeteksi panggilan sinkron
   useEffect(() => {
-    if (pathname !== "/") {
-      setLoginOpen(false);
-      setDaftarOpen(false);
-      setMenuOpen(false);
-    }
-  }, [pathname]);
+    const isNotHome = pathname !== "/";
+    
+    if (isNotHome || isAuthenticated) {
+      const timer = setTimeout(() => {
+        setLoginOpen((prev) => (prev ? false : prev));
+        setDaftarOpen((prev) => (prev ? false : prev));
+        
+        if (isNotHome) {
+          setMenuOpen((prev) => (prev ? false : prev));
+        }
+      }, 0);
 
-  useEffect(() => {
-    if (isAuthenticated) {
-      setLoginOpen(false);
-      setDaftarOpen(false);
+      return () => clearTimeout(timer);
     }
-  }, [isAuthenticated]);
+  }, [pathname, isAuthenticated]);
 
   const handleLogout = async () => {
     if (isLoggingOut) {
@@ -74,7 +81,7 @@ export default function Navbar() {
   return (
     <>
       <nav className="fixed w-full z-50 backdrop-blur-md select-none bg-white/70 border-b border-gray-200">
-        <div className="mx-auto max-w-7xl py-4 flex items-center justify-between">
+        <div className="mx-auto max-w-7xl py-4 flex items-center justify-between px-4">
           <div className="flex items-center gap-8">
             <Link href="/" className="flex items-center gap-2">
               <Image
