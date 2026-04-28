@@ -7,7 +7,7 @@ import pandas as pd
 
 
 class DataLoaderError(ValueError):
-	"""Raised when dataset loading or validation fails."""
+	pass
 
 
 SUPPORTED_FILE_TYPES = {".csv", ".tsv", ".xls", ".xlsx"}
@@ -35,9 +35,7 @@ def _read_dataframe(
 	suffix = path.suffix.lower()
 	if suffix not in SUPPORTED_FILE_TYPES:
 		allowed = ", ".join(sorted(SUPPORTED_FILE_TYPES))
-		raise DataLoaderError(
-			f"Unsupported file type '{suffix}'. Supported types: {allowed}"
-		)
+		raise DataLoaderError(f"Unsupported file type '{suffix}'. Supported types: {allowed}")
 
 	try:
 		if suffix in {".csv", ".tsv"}:
@@ -47,9 +45,7 @@ def _read_dataframe(
 			return pd.read_csv(path, encoding=encoding, **read_kwargs)
 		return pd.read_excel(path, sheet_name=sheet_name, **kwargs)
 	except ImportError as exc:
-		raise DataLoaderError(
-			f"Failed to read dataset file '{path}': {exc}"
-		) from exc
+		raise DataLoaderError(f"Failed to read dataset file '{path}': {exc}") from exc
 	except Exception as exc:
 		raise DataLoaderError(f"Failed to read dataset file '{path}': {exc}") from exc
 
@@ -70,7 +66,6 @@ def load_labeled_dataset(
 	encoding: str = "utf-8",
 	**kwargs: Any,
 ) -> pd.DataFrame:
-	"""Load a labeled dataset and return standardized columns: text, label."""
 	df = _read_dataframe(
 		file_path,
 		sheet_name=sheet_name,
@@ -87,13 +82,9 @@ def load_labeled_dataset(
 				break
 
 	if text_col is None:
-		raise DataLoaderError(
-			f"Text column '{text_column}' not found. Available columns: {list(df.columns)}"
-		)
+		raise DataLoaderError(f"Text column '{text_column}' not found. Available columns: {list(df.columns)}")
 	if label_col is None:
-		raise DataLoaderError(
-			f"Label column '{label_column}' not found. Available columns: {list(df.columns)}"
-		)
+		raise DataLoaderError(f"Label column '{label_column}' not found. Available columns: {list(df.columns)}")
 
 	result = df[[text_col, label_col]].copy()
 	result = result.rename(columns={text_col: "text", label_col: "label"})
@@ -129,7 +120,6 @@ def load_unlabeled_dataset(
 	encoding: str = "utf-8",
 	**kwargs: Any,
 ) -> pd.DataFrame:
-	"""Load an unlabeled dataset and return standardized column: text."""
 	df = _read_dataframe(
 		file_path,
 		sheet_name=sheet_name,
@@ -139,9 +129,7 @@ def load_unlabeled_dataset(
 
 	text_col = _find_matching_column(df, text_column)
 	if text_col is None:
-		raise DataLoaderError(
-			f"Text column '{text_column}' not found. Available columns: {list(df.columns)}"
-		)
+		raise DataLoaderError(f"Text column '{text_column}' not found. Available columns: {list(df.columns)}")
 
 	result = df[[text_col]].copy().rename(columns={text_col: "text"})
 
@@ -165,19 +153,14 @@ def load_unlabeled_dataset(
 
 
 def to_xy(df: pd.DataFrame) -> Tuple[pd.Series, pd.Series]:
-	"""Split standardized dataframe into X (text) and y (label)."""
 	required = {"text", "label"}
 	missing = required - set(df.columns)
 	if missing:
-		raise DataLoaderError(
-			f"Missing required column(s): {sorted(missing)}. "
-			"Expected dataframe with columns: ['text', 'label']."
-		)
+		raise DataLoaderError(f"Missing required column(s): {sorted(missing)}. Expected dataframe with columns: ['text', 'label'].")
 	return df["text"], df["label"]
 
 
 def to_records(df: pd.DataFrame) -> List[Dict[str, Any]]:
-	"""Convert standardized dataframe to list-of-dict records."""
 	if "text" not in df.columns:
 		raise DataLoaderError("Expected dataframe with at least 'text' column.")
 	return cast(List[Dict[str, Any]], df.to_dict(orient="records"))

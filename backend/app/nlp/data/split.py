@@ -9,7 +9,7 @@ from .loaders import DataLoaderError
 
 
 class DataSplitError(DataLoaderError):
-	"""Raised when dataset splitting fails."""
+	pass
 
 
 def _validate_dataframe(df: pd.DataFrame, require_label: bool = True) -> None:
@@ -42,7 +42,6 @@ def split_train_test(
 	stratify_by_label: bool = True,
 	shuffle: bool = True,
 ) -> Tuple[pd.DataFrame, pd.DataFrame]:
-	"""Split standardized dataframe into train and test sets."""
 	_validate_dataframe(df, require_label=stratify_by_label)
 	_validate_split_sizes(test_size)
 
@@ -71,7 +70,6 @@ def split_train_validation_test(
 	stratify_by_label: bool = True,
 	shuffle: bool = True,
 ) -> Tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame]:
-	"""Split standardized dataframe into train, validation, and test sets."""
 	_validate_dataframe(df, require_label=stratify_by_label)
 	_validate_split_sizes(test_size, validation_size)
 
@@ -107,7 +105,6 @@ def split_train_validation_test(
 
 
 def get_label_distribution(df: pd.DataFrame) -> Dict[str, float]:
-	"""Return normalized label distribution as a mapping of label -> percentage."""
 	if "label" not in df.columns:
 		raise DataSplitError("Expected dataframe with 'label' column.")
 
