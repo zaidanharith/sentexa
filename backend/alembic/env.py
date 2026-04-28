@@ -5,8 +5,8 @@ from alembic import context
 
 from app.core.config import settings
 from app.core.database import Base
-from app.models.user import User      # noqa: F401
-from app.models.review import Review  # noqa: F401
+from app.models.user import User
+from app.models.review import Review
 
 config = context.config
 
@@ -15,7 +15,6 @@ if config.config_file_name is not None:
 
 target_metadata = Base.metadata
 
-# Alembic needs a sync driver; replace asyncpg with psycopg2
 config.set_main_option(
     "sqlalchemy.url",
     settings.DATABASE_URL.replace("+asyncpg", "+psycopg2"),

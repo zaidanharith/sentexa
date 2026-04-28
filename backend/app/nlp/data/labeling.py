@@ -9,8 +9,7 @@ from .loaders import DataLoaderError
 
 
 class DataLabelingError(DataLoaderError):
-	"""Raised when label normalization or encoding fails."""
-
+	pass
 
 DEFAULT_LABEL_ALIASES: Dict[str, str] = {
 	"positive": "positive",
@@ -71,7 +70,6 @@ def normalize_label(
 	*,
 	aliases: Optional[Mapping[str, str]] = None,
 ) -> str:
-	"""Normalize a raw label into canonical label form."""
 	raw = _clean_label(label)
 	alias_map = dict(DEFAULT_LABEL_ALIASES)
 	if aliases:
@@ -93,11 +91,8 @@ def normalize_label_column(
 	aliases: Optional[Mapping[str, str]] = None,
 	inplace: bool = False,
 ) -> pd.DataFrame:
-	"""Normalize all label values in dataframe label column."""
 	if label_column not in df.columns:
-		raise DataLabelingError(
-			f"Label column '{label_column}' not found. Available columns: {list(df.columns)}"
-		)
+		raise DataLabelingError(f"Label column '{label_column}' not found. Available columns: {list(df.columns)}")
 
 	result = df if inplace else df.copy()
 	result[label_column] = result[label_column].apply(
@@ -111,7 +106,6 @@ def build_label_mapping(
 	*,
 	preferred_order: Optional[Sequence[str]] = None,
 ) -> LabelMapping:
-	"""Build deterministic label <-> id mapping."""
 	normalized = [normalize_label(label) for label in labels]
 	unique_labels = sorted(set(normalized))
 
@@ -135,7 +129,6 @@ def encode_labels(
 	*,
 	label_to_id: Optional[Mapping[str, int]] = None,
 ) -> List[int]:
-	"""Encode raw labels into integer classes."""
 	resolved_map = dict(label_to_id) if label_to_id else dict(DEFAULT_LABEL_TO_ID)
 	encoded: List[int] = []
 
@@ -155,7 +148,6 @@ def decode_labels(
 	*,
 	id_to_label: Optional[Mapping[int, str]] = None,
 ) -> List[str]:
-	"""Decode integer classes back into string labels."""
 	resolved_map = dict(id_to_label) if id_to_label else {
 		value: key for key, value in DEFAULT_LABEL_TO_ID.items()
 	}
@@ -163,9 +155,7 @@ def decode_labels(
 
 	for value in encoded_labels:
 		if value not in resolved_map:
-			raise DataLabelingError(
-				f"Unknown encoded label '{value}'. Known ids: {sorted(resolved_map.keys())}"
-			)
+			raise DataLabelingError(f"Unknown encoded label '{value}'. Known ids: {sorted(resolved_map.keys())}")
 		decoded.append(str(resolved_map[value]))
 
 	return decoded
@@ -176,7 +166,6 @@ def validate_supported_labels(
 	*,
 	allowed_labels: Optional[Iterable[str]] = None,
 ) -> Tuple[bool, List[str]]:
-	"""Validate labels against allowed classes and return unknown labels if any."""
 	allowed = set(allowed_labels or DEFAULT_LABEL_TO_ID.keys())
 	normalized_allowed = {normalize_label(label) for label in allowed}
 
@@ -197,7 +186,6 @@ def auto_label_text(
 	positive_keywords: Optional[Iterable[str]] = None,
 	negative_keywords: Optional[Iterable[str]] = None,
 ) -> str:
-	"""Assign a simple sentiment label based on keyword matching."""
 	if not text or not str(text).strip():
 		return "neutral"
 
@@ -224,11 +212,8 @@ def auto_label_dataframe(
 	negative_keywords: Optional[Iterable[str]] = None,
 	inplace: bool = False,
 ) -> pd.DataFrame:
-	"""Generate labels from text using simple keyword-based rules."""
 	if text_column not in df.columns:
-		raise DataLabelingError(
-			f"Text column '{text_column}' not found. Available columns: {list(df.columns)}"
-		)
+		raise DataLabelingError(f"Text column '{text_column}' not found. Available columns: {list(df.columns)}")
 
 	result = df if inplace else df.copy()
 	result[output_label_column] = result[text_column].astype(str).apply(
