@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import re
+from functools import lru_cache
 from collections.abc import Iterable as IterableABC
 from typing import Iterable, List, Optional
 
@@ -14,6 +15,12 @@ class TextStemmingError(ValueError):
 
 
 _WHITESPACE_PATTERN = re.compile(r"\s+")
+_STEMMER = StemmerFactory().create_stemmer()
+
+
+@lru_cache(maxsize=50000)
+def _stem_cached(value: str) -> str:
+    return _STEMMER.stem(value)
 
 
 def _coerce_text(value: object) -> str:
@@ -47,8 +54,7 @@ def stem_text(
     if lowercase:
         value = value.lower()
 
-    stemmer = StemmerFactory().create_stemmer()
-    value = stemmer.stem(value)
+    value = _stem_cached(value)
 
     if normalize_whitespace:
         value = _WHITESPACE_PATTERN.sub(" ", value).strip()
@@ -69,7 +75,6 @@ def stem_tokens(
         lowercase: bool = True,
         drop_empty: bool = True,
 ) -> List[str]:
-    stemmer = StemmerFactory().create_stemmer()
     result: List[str] = []
 
     for token in tokens:
@@ -80,7 +85,7 @@ def stem_tokens(
             continue
         if lowercase:
             value = value.lower()
-        stemmed = stemmer.stem(value)
+        stemmed = _stem_cached(value)
         if stemmed or not drop_empty:
             result.append(stemmed)
 

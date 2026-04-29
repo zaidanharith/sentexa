@@ -75,7 +75,6 @@ def tokenize_dataframe(
 ) -> pd.DataFrame:
 	if text_column not in df.columns:
 		raise TokenizationError(f"Text column '{text_column}' not found. Available columns: {list(df.columns)}")
-		)
 
 	result = df if inplace else df.copy()
 	result[output_column] = tokenize_series(result[text_column], **kwargs)
