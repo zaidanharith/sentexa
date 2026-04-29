@@ -25,14 +25,10 @@ COPY --from=builder /install /usr/local
 
 RUN groupadd -r appuser && useradd -r -g appuser appuser
 
-# Salin semua file dari komputer ke dalam folder /app di container
 COPY . /app/
 
-# Download dependensi NLTK
 RUN python -m nltk.downloader stopwords punkt averaged_perceptron_tagger -d /usr/local/share/nltk_data
 
-# PERBAIKAN: Otomatis ubah line ending Windows (CRLF) ke Linux (LF),
-# berikan hak akses eksekusi, dan atur kepemilikan file ke appuser.
 RUN sed -i 's/\r$//' /app/entrypoint.sh && \
     chmod +x /app/entrypoint.sh && \
     chown -R appuser:appuser /app
@@ -48,5 +44,4 @@ EXPOSE 8000
 HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
      CMD curl -f http://localhost:8000/api/health || exit 1
 
-# GUNAKAN BARIS INI:
 ENTRYPOINT ["/bin/bash", "/app/entrypoint.sh"]

@@ -1,11 +1,6 @@
 from __future__ import annotations
 
-import argparse
-import json
 from pathlib import Path
-from typing import Dict, Iterable, Optional
-
-import pandas as pd
 
 from app.nlp.data.labeling import (
 	DEFAULT_LABEL_TO_ID,
@@ -18,139 +13,77 @@ from app.nlp.data.labeling import (
 from app.nlp.data.loaders import DataLoaderError, load_labeled_dataset, load_unlabeled_dataset
 from app.nlp.data.split import (
 	DataSplitError,
-	get_label_distribution,
 	split_train_test,
 	split_train_validation_test,
 )
 
 
-def parse_args() -> argparse.Namespace:
-	parser = argparse.ArgumentParser(description="Prepare NLP dataset for model training.")
-	parser.add_argument("--input", required=True, help="Path to input dataset file (csv/tsv/xls/xlsx).")
-	parser.add_argument(
-		"--output-dir",
-		default="app/nlp/data/processed",
-		help="Output directory for prepared dataset files.",
-	)
-	parser.add_argument("--text-column", default="text", help="Text column name in source dataset.")
-	parser.add_argument(
-		"--label-column",
-		default="label",
-		help="Label column name in source dataset for labeled data.",
-	)
-	parser.add_argument(
-		"--split-mode",
-		choices=["train-test", "train-val-test"],
-		default="train-val-test",
-		help="Split strategy to apply.",
-	)
-	parser.add_argument("--test-size", type=float, default=0.2, help="Test split ratio.")
-	parser.add_argument("--validation-size", type=float, default=0.1, help="Validation split ratio.")
-	parser.add_argument("--random-state", type=int, default=42, help="Random state for reproducibility.")
-	parser.add_argument("--encoding", default="utf-8", help="File encoding for CSV/TSV input.")
-	parser.add_argument(
-		"--sheet-name",
-		default="0",
-		help="Excel sheet name/index (ignored for CSV/TSV). Use index number or sheet name.",
-	)
-	parser.add_argument(
-		"--lowercase-text",
-		action="store_true",
-		help="Convert all text to lowercase during loading.",
-	)
-	parser.add_argument(
-		"--no-stratify",
-		action="store_true",
-		help="Disable stratified split by label.",
-	)
-	parser.add_argument(
-		"--keep-duplicates",
-		action="store_true",
-		help="Keep duplicate rows instead of dropping them.",
-	)
-	parser.add_argument(
-		"--auto-label",
-		action="store_true",
-		help="Treat dataset as unlabeled and create labels using keyword-based rules.",
-	)
-	parser.add_argument(
-		"--allow-custom-labels",
-		action="store_true",
-		help="Allow labels outside negative/neutral/positive and build dynamic label mapping.",
-	)
-	return parser.parse_args()
-
-
-def _parse_sheet_name(raw_value: str) -> int | str:
-	try:
-		return int(raw_value)
-	except ValueError:
-		return raw_value
-
-
-def _resolve_label_to_id(labels: Iterable[object], allow_custom_labels: bool) -> Dict[str, int]:
-	if allow_custom_labels:
-		mapping = build_label_mapping(labels, preferred_order=["negative", "neutral", "positive"])
-		return mapping.label_to_id
-
-	is_supported, unknown = validate_supported_labels(labels)
-	if not is_supported:
-		raise DataLabelingError(
-			"Unsupported labels found: "
-			f"{unknown}. Use --allow-custom-labels to keep non-standard classes."
-		)
-	return dict(DEFAULT_LABEL_TO_ID)
-
-
-def _save_dataframe(df: pd.DataFrame, output_path: Path) -> None:
-	output_path.parent.mkdir(parents=True, exist_ok=True)
-	df.to_csv(output_path, index=False)
+PROJECT_ROOT = Path(__file__).resolve().parents[3]
+INPUT_PATH = PROJECT_ROOT / "app" / "nlp" / "data" / "raw" / "dataset.tsv"
+OUTPUT_DIR = PROJECT_ROOT / "app" / "nlp" / "data" / "processed"
+TEXT_COLUMN = "text"
+LABEL_COLUMN = "label"
+SPLIT_MODE = "train-val-test"
+TEST_SIZE = 0.2
+VALIDATION_SIZE = 0.1
+RANDOM_STATE = 42
+ENCODING = "utf-8"
+SHEET_NAME: int | str = 0
+LOWERCASE_TEXT = False
+NO_STRATIFY = False
+KEEP_DUPLICATES = False
+AUTO_LABEL = False
+ALLOW_CUSTOM_LABELS = False
 
 
 def main() -> int:
-	args = parse_args()
-	input_path = Path(args.input)
-	output_dir = Path(args.output_dir)
-	output_dir.mkdir(parents=True, exist_ok=True)
-
-	sheet_name = _parse_sheet_name(args.sheet_name)
-	drop_duplicates = not args.keep_duplicates
+	OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
 
 	try:
-		if args.auto_label:
+		if AUTO_LABEL:
 			dataset = load_unlabeled_dataset(
-				input_path,
-				text_column=args.text_column,
-				drop_duplicates=drop_duplicates,
-				lowercase_text=args.lowercase_text,
-				encoding=args.encoding,
-				sheet_name=sheet_name,
+				INPUT_PATH,
+				text_column=TEXT_COLUMN,
+				drop_duplicates=not KEEP_DUPLICATES,
+				lowercase_text=LOWERCASE_TEXT,
+				encoding=ENCODING,
+				sheet_name=SHEET_NAME,
 			)
 			dataset = auto_label_dataframe(dataset)
 		else:
 			dataset = load_labeled_dataset(
-				input_path,
-				text_column=args.text_column,
-				label_column=args.label_column,
-				drop_duplicates=drop_duplicates,
-				lowercase_text=args.lowercase_text,
-				encoding=args.encoding,
-				sheet_name=sheet_name,
+				INPUT_PATH,
+				text_column=TEXT_COLUMN,
+				label_column=LABEL_COLUMN,
+				drop_duplicates=not KEEP_DUPLICATES,
+				lowercase_text=LOWERCASE_TEXT,
+				encoding=ENCODING,
+				sheet_name=SHEET_NAME,
 			)
 			dataset = normalize_label_column(dataset)
 
-		label_to_id = _resolve_label_to_id(
-			dataset["label"],
-			allow_custom_labels=args.allow_custom_labels,
-		)
+		if ALLOW_CUSTOM_LABELS:
+			label_to_id = build_label_mapping(
+				dataset["label"],
+				preferred_order=["negative", "neutral", "positive"],
+			).label_to_id
+		else:
+			is_supported, unknown = validate_supported_labels(dataset["label"])
+			if not is_supported:
+				raise DataLabelingError(
+					"Unsupported labels found: "
+					f"{unknown}. Use --allow-custom-labels to keep non-standard classes."
+				)
+			label_to_id = dict(DEFAULT_LABEL_TO_ID)
+
 		dataset["label_id"] = dataset["label"].map(label_to_id)
 
-		stratify = not args.no_stratify
-		if args.split_mode == "train-test":
+		stratify = not NO_STRATIFY
+		if SPLIT_MODE == "train-test":
 			train_df, test_df = split_train_test(
 				dataset,
-				test_size=args.test_size,
-				random_state=args.random_state,
+				test_size=TEST_SIZE,
+				random_state=RANDOM_STATE,
 				stratify_by_label=stratify,
 			)
 			split_payload = {
@@ -160,9 +93,9 @@ def main() -> int:
 		else:
 			train_df, val_df, test_df = split_train_validation_test(
 				dataset,
-				test_size=args.test_size,
-				validation_size=args.validation_size,
-				random_state=args.random_state,
+				test_size=TEST_SIZE,
+				validation_size=VALIDATION_SIZE,
+				random_state=RANDOM_STATE,
 				stratify_by_label=stratify,
 			)
 			split_payload = {
@@ -171,33 +104,15 @@ def main() -> int:
 				"test": test_df,
 			}
 
-		_save_dataframe(dataset, output_dir / "dataset_prepared.csv")
+		dataset.to_csv(OUTPUT_DIR / "dataset_prepared.csv", index=False)
 		for split_name, split_df in split_payload.items():
-			_save_dataframe(split_df, output_dir / f"{split_name}.csv")
-
-		metadata = {
-			"input_file": str(input_path),
-			"num_rows": int(len(dataset)),
-			"split_mode": args.split_mode,
-			"label_to_id": label_to_id,
-			"distribution": get_label_distribution(dataset),
-			"splits": {
-				split_name: {
-					"rows": int(len(split_df)),
-					"distribution": get_label_distribution(split_df),
-				}
-				for split_name, split_df in split_payload.items()
-			},
-		}
-
-		with (output_dir / "metadata.json").open("w", encoding="utf-8") as file_obj:
-			json.dump(metadata, file_obj, indent=2)
+			split_df.to_csv(OUTPUT_DIR / f"{split_name}.csv", index=False)
 
 	except (DataLoaderError, DataLabelingError, DataSplitError) as exc:
 		print(f"[prepare_data] Error: {exc}")
 		return 1
 
-	print(f"[prepare_data] Completed. Output saved to: {output_dir}")
+	print(f"[prepare_data] Completed. Output saved to: {OUTPUT_DIR}")
 	print(f"[prepare_data] Total rows: {len(dataset)}")
 	return 0
 
