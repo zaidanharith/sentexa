@@ -23,22 +23,6 @@ TOKENS_COLUMN = "tokens"
 STEMS_COLUMN = "stems"
 
 
-
-def _load_dataframe(path: Path) -> pd.DataFrame:
-	if not path.exists():
-		raise FileNotFoundError(f"Input file not found: {path}")
-
-	suffix = path.suffix.lower()
-	if suffix == ".csv":
-		return pd.read_csv(path, encoding="utf-8")
-	if suffix == ".tsv":
-		return pd.read_csv(path, encoding="utf-8", sep="\t")
-	if suffix in {".xls", ".xlsx"}:
-		return pd.read_excel(path, sheet_name=0)
-
-	raise ValueError(f"Unsupported file type '{suffix}'.")
-
-
 def _get_file_signature(path: Path) -> dict[str, float | int]:
 	stat = path.stat()
 	return {
@@ -63,6 +47,7 @@ def main() -> int:
 	OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
 	output_path = OUTPUT_DIR / OUTPUT_FILENAME
 	cache_path = OUTPUT_DIR / ".preprocess_cache.json"
+	output_columns = ["text", "label", "label_id", STEMS_COLUMN]
 
 	try:
 		signature = _get_file_signature(INPUT_PATH)
@@ -71,12 +56,13 @@ def main() -> int:
 			if cache.get("input_path") == str(INPUT_PATH):
 				if cache.get("input_mtime") == signature["mtime"]:
 					if cache.get("input_size") == signature["size"]:
-						print(
-							f"[preprocess_data] Cached output is up to date: {output_path}"
-						)
-						return 0
+						if cache.get("output_columns") == output_columns:
+							print(
+								f"[preprocess_data] Cached output is up to date: {output_path}"
+							)
+							return 0
 
-		df = _load_dataframe(INPUT_PATH)
+		df = pd.read_csv(INPUT_PATH, encoding="utf-8")
 		if TEXT_COLUMN not in df.columns:
 			raise ValueError(
 				f"Text column '{TEXT_COLUMN}' not found. Available columns: {list(df.columns)}"
@@ -141,6 +127,11 @@ def main() -> int:
 			drop_empty=True,
 		)
 
+		selected_columns = [col for col in output_columns if col in df.columns]
+		if not selected_columns:
+			raise ValueError("No expected output columns found after preprocessing.")
+		df = df[selected_columns].copy()
+
 		df.to_csv(output_path, index=False)
 		_save_cache(
 			cache_path,
@@ -149,6 +140,7 @@ def main() -> int:
 				"input_mtime": signature["mtime"],
 				"input_size": signature["size"],
 				"output_path": str(output_path),
+				"output_columns": output_columns,
 			},
 		)
 

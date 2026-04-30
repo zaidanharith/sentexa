@@ -27,27 +27,24 @@ SPLIT_MODE = "train-val-test"
 TEST_SIZE = 0.2
 VALIDATION_SIZE = 0.1
 RANDOM_STATE = 42
-ENCODING = "utf-8"
-SHEET_NAME: int | str = 0
-LOWERCASE_TEXT = False
-NO_STRATIFY = False
-KEEP_DUPLICATES = False
-AUTO_LABEL = False
-ALLOW_CUSTOM_LABELS = False
 
 
 def main() -> int:
 	OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
 
 	try:
-		if AUTO_LABEL:
+		auto_label = False
+		allow_custom_labels = False
+		stratify = True
+
+		if auto_label:
 			dataset = load_unlabeled_dataset(
 				INPUT_PATH,
 				text_column=TEXT_COLUMN,
-				drop_duplicates=not KEEP_DUPLICATES,
-				lowercase_text=LOWERCASE_TEXT,
-				encoding=ENCODING,
-				sheet_name=SHEET_NAME,
+				drop_duplicates=not False,
+				lowercase_text=False,
+				encoding="utf-8",
+				sheet_name=0,
 			)
 			dataset = auto_label_dataframe(dataset)
 		else:
@@ -55,14 +52,14 @@ def main() -> int:
 				INPUT_PATH,
 				text_column=TEXT_COLUMN,
 				label_column=LABEL_COLUMN,
-				drop_duplicates=not KEEP_DUPLICATES,
-				lowercase_text=LOWERCASE_TEXT,
-				encoding=ENCODING,
-				sheet_name=SHEET_NAME,
+				drop_duplicates=not False,
+				lowercase_text=False,
+				encoding="utf-8",
+				sheet_name=0,
 			)
 			dataset = normalize_label_column(dataset)
 
-		if ALLOW_CUSTOM_LABELS:
+		if allow_custom_labels:
 			label_to_id = build_label_mapping(
 				dataset["label"],
 				preferred_order=["negative", "neutral", "positive"],
@@ -78,7 +75,6 @@ def main() -> int:
 
 		dataset["label_id"] = dataset["label"].map(label_to_id)
 
-		stratify = not NO_STRATIFY
 		if SPLIT_MODE == "train-test":
 			train_df, test_df = split_train_test(
 				dataset,
