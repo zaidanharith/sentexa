@@ -7,6 +7,9 @@ from app.core.config import settings
 from app.core.database import Base
 from app.models.user import User
 from app.models.review import Review
+from app.models.upload import Upload
+from app.models.sentiment_job import SentimentJob, SentimentJobResult
+from app.models.report_feedback_alert import Report, Feedback, Alert
 
 config = context.config
 
