@@ -52,6 +52,8 @@ Akses Backend dapat melalui [**http://localhost:8000**](http://localhost:8000)
 
 - 🔒 `GET /api/sentiment/predict/jobs` : Mengambil daftar semua job analisis batch milik pengguna beserta statusnya
 
+- 🔒 `POST /api/sentiment/predict/jobs` : Membuat job analisis sentimen batch baru dengan mengupload file atau memasukkan daftar teks untuk dianalisis secara asinkron
+
 - 🔒 `GET /api/sentiment/predict/jobs/{job_id}` : Mengambil status terkini dan ringkasan hasil (jumlah per label, progres) dari job tertentu
 
 - 🔒 `GET /api/sentiment/predict/jobs/{job_id}/results` : Mengambil hasil detail per ulasan dari suatu job analisis secara terpaginasi
