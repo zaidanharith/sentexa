@@ -26,7 +26,6 @@ export default function Navbar() {
   const [loginOpen, setLoginOpen] = useState(false);
   const [isLoggingOut, setIsLoggingOut] = useState(false);
 
-  // Perbaikan 1: Menggunakan setTimeout untuk membuka modal dari URL parameter
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     const shouldOpenLogin = pathname === "/" && params.get("login") === "1";
@@ -40,15 +39,14 @@ export default function Navbar() {
     }
   }, [isAuthenticated, loading, pathname, router]);
 
-// Perbaikan 2 & 3: Gunakan setTimeout agar linter tidak mendeteksi panggilan sinkron
   useEffect(() => {
     const isNotHome = pathname !== "/";
-    
+
     if (isNotHome || isAuthenticated) {
       const timer = setTimeout(() => {
         setLoginOpen((prev) => (prev ? false : prev));
         setDaftarOpen((prev) => (prev ? false : prev));
-        
+
         if (isNotHome) {
           setMenuOpen((prev) => (prev ? false : prev));
         }

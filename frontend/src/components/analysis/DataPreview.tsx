@@ -1,6 +1,6 @@
-'use client';
+"use client";
 
-import { ParsedFileData } from '@/lib/file-parser';
+import { ParsedFileData } from "@/lib/file-parser";
 
 interface DataPreviewProps {
   data: ParsedFileData;
@@ -29,10 +29,16 @@ export function DataPreview({ data, maxRows = 5 }: DataPreviewProps) {
           </thead>
           <tbody>
             {displayedRows.map((row, idx) => (
-              <tr key={idx} className="border-b border-gray-200 hover:bg-gray-50">
+              <tr
+                key={idx}
+                className="border-b border-gray-200 hover:bg-gray-50"
+              >
                 {data.headers.map((header) => (
-                  <td key={`${idx}-${header}`} className="px-4 py-3 text-gray-700">
-                    {String(row[header] || '-')}
+                  <td
+                    key={`${idx}-${header}`}
+                    className="px-4 py-3 text-gray-700"
+                  >
+                    {String(row[header] || "-")}
                   </td>
                 ))}
               </tr>

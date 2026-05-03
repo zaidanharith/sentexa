@@ -1,16 +1,20 @@
-'use client';
+"use client";
 
-import { useEffect, useState } from 'react';
-import { useAuth } from '@/hooks/useAuth';
-import { useAnalysis } from '@/hooks/useAnalysis';
-import { parseFile, downloadSampleFile } from '@/lib/file-parser';
-import { DataPreview } from '@/components/analysis/DataPreview';
-import { UploadArea } from '@/components/analysis/UploadArea';
+import { useEffect, useState } from "react";
+import { useAuth } from "@/hooks/useAuth";
+import { useSession } from "next-auth/react";
+import { useAnalysis } from "@/hooks/useAnalysis";
+import { parseFile, downloadSampleFile } from "@/lib/file-parser";
+import { DataPreview } from "@/components/analysis/DataPreview";
+import { UploadArea } from "@/components/analysis/UploadArea";
+import { FaFileDownload } from "react-icons/fa";
+import axios, { AxiosError } from "axios";
 
 export default function AnalysisDashboardPage() {
   const { user } = useAuth();
+  const { data: session } = useSession();
   const analysis = useAnalysis();
-  const [activeTab, setActiveTab] = useState<'upload' | 'text'>('upload');
+  const [activeTab, setActiveTab] = useState<"upload" | "text">("upload");
 
   const handleFileSelected = async (file: File) => {
     analysis.setLoading(true);
@@ -21,7 +25,8 @@ export default function AnalysisDashboardPage() {
       analysis.setFile(file);
       analysis.setParsedData(parsed);
     } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'Gagal memproses file';
+      const errorMessage =
+        err instanceof Error ? err.message : "Gagal memproses file";
       analysis.setError(errorMessage);
       analysis.setFile(null);
       analysis.setParsedData(null);
@@ -32,10 +37,9 @@ export default function AnalysisDashboardPage() {
 
   const handleReset = () => {
     analysis.reset();
-    setActiveTab('upload');
-    // Reset file input
-    const fileInput = document.getElementById('file-input') as HTMLInputElement;
-    if (fileInput) fileInput.value = '';
+    setActiveTab("upload");
+    const fileInput = document.getElementById("file-input") as HTMLInputElement;
+    if (fileInput) fileInput.value = "";
   };
 
   const handleAnalyze = async () => {
@@ -43,22 +47,49 @@ export default function AnalysisDashboardPage() {
     analysis.setError(null);
 
     try {
-      if (activeTab === 'text' && !analysis.state.textInput.trim()) {
-        throw new Error('Masukkan teks untuk dianalisis');
+      if (activeTab === "text" && !analysis.state.textInput.trim()) {
+        throw new Error("Masukkan teks untuk dianalisis");
       }
 
-      if (activeTab === 'upload' && !analysis.state.parsedData) {
-        throw new Error('Upload file terlebih dahulu');
+      if (activeTab === "upload" && !analysis.state.parsedData) {
+        throw new Error("Upload file terlebih dahulu");
       }
 
-      // TODO: Implementasi logic analisis nanti
-      console.log('Analisis data:', {
-        mode: activeTab,
-        data: analysis.state.parsedData,
-        text: analysis.state.textInput,
-      });
+      // console.log("Analisis data:", {
+      //   mode: activeTab,
+      //   data: analysis.state.parsedData,
+      //   text: analysis.state.textInput,
+      // });
+
+      if (activeTab === "text") {
+        try {
+          const API_URL = process.env.NEXT_PUBLIC_API_URL;
+          const url = API_URL
+            ? `${API_URL}/sentiment/predict`
+            : "/api/sentiment/predict";
+          const res = await axios.post(
+            url,
+            { text: analysis.state.textInput },
+            {
+              headers: {
+                Authorization: session?.accessToken
+                  ? `Bearer ${session.accessToken}`
+                  : undefined,
+              },
+            },
+          );
+          console.log("Sentiment result:", res.data);
+        } catch (error) {
+          const err = error as AxiosError;
+          console.error(
+            "Sentiment API error:",
+            err.response || err.message || err,
+          );
+        }
+      }
     } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'Terjadi kesalahan';
+      const errorMessage =
+        err instanceof Error ? err.message : "Terjadi kesalahan";
       analysis.setError(errorMessage);
     } finally {
       analysis.setLoading(false);
@@ -67,81 +98,69 @@ export default function AnalysisDashboardPage() {
 
   return (
     <div className="w-full max-w-4xl mx-auto p-6">
-      {/* Header */}
-      <div className="mb-8">
+      <div className="mb-2">
         <h1 className="text-3xl font-bold text-gray-900 mb-2">Analisis Baru</h1>
-        <div className="inline-flex items-center px-4 py-2 bg-blue-50 rounded-lg border border-blue-200">
-          <span className="text-sm font-medium text-gray-700">Paket Anda: </span>
-          <span className="ml-2 font-semibold text-blue-600">
-            {user?.subscription 
-  ? user.subscription.charAt(0).toUpperCase() + user.subscription.slice(1).toLowerCase() 
-  : 'Memuat...'}
-          </span>
-        </div>
       </div>
 
-      {/* Tabs */}
-      <div className="mb-6 border-b border-gray-200">
+      <div className="mb-6 border-b border-gray-300">
         <div className="flex gap-1">
           <button
             onClick={() => {
-              setActiveTab('upload');
-              analysis.setMode('upload');
+              setActiveTab("upload");
+              analysis.setMode("upload");
             }}
-            className={`px-4 py-3 font-medium text-sm border-b-2 transition-colors ${
-              activeTab === 'upload'
-                ? 'border-blue-600 text-blue-600'
-                : 'border-transparent text-gray-600 hover:text-gray-900'
+            className={`px-4 py-3 font-semibold text-sm border-b-2 transition-colors cursor-pointer ${
+              activeTab === "upload"
+                ? "border-sky-500 text-sky-500"
+                : "border-transparent text-gray-600 hover:text-gray-900"
             }`}
           >
-            📤 Upload File
+            Upload File
           </button>
           <button
             onClick={() => {
-              setActiveTab('text');
-              analysis.setMode('text');
+              setActiveTab("text");
+              analysis.setMode("text");
             }}
-            className={`px-4 py-3 font-medium text-sm border-b-2 transition-colors ${
-              activeTab === 'text'
-                ? 'border-blue-600 text-blue-600'
-                : 'border-transparent text-gray-600 hover:text-gray-900'
+            className={`px-4 py-3 font-semibold text-sm border-b-2 transition-colors cursor-pointer ${
+              activeTab === "text"
+                ? "border-sky-500 text-sky-500"
+                : "border-transparent text-gray-600 hover:text-gray-900"
             }`}
           >
-            ✍️ Input Teks
+            Input Teks
           </button>
         </div>
       </div>
 
-      {/* Error Message */}
       {analysis.state.error && (
         <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg">
-          <p className="text-sm font-medium text-red-800">{analysis.state.error}</p>
+          <p className="text-sm font-medium text-red-800">
+            {analysis.state.error}
+          </p>
         </div>
       )}
 
-      {/* Tab: Upload File */}
-      {activeTab === 'upload' && (
+      {activeTab === "upload" && (
         <div className="space-y-6">
           <UploadArea
             onFileSelected={handleFileSelected}
             isLoading={analysis.state.loading}
           />
 
-          {/* Download Sample */}
           <button
             onClick={downloadSampleFile}
-            className="text-blue-600 hover:text-blue-700 text-sm font-medium
-            cursor-pointer transition-colors"
+            className="text-sky-500 hover:text-sky-600 text-md font-medium
+            cursor-pointer transition-colors flex items-center gap-2"
           >
-            📥 Download file contoh
+            <FaFileDownload className="w-6 h-6" /> Contoh File Input
           </button>
 
-          {/* Preview */}
           {analysis.state.parsedData && (
             <div className="space-y-4">
               <div>
                 <h3 className="font-semibold text-gray-900 mb-2">
-                  📋 Preview Data ({analysis.state.parsedData.rowCount} baris)
+                  Preview Data ({analysis.state.parsedData.rowCount} baris)
                 </h3>
                 <p className="text-sm text-gray-600 mb-3">
                   File: {analysis.state.file?.name}
@@ -153,47 +172,45 @@ export default function AnalysisDashboardPage() {
         </div>
       )}
 
-      {/* Tab: Input Teks */}
-      {activeTab === 'text' && (
+      {activeTab === "text" && (
         <div className="space-y-4">
           <div>
-            <label className="block text-sm font-medium text-gray-900 mb-2">
+            <label className="block text-md font-medium text-gray-900 mb-2">
               Masukkan teks untuk dianalisis
             </label>
             <textarea
               value={analysis.state.textInput}
               onChange={(e) => analysis.setTextInput(e.target.value)}
-              placeholder="Masukkan teks ulasan atau komentar di sini..."
+              placeholder="Produknya bagus, tapi pengirimannya lama..."
               rows={6}
-              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none"
+              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-sky-500 focus:border-transparent resize-none"
               disabled={analysis.state.loading}
             />
           </div>
-          <p className="text-xs text-gray-500">
-            Teks akan dianalisis menggunakan model NLP untuk mendeteksi sentimen
-          </p>
         </div>
       )}
 
-      {/* Action Buttons */}
-      <div className="mt-8 flex gap-4 justify-end">
+      <div className="mt-3 flex gap-4 justify-end">
         <button
           onClick={handleReset}
-          disabled={analysis.state.loading || (!analysis.state.file && !analysis.state.textInput)}
-          className="px-6 py-2 bg-gray-100 hover:bg-gray-200 disabled:bg-gray-50 disabled:text-gray-400 text-gray-900 font-medium rounded-lg transition-colors"
+          disabled={
+            analysis.state.loading ||
+            (!analysis.state.file && !analysis.state.textInput)
+          }
+          className="disabled:text-gray-400 text-gray-900 font-medium rounded-lg transition-colors text-sm cursor-pointer"
         >
-          🔄 Reset Form
+          Reset Input
         </button>
         <button
           onClick={handleAnalyze}
           disabled={
             analysis.state.loading ||
-            (activeTab === 'upload' && !analysis.state.parsedData) ||
-            (activeTab === 'text' && !analysis.state.textInput.trim())
+            (activeTab === "upload" && !analysis.state.parsedData) ||
+            (activeTab === "text" && !analysis.state.textInput.trim())
           }
-          className="px-6 py-2 bg-blue-600 hover:bg-blue-700 disabled:bg-blue-300 disabled:cursor-not-allowed text-white font-medium rounded-lg transition-colors"
+          className="px-6 py-2 bg-sky-500 hover:bg-sky-600 disabled:bg-sky-300 disabled:cursor-not-allowed text-white font-semibold rounded-lg transition-colors cursor-pointer"
         >
-          {analysis.state.loading ? '⏳ Sedang diproses...' : '🚀 Mulai Analisis'}
+          {analysis.state.loading ? "Sedang diproses..." : "Mulai Analisis"}
         </button>
       </div>
     </div>
