@@ -1,7 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { useAuth } from "@/hooks/useAuth";
+import { useState } from "react";
 import { useSession } from "next-auth/react";
 import { useAnalysis } from "@/hooks/useAnalysis";
 import { parseFile, downloadSampleFile } from "@/lib/file-parser";
@@ -9,13 +8,14 @@ import { DataPreview } from "@/components/analysis/DataPreview";
 import { UploadArea } from "@/components/analysis/UploadArea";
 import { FaFileDownload } from "react-icons/fa";
 import axios, { AxiosError } from "axios";
+import { appToast } from "@/lib/toast";
 
 export default function AnalysisDashboardPage() {
-  const { user } = useAuth();
   const { data: session } = useSession();
   const analysis = useAnalysis();
   const [activeTab, setActiveTab] = useState<"upload" | "text">("upload");
 
+  console.log(session);
   const handleFileSelected = async (file: File) => {
     analysis.setLoading(true);
     analysis.setError(null);
@@ -78,13 +78,14 @@ export default function AnalysisDashboardPage() {
               },
             },
           );
-          console.log("Sentiment result:", res.data);
+          appToast.success(`Hasil analisis: ${res.data.label}`);
         } catch (error) {
           const err = error as AxiosError;
           console.error(
             "Sentiment API error:",
             err.response || err.message || err,
           );
+          appToast.error("Gagal menganalisis teks.");
         }
       }
     } catch (err) {
@@ -97,7 +98,7 @@ export default function AnalysisDashboardPage() {
   };
 
   return (
-    <div className="w-full max-w-4xl mx-auto p-6">
+    <div className="w-full mx-auto">
       <div className="mb-2">
         <h1 className="text-3xl font-bold text-gray-900 mb-2">Analisis Baru</h1>
       </div>
