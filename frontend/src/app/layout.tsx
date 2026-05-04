@@ -24,7 +24,10 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="id" className="scroll-smooth" data-scroll-behavior="smooth">
-      <body className={`${plusJakartaSans.variable} antialiased`}>
+      <body
+        className={`${plusJakartaSans.variable} antialiased`}
+        suppressHydrationWarning
+      >
         <SessionAuthProvider>
           <div className="min-h-screen flex flex-col">{children}</div>
         </SessionAuthProvider>

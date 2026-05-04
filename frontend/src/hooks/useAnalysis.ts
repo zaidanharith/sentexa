@@ -1,10 +1,10 @@
-'use client';
+"use client";
 
-import { useState } from 'react';
-import { ParsedFileData } from '@/lib/file-parser';
+import { useState } from "react";
+import { ParsedFileData } from "@/lib/file-parser";
 
 export interface AnalysisState {
-  mode: 'upload' | 'text';
+  mode: "upload" | "text";
   file: File | null;
   parsedData: ParsedFileData | null;
   textInput: string;
@@ -14,16 +14,16 @@ export interface AnalysisState {
 
 export function useAnalysis() {
   const [state, setState] = useState<AnalysisState>({
-    mode: 'upload',
+    mode: "upload",
     file: null,
     parsedData: null,
-    textInput: '',
+    textInput: "",
     loading: false,
     error: null,
   });
 
   const setFile = (file: File | null) => {
-    setState(prev => ({
+    setState((prev) => ({
       ...prev,
       file,
       error: null,
@@ -31,21 +31,21 @@ export function useAnalysis() {
   };
 
   const setParsedData = (data: ParsedFileData | null) => {
-    setState(prev => ({
+    setState((prev) => ({
       ...prev,
       parsedData: data,
     }));
   };
 
   const setTextInput = (text: string) => {
-    setState(prev => ({
+    setState((prev) => ({
       ...prev,
       textInput: text,
     }));
   };
 
-  const setMode = (mode: 'upload' | 'text') => {
-    setState(prev => ({
+  const setMode = (mode: "upload" | "text") => {
+    setState((prev) => ({
       ...prev,
       mode,
       error: null,
@@ -53,14 +53,14 @@ export function useAnalysis() {
   };
 
   const setLoading = (loading: boolean) => {
-    setState(prev => ({
+    setState((prev) => ({
       ...prev,
       loading,
     }));
   };
 
   const setError = (error: string | null) => {
-    setState(prev => ({
+    setState((prev) => ({
       ...prev,
       error,
     }));
@@ -68,10 +68,10 @@ export function useAnalysis() {
 
   const reset = () => {
     setState({
-      mode: 'upload',
+      mode: "upload",
       file: null,
       parsedData: null,
-      textInput: '',
+      textInput: "",
       loading: false,
       error: null,
     });
