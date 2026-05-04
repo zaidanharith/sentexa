@@ -12,27 +12,32 @@ export default function DashboardLayout({
     {
       label: "Dashboard",
       href: "/dashboard",
+      isPremiumOnly: false,
     },
     {
       label: "Langganan",
       href: "/dashboard/subscription",
+      isPremiumOnly: false,
     },
     {
       label: "Analisis",
       href: "/dashboard/analysis",
+      isPremiumOnly: false,
     },
     {
       label: "Ulasan",
       href: "/dashboard/reviews",
-    },
-    {
-      label: "Laporan",
-      href: "/dashboard/reports",
-      badge: "Premium",
+      isPremiumOnly: false,
     },
     {
       label: "Riwayat",
       href: "/dashboard/history",
+      isPremiumOnly: false,
+    },
+    {
+      label: "Laporan",
+      href: "/dashboard/reports",
+      isPremiumOnly: true,
     },
   ];
 

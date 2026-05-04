@@ -5,6 +5,7 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useState } from "react";
 import { MdOutlineSpaceDashboard, MdOutlineAttachMoney } from "react-icons/md";
+import { GiQueenCrown } from "react-icons/gi";
 import {
   HiOutlineChartBar,
   HiOutlineChatAlt2,
@@ -23,6 +24,7 @@ import { appToast } from "@/lib/toast";
 type DashboardNavItem = {
   label: string;
   href: string;
+  isPremiumOnly: boolean;
   badge?: string;
 };
 
@@ -145,18 +147,22 @@ export default function Sidebar({
                   isActive
                     ? "bg-sky-50 text-sky-600"
                     : "text-gray-600 hover:bg-gray-100 hover:text-gray-900"
-                } ${collapsed ? "justify-center" : ""}`}
+                } ${collapsed ? "justify-center" : ""} ${item.isPremiumOnly ? "bg-amber-100" : ""}`}
               >
-                <span className={isActive ? "text-sky-500" : "text-gray-400"}>
+                <span
+                  className={`${isActive ? "text-sky-500" : "text-gray-400"}`}
+                >
                   {icon}
                 </span>
                 {!collapsed && (
-                  <span className="flex-1 truncate">{item.label}</span>
-                )}
-                {!collapsed && item.badge && (
-                  <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded-full bg-amber-50 text-amber-600 border border-amber-200">
-                    {item.badge}
+                  <span
+                    className={`flex-1 truncate text-gray-600 ${item.isPremiumOnly ? "text-amber-600" : ""}`}
+                  >
+                    {item.label}
                   </span>
+                )}
+                {!collapsed && item.isPremiumOnly && (
+                  <GiQueenCrown className="w-5 h-5 text-amber-600" />
                 )}
               </Link>
             );

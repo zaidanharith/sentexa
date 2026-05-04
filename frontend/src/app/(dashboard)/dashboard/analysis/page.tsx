@@ -9,6 +9,8 @@ import { UploadArea } from "@/components/analysis/UploadArea";
 import { FaFileDownload } from "react-icons/fa";
 import axios, { AxiosError } from "axios";
 import { appToast } from "@/lib/toast";
+import DashboardPageTitle from "@/components/layout/dashboard/DashboardPageTitle";
+import DashboardPageContent from "@/components/layout/dashboard/DashboardPageContent";
 
 export default function AnalysisDashboardPage() {
   const { data: session } = useSession();
@@ -18,7 +20,6 @@ export default function AnalysisDashboardPage() {
   console.log(session);
   const handleFileSelected = async (file: File) => {
     analysis.setLoading(true);
-    analysis.setError(null);
 
     try {
       const parsed = await parseFile(file);
@@ -27,7 +28,7 @@ export default function AnalysisDashboardPage() {
     } catch (err) {
       const errorMessage =
         err instanceof Error ? err.message : "Gagal memproses file";
-      analysis.setError(errorMessage);
+      appToast.error(errorMessage);
       analysis.setFile(null);
       analysis.setParsedData(null);
     } finally {
@@ -44,15 +45,16 @@ export default function AnalysisDashboardPage() {
 
   const handleAnalyze = async () => {
     analysis.setLoading(true);
-    analysis.setError(null);
 
     try {
       if (activeTab === "text" && !analysis.state.textInput.trim()) {
-        throw new Error("Masukkan teks untuk dianalisis");
+        appToast.warning("Masukkan teks untuk dianalisis");
+        return;
       }
 
       if (activeTab === "upload" && !analysis.state.parsedData) {
-        throw new Error("Upload file terlebih dahulu");
+        appToast.warning("Upload file terlebih dahulu");
+        return;
       }
 
       // console.log("Analisis data:", {
@@ -91,129 +93,123 @@ export default function AnalysisDashboardPage() {
     } catch (err) {
       const errorMessage =
         err instanceof Error ? err.message : "Terjadi kesalahan";
-      analysis.setError(errorMessage);
+      appToast.error(errorMessage);
     } finally {
       analysis.setLoading(false);
     }
   };
 
   return (
-    <div className="w-full mx-auto">
-      <div className="mb-2">
-        <h1 className="text-3xl font-bold text-gray-900 mb-2">Analisis Baru</h1>
-      </div>
-
-      <div className="mb-6 border-b border-gray-300">
-        <div className="flex gap-1">
-          <button
-            onClick={() => {
-              setActiveTab("upload");
-              analysis.setMode("upload");
-            }}
-            className={`px-4 py-3 font-semibold text-sm border-b-2 transition-colors cursor-pointer ${
-              activeTab === "upload"
-                ? "border-sky-500 text-sky-500"
-                : "border-transparent text-gray-600 hover:text-gray-900"
-            }`}
-          >
-            Upload File
-          </button>
-          <button
-            onClick={() => {
-              setActiveTab("text");
-              analysis.setMode("text");
-            }}
-            className={`px-4 py-3 font-semibold text-sm border-b-2 transition-colors cursor-pointer ${
-              activeTab === "text"
-                ? "border-sky-500 text-sky-500"
-                : "border-transparent text-gray-600 hover:text-gray-900"
-            }`}
-          >
-            Input Teks
-          </button>
-        </div>
-      </div>
-
-      {analysis.state.error && (
-        <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg">
-          <p className="text-sm font-medium text-red-800">
-            {analysis.state.error}
-          </p>
-        </div>
-      )}
-
-      {activeTab === "upload" && (
-        <div className="space-y-6">
-          <UploadArea
-            onFileSelected={handleFileSelected}
-            isLoading={analysis.state.loading}
-          />
-
-          <button
-            onClick={downloadSampleFile}
-            className="text-sky-500 hover:text-sky-600 text-md font-medium
-            cursor-pointer transition-colors flex items-center gap-2"
-          >
-            <FaFileDownload className="w-6 h-6" /> Contoh File Input
-          </button>
-
-          {analysis.state.parsedData && (
-            <div className="space-y-4">
-              <div>
-                <h3 className="font-semibold text-gray-900 mb-2">
-                  Preview Data ({analysis.state.parsedData.rowCount} baris)
-                </h3>
-                <p className="text-sm text-gray-600 mb-3">
-                  File: {analysis.state.file?.name}
-                </p>
-              </div>
-              <DataPreview data={analysis.state.parsedData} />
-            </div>
-          )}
-        </div>
-      )}
-
-      {activeTab === "text" && (
-        <div className="space-y-4">
-          <div>
-            <label className="block text-md font-medium text-gray-900 mb-2">
-              Masukkan teks untuk dianalisis
-            </label>
-            <textarea
-              value={analysis.state.textInput}
-              onChange={(e) => analysis.setTextInput(e.target.value)}
-              placeholder="Produknya bagus, tapi pengirimannya lama..."
-              rows={6}
-              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-sky-500 focus:border-transparent resize-none"
-              disabled={analysis.state.loading}
-            />
+    <main className="w-full max-w-4xl mx-auto flex flex-col gap-4">
+      <DashboardPageTitle
+        title="Analisis Baru"
+        subtitle="Upload file atau masukkan teks untuk dianalisis"
+      />
+      <DashboardPageContent>
+        <div className="mb-6 border-b border-gray-300">
+          <div className="flex gap-1">
+            <button
+              onClick={() => {
+                setActiveTab("upload");
+                analysis.setMode("upload");
+              }}
+              className={`px-4 py-3 font-semibold text-sm border-b-2 transition-colors cursor-pointer ${
+                activeTab === "upload"
+                  ? "border-sky-500 text-sky-500"
+                  : "border-transparent text-gray-600 hover:text-gray-900"
+              }`}
+            >
+              Upload File
+            </button>
+            <button
+              onClick={() => {
+                setActiveTab("text");
+                analysis.setMode("text");
+              }}
+              className={`px-4 py-3 font-semibold text-sm border-b-2 transition-colors cursor-pointer ${
+                activeTab === "text"
+                  ? "border-sky-500 text-sky-500"
+                  : "border-transparent text-gray-600 hover:text-gray-900"
+              }`}
+            >
+              Input Teks
+            </button>
           </div>
         </div>
-      )}
 
-      <div className="mt-3 flex gap-4 justify-end">
-        <button
-          onClick={handleReset}
-          disabled={
-            analysis.state.loading ||
-            (!analysis.state.file && !analysis.state.textInput)
-          }
-          className="disabled:text-gray-400 text-gray-900 font-medium rounded-lg transition-colors text-sm cursor-pointer"
-        >
-          Reset Input
-        </button>
-        <button
-          onClick={handleAnalyze}
-          disabled={
-            analysis.state.loading ||
-            (activeTab === "upload" && !analysis.state.parsedData) ||
-            (activeTab === "text" && !analysis.state.textInput.trim())
-          }
-          className="px-6 py-2 bg-sky-500 hover:bg-sky-600 disabled:bg-sky-300 disabled:cursor-not-allowed text-white font-semibold rounded-lg transition-colors cursor-pointer"
-        >
-          {analysis.state.loading ? "Sedang diproses..." : "Mulai Analisis"}
-        </button>
-      </div>
-    </div>
+        {activeTab === "upload" && (
+          <div className="space-y-6">
+            <UploadArea
+              onFileSelected={handleFileSelected}
+              isLoading={analysis.state.loading}
+            />
+
+            <button
+              onClick={downloadSampleFile}
+              className="text-sky-500 hover:text-sky-600 text-md font-medium
+            cursor-pointer transition-colors flex items-center gap-2"
+            >
+              <FaFileDownload className="w-6 h-6" /> Contoh File Input
+            </button>
+
+            {analysis.state.parsedData && (
+              <div className="space-y-4">
+                <div>
+                  <h3 className="font-semibold text-gray-900 mb-2">
+                    Preview Data ({analysis.state.parsedData.rowCount} baris)
+                  </h3>
+                  <p className="text-sm text-gray-600 mb-3">
+                    File: {analysis.state.file?.name}
+                  </p>
+                </div>
+                <DataPreview data={analysis.state.parsedData} />
+              </div>
+            )}
+          </div>
+        )}
+
+        {activeTab === "text" && (
+          <div className="space-y-4">
+            <div>
+              <label className="block text-md font-medium text-gray-900 mb-2">
+                Masukkan teks untuk dianalisis
+              </label>
+              <textarea
+                value={analysis.state.textInput}
+                onChange={(e) => analysis.setTextInput(e.target.value)}
+                placeholder="Produknya bagus, tapi pengirimannya lama..."
+                rows={6}
+                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-sky-500 focus:border-transparent resize-none"
+                disabled={analysis.state.loading}
+              />
+            </div>
+          </div>
+        )}
+
+        <div className="mt-3 flex gap-4 justify-end">
+          <button
+            onClick={handleReset}
+            disabled={
+              analysis.state.loading ||
+              (!analysis.state.file && !analysis.state.textInput)
+            }
+            className="disabled:text-gray-400 text-gray-900 font-medium rounded-lg transition-colors text-sm cursor-pointer"
+          >
+            Reset Input
+          </button>
+          <button
+            onClick={handleAnalyze}
+            disabled={
+              analysis.state.loading ||
+              (activeTab === "upload" && !analysis.state.parsedData) ||
+              (activeTab === "text" && !analysis.state.textInput.trim())
+            }
+            className="px-6 py-2 bg-sky-500 hover:bg-sky-600 disabled:bg-sky-300 disabled:cursor-not-allowed text-white font-semibold rounded-lg transition-colors cursor-pointer"
+          >
+            {analysis.state.loading ? "Sedang diproses..." : "Mulai Analisis"}
+          </button>
+        </div>
+      </DashboardPageContent>
+    </main>
   );
 }
