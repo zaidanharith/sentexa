@@ -3,7 +3,11 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api import deps
 from app.models.user import User
-from app.schemas.analysis_history import AnalysisHistoryDetailResponse, AnalysisHistoryListResponse
+from app.schemas.analysis_history import (
+	AnalysisHistoryDetailResponse,
+	AnalysisHistoryListResponse,
+	AnalysisHistorySummaryResponse,
+)
 from app.services import analysis_history_service
 
 
@@ -33,7 +37,26 @@ async def list_analysis_history(
 	)
 
 
-@router.get("/{history_id}", response_model=AnalysisHistoryDetailResponse)
+@router.get("/summary", response_model=AnalysisHistorySummaryResponse)
+async def get_analysis_history_summary(
+	current_user: User = Depends(deps.get_current_user),
+	db: AsyncSession = Depends(deps.get_db),
+):
+	(
+		total_analyses,
+		delta_from_yesterday,
+		sentiment_counts,
+		total_sentiments,
+	) = await analysis_history_service.get_history_summary(db, current_user.id)
+	return AnalysisHistorySummaryResponse(
+		total_analyses=total_analyses,
+		delta_from_yesterday=delta_from_yesterday,
+		sentiment_counts=sentiment_counts,
+		total_sentiments=total_sentiments,
+	)
+
+
+@router.get("/{history_id:int}", response_model=AnalysisHistoryDetailResponse)
 async def get_analysis_history(
 	history_id: int,
 	current_user: User = Depends(deps.get_current_user),

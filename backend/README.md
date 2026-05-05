@@ -630,6 +630,23 @@ Akses Backend dapat melalui [**http://localhost:8000**](http://localhost:8000)
      ]
   ```
 
+  - 🔒 `GET /api/analyses/summary` : Mengambil ringkasan metrik analisis milik pengguna (total analisis, perubahan dari kemarin, dan distribusi sentimen)
+
+    Contoh _response_:
+
+    ```text
+       {
+         "total_analyses": 120,
+         "delta_from_yesterday": 5,
+         "sentiment_counts": {
+           "positive": 68,
+           "negative": 32,
+           "neutral": 20
+         },
+         "total_sentiments": 120
+       }
+    ```
+
 - 🔒 `POST /api/feedback` : Mengirimkan koreksi label sentimen pada hasil tertentu untuk keperluan peningkatan akurasi model
 
   Contoh _request_:

@@ -42,3 +42,10 @@ class AnalysisHistoryListResponse(BaseModel):
 
 class AnalysisHistoryDetailResponse(BaseModel):
 	item: AnalysisHistoryItem
+
+
+class AnalysisHistorySummaryResponse(BaseModel):
+	total_analyses: int
+	delta_from_yesterday: int
+	sentiment_counts: dict[str, int]
+	total_sentiments: int

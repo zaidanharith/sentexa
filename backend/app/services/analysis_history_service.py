@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from datetime import datetime, timedelta
 from typing import Optional
 
 from fastapi import HTTPException, status
@@ -128,3 +129,88 @@ async def upsert_job_history(
 	await db.flush()
 	await db.refresh(history)
 	return history
+
+
+def _normalize_label(value: object) -> str | None:
+	if value is None:
+		return None
+	label = str(value).strip().lower()
+	if not label:
+		return None
+	if label in {"positif", "positive"}:
+		return "positive"
+	if label in {"negatif", "negative"}:
+		return "negative"
+	if label in {"netral", "neutral"}:
+		return "neutral"
+	return None
+
+
+async def get_history_summary(
+	db: AsyncSession,
+	user_id: int,
+) -> tuple[int, int, dict[str, int], int]:
+	count_query = select(func.count()).select_from(AnalysisHistory).where(AnalysisHistory.user_id == user_id)
+	count_result = await db.execute(count_query)
+	total_analyses = int(count_result.scalar_one())
+
+	start_today = datetime.utcnow().replace(hour=0, minute=0, second=0, microsecond=0)
+	start_yesterday = start_today - timedelta(days=1)
+	start_tomorrow = start_today + timedelta(days=1)
+
+	count_today_result = await db.execute(
+		select(func.count()).select_from(AnalysisHistory).where(
+			AnalysisHistory.user_id == user_id,
+			AnalysisHistory.created_at >= start_today,
+			AnalysisHistory.created_at < start_tomorrow,
+		)
+	)
+	count_yesterday_result = await db.execute(
+		select(func.count()).select_from(AnalysisHistory).where(
+			AnalysisHistory.user_id == user_id,
+			AnalysisHistory.created_at >= start_yesterday,
+			AnalysisHistory.created_at < start_today,
+		)
+	)
+	count_today = int(count_today_result.scalar_one())
+	count_yesterday = int(count_yesterday_result.scalar_one())
+	delta_from_yesterday = count_today - count_yesterday
+
+	result = await db.execute(
+		select(
+			AnalysisHistory.source_type,
+			AnalysisHistory.result_label,
+			AnalysisHistory.label_counts,
+			AnalysisHistory.result_payload,
+		)
+		.where(AnalysisHistory.user_id == user_id)
+	)
+
+	counts = {"positive": 0, "negative": 0, "neutral": 0}
+	for source_type, result_label, label_counts, result_payload in result.all():
+		if source_type == "batch":
+			if isinstance(label_counts, dict):
+				for key, value in label_counts.items():
+					label = _normalize_label(key)
+					if label is None:
+						continue
+					try:
+						counts[label] += int(value)
+					except (TypeError, ValueError):
+						continue
+			elif isinstance(result_payload, list):
+				for item in result_payload:
+					if not isinstance(item, dict):
+						continue
+					label = _normalize_label(item.get("label"))
+					if label is None:
+						continue
+					counts[label] += 1
+		else:
+			label = _normalize_label(result_label)
+			if label is None:
+				continue
+			counts[label] += 1
+
+	total_sentiments = sum(counts.values())
+	return total_analyses, delta_from_yesterday, counts, total_sentiments
