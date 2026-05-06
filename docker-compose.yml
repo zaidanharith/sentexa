@@ -1,0 +1,72 @@
+services:
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: sentexa_backend
+    restart: unless-stopped
+    env_file:
+      - ./backend/.env
+    environment:
+      ENVIRONMENT: ${ENVIRONMENT:-production}
+    ports:
+      - "8000:8000"
+    networks:
+      - sentexa_network
+    volumes:
+      - ./backend/app/nlp/data/raw:/app/app/nlp/data/raw:ro
+      - ./backend/app/nlp/data/processed:/app/app/nlp/data/processed
+    security_opt:
+      - no-new-privileges:true
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+      target: dev
+      args:
+        NEXT_PUBLIC_API_URL: /api
+    container_name: sentexa_frontend
+    restart: unless-stopped
+    environment:
+      NEXTAUTH_URL: http://localhost:3000
+      NEXTAUTH_SECRET: ${NEXTAUTH_SECRET:-change-me}
+      INTERNAL_API_URL: http://backend:8000/api
+      NODE_ENV: development
+      CHOKIDAR_USEPOLLING: "true"
+      CHOKIDAR_INTERVAL: "1000"
+      CHOKIDAR_USEPOLLING_WATCH_FILE: "true"
+      WATCHPACK_POLLING: "1000"
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
+    command: npm run dev
+    depends_on:
+      - backend
+    networks:
+      - sentexa_network
+
+  nginx:
+    image: nginx:alpine
+    container_name: sentexa_nginx
+    restart: unless-stopped
+    ports:
+      - "80:80"
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+    depends_on:
+      - backend
+      - frontend
+    networks:
+      - sentexa_network
+    read_only: true
+    tmpfs:
+      - /var/run
+      - /var/cache/nginx
+      - /tmp
+
+networks:
+  sentexa_network:
+    driver: bridge

@@ -1,3 +1,5 @@
+import logging
+
 from fastapi import APIRouter, HTTPException, status
 from sqlalchemy import text
 
@@ -6,6 +8,7 @@ from app.core.config import settings
 from app.core.metrics import metrics_state
 
 router = APIRouter(tags=["health"])
+logger = logging.getLogger(__name__)
 
 @router.get("/")
 def home():
@@ -21,6 +24,7 @@ async def ready():
         async with engine.connect() as conn:
             await conn.execute(text("SELECT 1"))
     except Exception as exc:
+        logger.exception("Readiness check failed")
         raise HTTPException(
             status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
             detail="Service not ready",

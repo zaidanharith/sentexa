@@ -1,6 +1,7 @@
 import type { SubscriptionPlan } from "@/lib/api";
 
 const API_BASE_URL =
+  process.env.INTERNAL_API_URL?.replace(/\/$/, "") ??
   process.env.NEXT_PUBLIC_API_URL?.replace(/\/$/, "") ??
   "http://localhost:8000/api";
 

@@ -21,25 +21,17 @@ Sentexa adalah aplikasi berbasis web untuk melakukan analisis sentimen berbasis 
    cd sentexa
    ```
 
-3. Jalankan **Backend** (Terminal 1, dari root project `sentexa`).
+3. Jalankan semua _service_ (Frontend, Backend, dan Nginx) dari root project `sentexa`.
 
    ```bash
-   cd backend
-   docker compose -f deployments/docker/docker-compose.yml up --build
+   docker compose up --build
    ```
 
-4. Jalankan **Frontend** (Terminal 2).
+4. Akses aplikasi:
 
-   ```bash
-   cd frontend
-   npm install
-   npm run dev
-   ```
-
-5. Akses aplikasi:
-
-- **Frontend**: [http://localhost:3000](http://localhost:3000)
-- **Backend API**: [http://localhost:8000](http://localhost:8000)
+- **Aplikasi (Nginx)**: [http://localhost](http://localhost)
+- **Frontend langsung**: [http://localhost:3000](http://localhost:3000)
+- **Backend API langsung**: [http://localhost:8000](http://localhost:8000)
 
 ## 📋 Daftar API Endpoints
 

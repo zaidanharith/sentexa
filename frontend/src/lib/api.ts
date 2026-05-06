@@ -1,8 +1,17 @@
 import axios, { AxiosError } from "axios";
 
-const API_BASE_URL =
-  process.env.NEXT_PUBLIC_API_URL?.replace(/\/$/, "") ??
-  "http://localhost:8000/api";
+function resolveApiBaseUrl() {
+  const publicUrl = process.env.NEXT_PUBLIC_API_URL?.replace(/\/$/, "");
+  const internalUrl = process.env.INTERNAL_API_URL?.replace(/\/$/, "");
+
+  if (typeof window === "undefined") {
+    return internalUrl ?? publicUrl ?? "http://localhost:8000/api";
+  }
+
+  return publicUrl ?? "/api";
+}
+
+const API_BASE_URL = resolveApiBaseUrl();
 
 export const apiClient = axios.create({
   baseURL: API_BASE_URL,

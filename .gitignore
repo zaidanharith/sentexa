@@ -594,9 +594,6 @@ build/
 # PostgreSQL
 # Add PostgreSQL-specific ignores here
 
-# Redis
-# Add Redis-specific ignores here
-
 # JSON
 # Add JSON-specific ignores here
 
