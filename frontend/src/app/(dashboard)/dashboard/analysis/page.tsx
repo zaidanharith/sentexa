@@ -115,17 +115,16 @@ export default function AnalysisDashboardPage() {
         }
       />
       <DashboardPageContent>
-        {/* Subscription Info Badge */}
-        <div className="mb-6 p-3 bg-blue-50 rounded-lg border border-blue-200 flex items-center justify-between">
+        <div className="mb-6 p-3 bg-sky-50 rounded-lg border border-sky-200 flex items-center justify-between">
           <span className="text-sm font-medium text-gray-700">
             Paket Anda:
-            <span className="ml-2 font-semibold text-blue-600">
+            <span className="ml-2 font-semibold text-sky-600">
               {subscriptionTier.charAt(0).toUpperCase() +
                 subscriptionTier.slice(1)}
             </span>
           </span>
           {subscriptionTier === "free" && (
-            <button className="text-xs font-semibold text-blue-600 hover:text-blue-700 transition-colors">
+            <button className="text-xs font-semibold text-sky-600 hover:text-sky-700 transition-colors">
               Upgrade Sekarang
             </button>
           )}

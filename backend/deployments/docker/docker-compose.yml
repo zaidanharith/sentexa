@@ -1,18 +1,4 @@
 services:
-  redis:
-    image: redis:7-alpine
-    container_name: sentexa_redis
-    restart: unless-stopped
-    volumes:
-      - redis_data:/data
-    networks:
-      - sentexa_network
-    healthcheck:
-      test: ["CMD", "redis-cli", "ping"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-
   backend:
     build:
       context: ../../
@@ -23,12 +9,8 @@ services:
       - ../../.env
     environment:
       ENVIRONMENT: ${ENVIRONMENT:-production}
-      REDIS_URL: redis://redis:6379
     ports:
       - "8000:8000"
-    depends_on:
-      redis:
-        condition: service_healthy
     networks:
       - sentexa_network
     volumes:
@@ -54,10 +36,6 @@ services:
       - /var/run
       - /var/cache/nginx
       - /tmp
-
-volumes:
-  redis_data:
-    driver: local
 
 networks:
   sentexa_network:
