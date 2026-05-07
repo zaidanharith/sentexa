@@ -9,6 +9,7 @@ class Settings(BaseSettings):
     PORT: int = 8000
 
     DATABASE_URL: str
+    PGBOUNCER: bool = False
 
     SECRET_KEY: str
     ALGORITHM: str = "HS256"
