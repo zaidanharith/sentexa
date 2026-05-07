@@ -17,7 +17,7 @@ const DashboardPageContent: React.FC<DashboardPageContentProps> = ({
 }) => {
   return (
     <section
-      className={`w-full rounded-2xl border border-slate-200 !bg-white shadow-sm px-8 py-6 ${className}`}
+      className={`w-full rounded-2xl border border-slate-200 bg-white shadow-sm px-8 py-6 ${className}`}
     >
       <div className="flex flex-col gap-px">
         {title && <h1 className="font-bold text-lg">{title}</h1>}
