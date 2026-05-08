@@ -5,6 +5,7 @@ import axios, { AxiosError } from "axios";
 import { useSession } from "next-auth/react";
 import DashboardPageTitle from "@/components/layout/dashboard/DashboardPageTitle";
 import DashboardPageContent from "@/components/layout/dashboard/DashboardPageContent";
+import KeywordTable from "@/components/layout/dashboard/KeywordTable";
 import { FaArrowUp, FaArrowDown } from "react-icons/fa";
 import { appToast } from "@/lib/toast";
 
@@ -15,10 +16,23 @@ type AnalysisSummaryResponse = {
   total_sentiments: number;
 };
 
+type KeywordResponse = {
+  items: { word: string; count: number }[];
+  sentiment?: string | null;
+  job_id?: string | null;
+};
+
 export default function DashboardPage() {
   const { data: session, status } = useSession();
   const [summary, setSummary] = useState<AnalysisSummaryResponse | null>(null);
   const [loading, setLoading] = useState(false);
+  const [keywordsLoading, setKeywordsLoading] = useState(false);
+  const [positiveKeywords, setPositiveKeywords] = useState<
+    { word: string; count: number }[]
+  >([]);
+  const [negativeKeywords, setNegativeKeywords] = useState<
+    { word: string; count: number }[]
+  >([]);
 
   const apiBaseUrl =
     process.env.NEXT_PUBLIC_API_URL?.replace(/\/$/, "") ??
@@ -64,6 +78,64 @@ export default function DashboardPage() {
     };
 
     fetchSummary();
+    return () => {
+      isActive = false;
+    };
+  }, [apiBaseUrl, session?.accessToken, status]);
+
+  useEffect(() => {
+    const accessToken = session?.accessToken;
+    if (!accessToken || status === "loading") {
+      return;
+    }
+
+    let isActive = true;
+    const fetchKeywords = async () => {
+      setKeywordsLoading(true);
+      try {
+        const [positiveResponse, negativeResponse] = await Promise.all([
+          axios.get<KeywordResponse>(
+            `${apiBaseUrl}/dashboard/keywords?sentiment=positive&top=40`,
+            {
+              headers: {
+                Authorization: `Bearer ${accessToken}`,
+              },
+            },
+          ),
+          axios.get<KeywordResponse>(
+            `${apiBaseUrl}/dashboard/keywords?sentiment=negative&top=40`,
+            {
+              headers: {
+                Authorization: `Bearer ${accessToken}`,
+              },
+            },
+          ),
+        ]);
+
+        if (!isActive) {
+          return;
+        }
+
+        setPositiveKeywords(positiveResponse.data.items || []);
+        setNegativeKeywords(negativeResponse.data.items || []);
+      } catch (err) {
+        if (!isActive) {
+          return;
+        }
+        const apiError = err as AxiosError;
+        const message =
+          typeof apiError.response?.data === "string"
+            ? apiError.response?.data
+            : apiError.message || "Gagal memuat word cloud.";
+        appToast.error(message);
+      } finally {
+        if (isActive) {
+          setKeywordsLoading(false);
+        }
+      }
+    };
+
+    fetchKeywords();
     return () => {
       isActive = false;
     };
@@ -157,6 +229,24 @@ export default function DashboardPage() {
           <p className="text-gray-600 text-sm mt-1">
             {loading ? "Memuat..." : `${neutralCount} Ulasan Netral`}
           </p>
+        </DashboardPageContent>
+      </div>
+      <div className="flex items-center gap-4">
+        <DashboardPageContent line={false} className="flex-1">
+          <KeywordTable
+            items={positiveKeywords}
+            loading={keywordsLoading}
+            emptyLabel="Belum ada kata kunci positif"
+            tone="positive"
+          />
+        </DashboardPageContent>
+        <DashboardPageContent line={false} className="flex-1">
+          <KeywordTable
+            items={negativeKeywords}
+            loading={keywordsLoading}
+            emptyLabel="Belum ada kata kunci negatif"
+            tone="negative"
+          />
         </DashboardPageContent>
       </div>
     </main>

@@ -86,6 +86,16 @@ function ProfileContent({ user }: { user: AuthUser }) {
   const hasPremium = isPremiumSubscription(user.subscription);
   const planName = getSubscriptionName(user.subscription);
 
+  const getExpiryDateDisplay = () => {
+    if (!user.subscription?.expiresAt) return "Tanggal tidak tersedia";
+    const date = new Date(user.subscription.expiresAt);
+    return date.toLocaleDateString("id-ID", {
+      year: "numeric",
+      month: "long",
+      day: "numeric",
+    });
+  };
+
   return (
     <main className="w-full mx-auto flex flex-col gap-4 max-w-4xl">
       <DashboardPageTitle
@@ -104,23 +114,6 @@ function ProfileContent({ user }: { user: AuthUser }) {
               </h2>
               <p className="text-sm text-slate-500">{user.email}</p>
             </div>
-          </div>
-
-          <div className="flex flex-wrap items-center gap-2">
-            <span
-              className={`inline-flex items-center gap-1 rounded-full px-3 py-1 text-xs font-semibold border ${
-                hasPremium
-                  ? "border-amber-200 bg-amber-50 text-amber-700"
-                  : "border-slate-200 bg-slate-100 text-slate-600"
-              }`}
-            >
-              <HiOutlineShieldCheck className="h-4 w-4" />
-              {planName}
-            </span>
-            <span className="inline-flex items-center gap-1 rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1 text-xs font-semibold text-emerald-700">
-              <HiOutlineCheckCircle className="h-4 w-4" />
-              Aktif
-            </span>
           </div>
         </div>
       </DashboardPageContent>
@@ -221,7 +214,7 @@ function ProfileContent({ user }: { user: AuthUser }) {
             </div>
             <p className="text-xs text-slate-500">
               {hasPremium
-                ? "Kadaluarsa: [Tanggal]"
+                ? `Kadaluarsa: ${getExpiryDateDisplay()}`
                 : "Akun Anda saat ini menggunakan paket gratis"}
             </p>
           </div>

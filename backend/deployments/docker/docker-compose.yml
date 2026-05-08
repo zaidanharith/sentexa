@@ -18,6 +18,20 @@ services:
       - ../../app/nlp/data/processed:/app/app/nlp/data/processed
     security_opt:
       - no-new-privileges:true
+    develop:
+      watch:
+        - action: sync
+          path: ../../app
+          target: /app/app
+          ignore:
+            - __pycache__/
+            - "*.pyc"
+            - .pytest_cache/
+            - .ruff_cache/
+        - action: rebuild
+          path: ../../requirements.txt
+        - action: rebuild
+          path: ../../alembic.ini
 
   nginx:
     image: nginx:alpine
@@ -36,6 +50,11 @@ services:
       - /var/run
       - /var/cache/nginx
       - /tmp
+    develop:
+      watch:
+        - action: sync
+          path: ./nginx
+          target: /etc/nginx
 
 networks:
   sentexa_network:

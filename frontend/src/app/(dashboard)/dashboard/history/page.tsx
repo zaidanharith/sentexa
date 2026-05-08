@@ -6,6 +6,7 @@ import { useSession } from "next-auth/react";
 import DashboardPageTitle from "@/components/layout/dashboard/DashboardPageTitle";
 import DashboardPageContent from "@/components/layout/dashboard/DashboardPageContent";
 import { appToast } from "@/lib/toast";
+import { FaArrowLeft, FaArrowRight } from "react-icons/fa6";
 
 type AnalysisPrediction = {
   label?: string;
@@ -350,9 +351,9 @@ export default function HistoryDashboardPage() {
               type="button"
               onClick={() => handlePageChange(currentPage - 1)}
               disabled={currentPage === 1}
-              className="px-3 py-1.5 rounded-lg border border-slate-200 text-slate-600 disabled:text-slate-300 disabled:border-slate-100 hover:bg-slate-50 transition"
+              className="px-3 py-1.5 rounded-lg border border-slate-200 text-slate-600 disabled:text-slate-300 disabled:border-slate-100 hover:bg-slate-50 transition cursor-pointer"
             >
-              Sebelumnya
+              <FaArrowLeft />
             </button>
             <span className="text-slate-600">
               Halaman {currentPage} dari {totalPages}
@@ -361,9 +362,9 @@ export default function HistoryDashboardPage() {
               type="button"
               onClick={() => handlePageChange(currentPage + 1)}
               disabled={currentPage === totalPages}
-              className="px-3 py-1.5 rounded-lg border border-slate-200 text-slate-600 disabled:text-slate-300 disabled:border-slate-100 hover:bg-slate-50 transition"
+              className="px-3 py-1.5 rounded-lg border border-slate-200 text-slate-600 disabled:text-slate-300 disabled:border-slate-100 hover:bg-slate-50 transition cursor-pointer"
             >
-              Berikutnya
+              <FaArrowRight />
             </button>
           </div>
         </div>
