@@ -7,6 +7,7 @@ from app.schemas.analysis_history import (
 	AnalysisHistoryDetailResponse,
 	AnalysisHistoryListResponse,
 	AnalysisHistorySummaryResponse,
+	AnalysisHistoryTrendResponse,
 )
 from app.services import analysis_history_service
 
@@ -54,6 +55,20 @@ async def get_analysis_history_summary(
 		sentiment_counts=sentiment_counts,
 		total_sentiments=total_sentiments,
 	)
+
+
+@router.get("/trend", response_model=AnalysisHistoryTrendResponse)
+async def get_analysis_history_trend(
+	current_user: User = Depends(deps.get_current_user),
+	db: AsyncSession = Depends(deps.get_db),
+	days: int = Query(30, ge=1, le=365),
+):
+	items = await analysis_history_service.get_history_trend(
+		db,
+		current_user.id,
+		days=days,
+	)
+	return AnalysisHistoryTrendResponse(items=items)
 
 
 @router.get("/{history_id:int}", response_model=AnalysisHistoryDetailResponse)
