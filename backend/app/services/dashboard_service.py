@@ -33,7 +33,7 @@ async def get_keywords(
 		query = query.where(AnalysisHistory.job_id == job_id)
 
 	result = await db.execute(query)
-	print(result.all())
+	
 	texts = [row[0] for row in result.all() if row and isinstance(row[0], str)]
 	if not texts:
 		return []

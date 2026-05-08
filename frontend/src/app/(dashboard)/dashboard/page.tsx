@@ -6,6 +6,7 @@ import { useSession } from "next-auth/react";
 import DashboardPageTitle from "@/components/layout/dashboard/DashboardPageTitle";
 import DashboardPageContent from "@/components/layout/dashboard/DashboardPageContent";
 import KeywordTable from "@/components/layout/dashboard/KeywordTable";
+import TrendChart from "@/components/layout/dashboard/TrendChart";
 import { FaArrowUp, FaArrowDown } from "react-icons/fa";
 import { appToast } from "@/lib/toast";
 
@@ -22,6 +23,16 @@ type KeywordResponse = {
   job_id?: string | null;
 };
 
+type TrendItem = {
+  date: string;
+  positive: number;
+  negative: number;
+};
+
+type TrendResponse = {
+  items: TrendItem[];
+};
+
 export default function DashboardPage() {
   const { data: session, status } = useSession();
   const [summary, setSummary] = useState<AnalysisSummaryResponse | null>(null);
@@ -33,6 +44,8 @@ export default function DashboardPage() {
   const [negativeKeywords, setNegativeKeywords] = useState<
     { word: string; count: number }[]
   >([]);
+  const [trendLoading, setTrendLoading] = useState(false);
+  const [trendData, setTrendData] = useState<TrendItem[]>([]);
 
   const apiBaseUrl =
     process.env.NEXT_PUBLIC_API_URL?.replace(/\/$/, "") ??
@@ -78,6 +91,53 @@ export default function DashboardPage() {
     };
 
     fetchSummary();
+    return () => {
+      isActive = false;
+    };
+  }, [apiBaseUrl, session?.accessToken, status]);
+
+  useEffect(() => {
+    const accessToken = session?.accessToken;
+    if (!accessToken || status === "loading") {
+      return;
+    }
+
+    let isActive = true;
+    const fetchTrend = async () => {
+      setTrendLoading(true);
+      try {
+        const response = await axios.get<TrendResponse>(
+          `${apiBaseUrl}/analyses/trend?days=14`,
+          {
+            headers: {
+              Authorization: `Bearer ${accessToken}`,
+            },
+          },
+        );
+
+        if (!isActive) {
+          return;
+        }
+
+        setTrendData(response.data.items || []);
+      } catch (err) {
+        if (!isActive) {
+          return;
+        }
+        const apiError = err as AxiosError;
+        const message =
+          typeof apiError.response?.data === "string"
+            ? apiError.response?.data
+            : apiError.message || "Gagal memuat tren analisis.";
+        appToast.error(message);
+      } finally {
+        if (isActive) {
+          setTrendLoading(false);
+        }
+      }
+    };
+
+    fetchTrend();
     return () => {
       isActive = false;
     };
@@ -231,22 +291,25 @@ export default function DashboardPage() {
           </p>
         </DashboardPageContent>
       </div>
-      <div className="flex items-center gap-4">
-        <DashboardPageContent line={false} className="flex-1">
-          <KeywordTable
-            items={positiveKeywords}
-            loading={keywordsLoading}
-            emptyLabel="Belum ada kata kunci positif"
-            tone="positive"
-          />
+      <div className="grid gap-4 lg:grid-cols-2">
+        <DashboardPageContent title="Frekuensi Keyword" line={false}>
+          <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:gap-6">
+            <KeywordTable
+              items={positiveKeywords}
+              loading={keywordsLoading}
+              emptyLabel="Belum ada kata kunci positif"
+              tone="positive"
+            />
+            <KeywordTable
+              items={negativeKeywords}
+              loading={keywordsLoading}
+              emptyLabel="Belum ada kata kunci negatif"
+              tone="negative"
+            />
+          </div>
         </DashboardPageContent>
-        <DashboardPageContent line={false} className="flex-1">
-          <KeywordTable
-            items={negativeKeywords}
-            loading={keywordsLoading}
-            emptyLabel="Belum ada kata kunci negatif"
-            tone="negative"
-          />
+        <DashboardPageContent title="Tren Analisis" line={false}>
+          <TrendChart data={trendData} loading={trendLoading} />
         </DashboardPageContent>
       </div>
     </main>
