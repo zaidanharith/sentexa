@@ -1,48 +1,36 @@
 "use client";
 
 import { useState } from "react";
-import { useAuth } from "@/hooks/useAuth";
 import { useSession } from "next-auth/react";
 import { useAnalysis } from "@/hooks/useAnalysis";
 import { parseFile, downloadSampleFile } from "@/lib/file-parser";
+import { getFeatureAccess, getSubscriptionTier } from "@/lib/subscription";
 import { DataPreview } from "@/components/analysis/DataPreview";
 import { UploadArea } from "@/components/analysis/UploadArea";
-import HasilAnalisis from "@/components/analysis/HasilAnalisis";
+import { UpgradeAlert } from "@/components/analysis/UpgradeAlert";
 import { FaFileDownload } from "react-icons/fa";
 import axios, { AxiosError } from "axios";
-
-interface AnalysisResult {
-  total: number;
-  positive: number;
-  negative: number;
-  neutral: number;
-}
-
-function getMockAnalysisResult(text: string): AnalysisResult {
-  const normalized = text.toLowerCase();
-  const positive = normalized.split(/\s+/).filter(word => ['bagus','cepat','mantap','baik','puas','oke','lancar','nyaman'].includes(word)).length;
-  const negative = normalized.split(/\s+/).filter(word => ['lama','buruk','jelek','gagal','tidak','kurang','mahal','rusak'].includes(word)).length;
-  const total = Math.max(1, positive + negative + 1);
-  const neutral = Math.max(0, total - positive - negative);
-
-  return {
-    total,
-    positive: positive || 1,
-    negative: negative || 0,
-    neutral,
-  };
-}
+import { appToast } from "@/lib/toast";
+import DashboardPageTitle from "@/components/layout/dashboard/DashboardPageTitle";
+import DashboardPageContent from "@/components/layout/dashboard/DashboardPageContent";
 
 export default function AnalysisDashboardPage() {
-  const { user } = useAuth();
   const { data: session } = useSession();
   const analysis = useAnalysis();
   const [activeTab, setActiveTab] = useState<"upload" | "text">("upload");
-  const [analysisResult, setAnalysisResult] = useState<AnalysisResult | null>(null);
+
+  // Get subscription tier and features
+  const subscriptionTier = getSubscriptionTier(session?.user?.subscription);
+  const features = getFeatureAccess(session?.user?.subscription);
+
+  // If free user, default to text tab
+  const defaultTab = !features.canUploadFile ? "text" : "upload";
+  const displayTab = features.canUploadFile ? activeTab : "text";
+
+  console.log(session);
 
   const handleFileSelected = async (file: File) => {
     analysis.setLoading(true);
-    analysis.setError(null);
 
     try {
       const parsed = await parseFile(file);
@@ -51,7 +39,7 @@ export default function AnalysisDashboardPage() {
     } catch (err) {
       const errorMessage =
         err instanceof Error ? err.message : "Gagal memproses file";
-      analysis.setError(errorMessage);
+      appToast.error(errorMessage);
       analysis.setFile(null);
       analysis.setParsedData(null);
     } finally {
@@ -61,213 +49,208 @@ export default function AnalysisDashboardPage() {
 
   const handleReset = () => {
     analysis.reset();
-    setAnalysisResult(null);
-    setActiveTab("upload");
+    setActiveTab(defaultTab);
     const fileInput = document.getElementById("file-input") as HTMLInputElement;
     if (fileInput) fileInput.value = "";
   };
 
   const handleAnalyze = async () => {
     analysis.setLoading(true);
-    analysis.setError(null);
 
     try {
       if (activeTab === "text" && !analysis.state.textInput.trim()) {
-        throw new Error("Masukkan teks untuk dianalisis");
+        appToast.warning("Masukkan teks untuk dianalisis");
+        return;
       }
 
       if (activeTab === "upload" && !analysis.state.parsedData) {
-        throw new Error("Upload file terlebih dahulu");
+        appToast.warning("Upload file terlebih dahulu");
+        return;
       }
 
-      // console.log("Analisis data:", {
-      //   mode: activeTab,
-      //   data: analysis.state.parsedData,
-      //   text: analysis.state.textInput,
-      // });
-
       if (activeTab === "text") {
-        const API_URL = process.env.NEXT_PUBLIC_API_URL;
-        const url = API_URL
-          ? `${API_URL}/sentiment/predict`
-          : undefined;
-
-        if (!url) {
-          const result = getMockAnalysisResult(analysis.state.textInput);
-          setAnalysisResult(result);
-        } else {
-          try {
-            console.log("Calling API:", url);
-            const res = await axios.post(
-              url,
-              { text: analysis.state.textInput },
-              {
-                headers: {
-                  Authorization: session?.accessToken
-                    ? `Bearer ${session.accessToken}`
-                    : undefined,
-                },
+        try {
+          const API_URL = process.env.NEXT_PUBLIC_API_URL;
+          const url = API_URL
+            ? `${API_URL}/sentiment/predict`
+            : "/api/sentiment/predict";
+          const res = await axios.post(
+            url,
+            { text: analysis.state.textInput },
+            {
+              headers: {
+                Authorization: session?.accessToken
+                  ? `Bearer ${session.accessToken}`
+                  : undefined,
               },
-            );
-
-            console.log("Sentiment result:", res.data);
-
-            const result: AnalysisResult = {
-              total: res.data.total || 1,
-              positive: res.data.positive || res.data.positif || 0,
-              negative: res.data.negative || res.data.negatif || 0,
-              neutral: res.data.neutral || res.data.netral || 0,
-            };
-
-            setAnalysisResult(result);
-          } catch (error) {
-            console.warn("API request failed, using mock result", error);
-            const result = getMockAnalysisResult(analysis.state.textInput);
-            setAnalysisResult(result);
-          }
+            },
+          );
+          appToast.success(`Hasil analisis: ${res.data.label}`);
+        } catch (error) {
+          const err = error as AxiosError;
+          console.error(
+            "Sentiment API error:",
+            err.response || err.message || err,
+          );
+          appToast.error("Gagal menganalisis teks.");
         }
       }
     } catch (err) {
-      let errorMessage = "Terjadi kesalahan";
-
-      if (err instanceof AxiosError) {
-        console.error("API Error:", err.response?.data || err.message);
-        errorMessage = err.response?.data?.detail || err.response?.data?.message || err.message || "Gagal memanggil API";
-      } else if (err instanceof Error) {
-        console.error("Error:", err.message);
-        errorMessage = err.message;
-      }
-
-      analysis.setError(errorMessage);
+      const errorMessage =
+        err instanceof Error ? err.message : "Terjadi kesalahan";
+      appToast.error(errorMessage);
     } finally {
       analysis.setLoading(false);
     }
   };
 
   return (
-    <div className="w-full max-w-4xl mx-auto p-6">
-      <div className="mb-2">
-        <h1 className="text-3xl font-bold text-gray-900 mb-2">Analisis Baru</h1>
-      </div>
-
-      <div className="mb-6 border-b border-gray-300">
-        <div className="flex gap-1">
-          <button
-            onClick={() => {
-              setActiveTab("upload");
-              analysis.setMode("upload");
-            }}
-            className={`px-4 py-3 font-semibold text-sm border-b-2 transition-colors cursor-pointer ${
-              activeTab === "upload"
-                ? "border-sky-500 text-sky-500"
-                : "border-transparent text-gray-600 hover:text-gray-900"
-            }`}
-          >
-            Upload File
-          </button>
-          <button
-            onClick={() => {
-              setActiveTab("text");
-              analysis.setMode("text");
-            }}
-            className={`px-4 py-3 font-semibold text-sm border-b-2 transition-colors cursor-pointer ${
-              activeTab === "text"
-                ? "border-sky-500 text-sky-500"
-                : "border-transparent text-gray-600 hover:text-gray-900"
-            }`}
-          >
-            Input Teks
-          </button>
-        </div>
-      </div>
-
-      {analysis.state.error && (
-        <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg">
-          <p className="text-sm font-medium text-red-800">
-            {analysis.state.error}
-          </p>
-        </div>
-      )}
-
-      {activeTab === "upload" && (
-        <div className="space-y-6">
-          <UploadArea
-            onFileSelected={handleFileSelected}
-            isLoading={analysis.state.loading}
-          />
-
-          <button
-            onClick={downloadSampleFile}
-            className="text-sky-500 hover:text-sky-600 text-md font-medium
-            cursor-pointer transition-colors flex items-center gap-2"
-          >
-            <FaFileDownload className="w-6 h-6" /> Contoh File Input
-          </button>
-
-          {analysis.state.parsedData && (
-            <div className="space-y-4">
-              <div>
-                <h3 className="font-semibold text-gray-900 mb-2">
-                  Preview Data ({analysis.state.parsedData.rowCount} baris)
-                </h3>
-                <p className="text-sm text-gray-600 mb-3">
-                  File: {analysis.state.file?.name}
-                </p>
-              </div>
-              <DataPreview data={analysis.state.parsedData} />
-            </div>
+    <main className="w-full max-w-4xl mx-auto flex flex-col gap-4">
+      <DashboardPageTitle
+        title="Analisis Baru"
+        subtitle={
+          subscriptionTier === "free"
+            ? "Masukkan teks untuk dianalisis (Upgrade untuk akses upload file)"
+            : "Upload file atau masukkan teks untuk dianalisis"
+        }
+      />
+      <DashboardPageContent>
+        <div className="mb-6 p-3 bg-sky-50 rounded-lg border border-sky-200 flex items-center justify-between">
+          <span className="text-sm font-medium text-gray-700">
+            Paket Anda:
+            <span className="ml-2 font-semibold text-sky-600">
+              {subscriptionTier.charAt(0).toUpperCase() +
+                subscriptionTier.slice(1)}
+            </span>
+          </span>
+          {subscriptionTier === "free" && (
+            <button className="text-xs font-semibold text-sky-600 hover:text-sky-700 transition-colors">
+              Upgrade Sekarang
+            </button>
           )}
         </div>
-      )}
 
-      {activeTab === "text" && (
-        <div className="space-y-4">
-          <div>
-            <label className="block text-md font-medium text-gray-900 mb-2">
-              Masukkan teks untuk dianalisis
-            </label>
-            <textarea
-              value={analysis.state.textInput}
-              onChange={(e) => analysis.setTextInput(e.target.value)}
-              placeholder="Produknya bagus, tapi pengirimannya lama..."
-              rows={6}
-              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-sky-500 focus:border-transparent resize-none"
-              disabled={analysis.state.loading}
-            />
+        {/* Tabs - Only show upload tab if premium */}
+        {features.canUploadFile && (
+          <div className="mb-6 border-b border-gray-300">
+            <div className="flex gap-1">
+              <button
+                onClick={() => {
+                  setActiveTab("upload");
+                  analysis.setMode("upload");
+                }}
+                className={`px-4 py-3 font-semibold text-sm border-b-2 transition-colors cursor-pointer ${
+                  activeTab === "upload"
+                    ? "border-sky-500 text-sky-500"
+                    : "border-transparent text-gray-600 hover:text-gray-900"
+                }`}
+              >
+                Upload File
+              </button>
+              <button
+                onClick={() => {
+                  setActiveTab("text");
+                  analysis.setMode("text");
+                }}
+                className={`px-4 py-3 font-semibold text-sm border-b-2 transition-colors cursor-pointer ${
+                  activeTab === "text"
+                    ? "border-sky-500 text-sky-500"
+                    : "border-transparent text-gray-600 hover:text-gray-900"
+                }`}
+              >
+                Input Teks
+              </button>
+            </div>
           </div>
-        </div>
-      )}
+        )}
 
-      <div className="mt-3 flex gap-4 justify-end">
-        <button
-          onClick={handleReset}
-          disabled={
-            analysis.state.loading ||
-            (!analysis.state.file && !analysis.state.textInput)
-          }
-          className="disabled:text-gray-400 text-gray-900 font-medium rounded-lg transition-colors text-sm cursor-pointer"
-        >
-          Reset Input
-        </button>
-        <button
-          onClick={handleAnalyze}
-          disabled={
-            analysis.state.loading ||
-            (activeTab === "upload" && !analysis.state.parsedData) ||
-            (activeTab === "text" && !analysis.state.textInput.trim())
-          }
-          className="px-6 py-2 bg-sky-500 hover:bg-sky-600 disabled:bg-sky-300 disabled:cursor-not-allowed text-white font-semibold rounded-lg transition-colors cursor-pointer"
-        >
-          {analysis.state.loading ? "Sedang diproses..." : "Mulai Analisis"}
-        </button>
-      </div>
+        {/* Tab: Upload File */}
+        {displayTab === "upload" && features.canUploadFile && (
+          <div className="space-y-6">
+            <UploadArea
+              onFileSelected={handleFileSelected}
+              isLoading={analysis.state.loading}
+            />
 
-      {analysisResult && (
-        <div className="mt-8">
-          <h2 className="text-2xl font-bold text-gray-900 mb-6">Hasil Analisis</h2>
-          <HasilAnalisis result={analysisResult} />
+            <button
+              onClick={downloadSampleFile}
+              className="text-sky-500 hover:text-sky-600 text-md font-medium
+            cursor-pointer transition-colors flex items-center gap-2"
+            >
+              <FaFileDownload className="w-6 h-6" /> Contoh File Input
+            </button>
+
+            {analysis.state.parsedData && (
+              <div className="space-y-4">
+                <div>
+                  <h3 className="font-semibold text-gray-900 mb-2">
+                    Preview Data ({analysis.state.parsedData.rowCount} baris)
+                  </h3>
+                  <p className="text-sm text-gray-600 mb-3">
+                    File: {analysis.state.file?.name}
+                  </p>
+                </div>
+                <DataPreview data={analysis.state.parsedData} />
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Tab: Input Teks */}
+        {displayTab === "text" && features.canInputText && (
+          <div className="space-y-4">
+            <div>
+              <label className="block text-md font-medium text-gray-900 mb-2">
+                Masukkan teks untuk dianalisis
+              </label>
+              <textarea
+                value={analysis.state.textInput}
+                onChange={(e) => analysis.setTextInput(e.target.value)}
+                placeholder="Produknya bagus, tapi pengirimannya lama..."
+                rows={6}
+                maxLength={features.maxTextLength || 5000}
+                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-sky-500 focus:border-transparent resize-none"
+                disabled={analysis.state.loading}
+              />
+              <p className="text-xs text-gray-500 mt-2">
+                {analysis.state.textInput.length} /{" "}
+                {features.maxTextLength || 5000} karakter
+              </p>
+            </div>
+          </div>
+        )}
+
+        <div className="mt-3 flex gap-4 justify-end">
+          <button
+            onClick={handleReset}
+            disabled={
+              analysis.state.loading ||
+              (!analysis.state.file && !analysis.state.textInput)
+            }
+            className="disabled:text-gray-400 text-gray-900 font-medium rounded-lg transition-colors text-sm cursor-pointer"
+          >
+            Reset Input
+          </button>
+          <button
+            onClick={handleAnalyze}
+            disabled={
+              analysis.state.loading ||
+              (displayTab === "upload" && !analysis.state.parsedData) ||
+              (displayTab === "text" && !analysis.state.textInput.trim())
+            }
+            className="px-6 py-2 bg-sky-500 hover:bg-sky-600 disabled:bg-sky-300 disabled:cursor-not-allowed text-white font-semibold rounded-lg transition-colors cursor-pointer"
+          >
+            {analysis.state.loading ? "Sedang diproses..." : "Mulai Analisis"}
+          </button>
         </div>
+      </DashboardPageContent>
+
+      {/* Show upgrade alert if free user */}
+      {subscriptionTier === "free" && (
+        <DashboardPageContent>
+          <UpgradeAlert />
+        </DashboardPageContent>
       )}
-    </div>
+    </main>
   );
 }

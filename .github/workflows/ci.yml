@@ -76,7 +76,7 @@ jobs:
         working-directory: backend/deployments/docker
         run: |
           cp ../../.env.example ../../.env 2>/dev/null || \
-            echo -e "DATABASE_URL=postgresql://user:pass@localhost:5432/db\nREDIS_URL=redis://localhost:6379\nSECRET_KEY=ci-secret\nENVIRONMENT=production" > ../../.env
+            echo -e "DATABASE_URL=postgresql://user:pass@localhost:5432/db\nSECRET_KEY=ci-secret\nENVIRONMENT=production" > ../../.env
           docker compose config --quiet
 
       - name: Build backend Docker image

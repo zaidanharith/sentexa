@@ -32,7 +32,7 @@ Sentexa adalah aplikasi berbasis web untuk melakukan analisis sentimen berbasis 
 
    ```bash
    cd frontend
-   npm install
+   npm i
    npm run dev
    ```
 
