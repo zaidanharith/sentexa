@@ -86,15 +86,7 @@ function ProfileContent({ user }: { user: AuthUser }) {
   const hasPremium = isPremiumSubscription(user.subscription);
   const planName = getSubscriptionName(user.subscription);
 
-  const getExpiryDateDisplay = () => {
-    if (!user.subscription?.expiresAt) return "Tanggal tidak tersedia";
-    const date = new Date(user.subscription.expiresAt);
-    return date.toLocaleDateString("id-ID", {
-      year: "numeric",
-      month: "long",
-      day: "numeric",
-    });
-  };
+  const getExpiryDateDisplay = () => "Tanggal tidak tersedia";
 
   return (
     <main className="w-full mx-auto flex flex-col gap-4 max-w-4xl">

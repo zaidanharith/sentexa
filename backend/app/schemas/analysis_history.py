@@ -49,3 +49,13 @@ class AnalysisHistorySummaryResponse(BaseModel):
 	delta_from_yesterday: int
 	sentiment_counts: dict[str, int]
 	total_sentiments: int
+
+
+class AnalysisTrendItem(BaseModel):
+	date: str
+	positive: int
+	negative: int
+
+
+class AnalysisHistoryTrendResponse(BaseModel):
+	items: list[AnalysisTrendItem]
