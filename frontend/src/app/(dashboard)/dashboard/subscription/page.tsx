@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import { useAuth } from "@/hooks/useAuth";
 import DashboardPageTitle from "@/components/layout/dashboard/DashboardPageTitle";
 import DashboardPageContent from "@/components/layout/dashboard/DashboardPageContent";
@@ -7,6 +8,7 @@ import DashboardPageContent from "@/components/layout/dashboard/DashboardPageCon
 export default function SubscriptionPage() {
   const { user } = useAuth();
   const currentPlan = user?.subscription?.toLowerCase() || "free";
+  const [selectedDuration, setSelectedDuration] = useState("monthly");
 
   const freePlanFeatures = [
     "Analisis teks manual saja (tanpa unggah CSV/Excel)",
@@ -20,6 +22,14 @@ export default function SubscriptionPage() {
     "Akses laporan yang dapat diunduh (PDF/CSV)",
   ];
 
+  const durationOptions = [
+    { code: "weekly", name: "Mingguan", price: 29000, duration: "7 hari" },
+    { code: "monthly", name: "Bulanan", price: 99000, duration: "30 hari" },
+    { code: "annual", name: "Tahunan", price: 899000, duration: "365 hari" },
+  ];
+
+  const selectedDurationData = durationOptions.find(d => d.code === selectedDuration) || durationOptions[1];
+
   return (
     <main className="w-full max-w-4xl mx-auto flex flex-col gap-6 pb-8">
       <DashboardPageTitle
@@ -28,7 +38,7 @@ export default function SubscriptionPage() {
       />
 
       <div className="flex flex-col md:flex-row gap-6">
-        <div className={`flex-1 rounded-xl border-2 p-8 flex flex-col ${
+        <div className={`flex-1 rounded-xl border-2 p-8 flex flex-col min-h-[500px] ${
           currentPlan === "free"
             ? "border-gray-300 bg-gray-50"
             : "border-gray-300 bg-gray-50 opacity-60"
@@ -61,7 +71,7 @@ export default function SubscriptionPage() {
         </div>
 
         {/* Premium Plan Card */}
-        <div className={`flex-1 rounded-xl border-2 p-8 flex flex-col relative overflow-hidden ${
+        <div className={`flex-1 rounded-xl border-2 p-8 flex flex-col relative overflow-hidden min-h-[500px] ${
           currentPlan === "premium"
             ? "border-sky-600 bg-gradient-to-br from-sky-100 to-white"
             : "border-sky-600 bg-gradient-to-br from-sky-50 to-white"
@@ -77,9 +87,41 @@ export default function SubscriptionPage() {
             <p className="text-gray-600 text-sm">Akses penuh ke semua fitur</p>
           </div>
 
+          {/* Duration Selection */}
+          {currentPlan !== "premium" && (
+            <div className="mb-6">
+              <p className="text-sm font-semibold text-gray-900 mb-3">Pilih Durasi:</p>
+              <div className="space-y-2">
+                {durationOptions.map((option) => (
+                  <label key={option.code} className="flex items-center gap-3 cursor-pointer">
+                    <input
+                      type="radio"
+                      name="duration"
+                      value={option.code}
+                      checked={selectedDuration === option.code}
+                      onChange={(e) => setSelectedDuration(e.target.value)}
+                      className="w-4 h-4 text-sky-600 bg-gray-100 border-gray-300 focus:ring-sky-500"
+                    />
+                    <div className="flex-1">
+                      <span className="text-sm font-medium text-gray-900">{option.name}</span>
+                      <span className="text-xs text-gray-500 ml-2">({option.duration})</span>
+                    </div>
+                    <span className="text-sm font-semibold text-sky-600">
+                      IDR {option.price.toLocaleString()}
+                    </span>
+                  </label>
+                ))}
+              </div>
+            </div>
+          )}
+
           <div className="mb-6">
-            <span className="text-4xl font-bold text-sky-600">IDR 99.000</span>
-            <span className="text-gray-600 text-sm">/bulan</span>
+            <span className="text-4xl font-bold text-sky-600">
+              IDR {currentPlan === "premium" ? "99.000" : selectedDurationData.price.toLocaleString()}
+            </span>
+            <span className="text-gray-600 text-sm">
+              /{currentPlan === "premium" ? "bulan" : (selectedDuration === "annual" ? "tahun" : selectedDuration === "monthly" ? "bulan" : "minggu")}
+            </span>
           </div>
 
           <button disabled={currentPlan === "premium"} className={`w-full font-semibold py-2.5 px-4 rounded-lg transition mb-8 ${
