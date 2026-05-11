@@ -14,10 +14,24 @@ import { appToast } from "@/lib/toast";
 import DashboardPageTitle from "@/components/layout/dashboard/DashboardPageTitle";
 import DashboardPageContent from "@/components/layout/dashboard/DashboardPageContent";
 
+interface AnalysisResult {
+  text: string;
+  label: string;
+  score: number;
+  scores: {
+    negative: number;
+    neutral: number;
+    positive: number;
+  };
+}
+
 export default function AnalysisDashboardPage() {
   const { data: session } = useSession();
   const analysis = useAnalysis();
   const [activeTab, setActiveTab] = useState<"upload" | "text">("upload");
+  const [analysisResult, setAnalysisResult] = useState<AnalysisResult | null>(
+    null,
+  );
 
   // Get subscription tier and features
   const subscriptionTier = getSubscriptionTier(session?.user?.subscription);
@@ -85,7 +99,13 @@ export default function AnalysisDashboardPage() {
               },
             },
           );
-          appToast.success(`Hasil analisis: ${res.data.label}`);
+          setAnalysisResult({
+            text: analysis.state.textInput,
+            label: res.data.label,
+            score: res.data.score,
+            scores: res.data.scores,
+          });
+          analysis.setTextInput("");
         } catch (error) {
           const err = error as AxiosError;
           console.error(
@@ -249,6 +269,130 @@ export default function AnalysisDashboardPage() {
       {subscriptionTier === "free" && (
         <DashboardPageContent>
           <UpgradeAlert />
+        </DashboardPageContent>
+      )}
+
+      {/* Analysis Result Card */}
+      {analysisResult && (
+        <DashboardPageContent>
+          <div className="border-2 border-sky-200 rounded-lg p-6 bg-linear-to-br from-sky-50 to-blue-50">
+            <h2 className="text-lg font-bold text-gray-900 mb-4">
+              Hasil Analisis
+            </h2>
+
+            {/* Input Text */}
+            <div className="mb-6 pb-4 border-b border-gray-200">
+              <p className="text-sm font-medium text-gray-600 mb-2">
+                Teks Input:
+              </p>
+              <p className="text-gray-900 italic bg-white p-3 rounded border border-gray-200">
+                &ldquo;{analysisResult.text}&rdquo;
+              </p>
+            </div>
+
+            {/* Label and Main Score */}
+            <div className="mb-6 pb-4 border-b border-gray-200">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-medium text-gray-600 mb-2">
+                    Sentimen:
+                  </p>
+                  <div className="flex items-center gap-3">
+                    <span
+                      className={`px-4 py-2 rounded-full font-bold text-white ${
+                        analysisResult.label === "positive"
+                          ? "bg-green-500"
+                          : analysisResult.label === "negative"
+                            ? "bg-red-500"
+                            : "bg-gray-500"
+                      }`}
+                    >
+                      {analysisResult.label.charAt(0).toUpperCase() +
+                        analysisResult.label.slice(1)}
+                    </span>
+                    <span className="text-2xl font-bold text-sky-600">
+                      {(analysisResult.score * 100).toFixed(2)}%
+                    </span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Score Details */}
+            <div className="space-y-4">
+              <p className="text-sm font-medium text-gray-600 mb-4">
+                Detail Skor:
+              </p>
+
+              {/* Positive Score */}
+              <div>
+                <div className="flex justify-between items-center mb-2">
+                  <span className="text-sm font-medium text-green-700">
+                    Positif
+                  </span>
+                  <span className="text-sm font-semibold text-green-600">
+                    {(analysisResult.scores.positive * 100).toFixed(2)}%
+                  </span>
+                </div>
+                <div className="w-full bg-gray-200 rounded-full h-2">
+                  <div
+                    className="bg-green-500 h-2 rounded-full transition-all duration-300"
+                    style={{
+                      width: `${analysisResult.scores.positive * 100}%`,
+                    }}
+                  ></div>
+                </div>
+              </div>
+
+              {/* Neutral Score */}
+              <div>
+                <div className="flex justify-between items-center mb-2">
+                  <span className="text-sm font-medium text-gray-700">
+                    Netral
+                  </span>
+                  <span className="text-sm font-semibold text-gray-600">
+                    {(analysisResult.scores.neutral * 100).toFixed(2)}%
+                  </span>
+                </div>
+                <div className="w-full bg-gray-200 rounded-full h-2">
+                  <div
+                    className="bg-gray-500 h-2 rounded-full transition-all duration-300"
+                    style={{
+                      width: `${analysisResult.scores.neutral * 100}%`,
+                    }}
+                  ></div>
+                </div>
+              </div>
+
+              {/* Negative Score */}
+              <div>
+                <div className="flex justify-between items-center mb-2">
+                  <span className="text-sm font-medium text-red-700">
+                    Negatif
+                  </span>
+                  <span className="text-sm font-semibold text-red-600">
+                    {(analysisResult.scores.negative * 100).toFixed(2)}%
+                  </span>
+                </div>
+                <div className="w-full bg-gray-200 rounded-full h-2">
+                  <div
+                    className="bg-red-500 h-2 rounded-full transition-all duration-300"
+                    style={{
+                      width: `${analysisResult.scores.negative * 100}%`,
+                    }}
+                  ></div>
+                </div>
+              </div>
+            </div>
+
+            {/* Clear Result Button */}
+            <button
+              onClick={() => setAnalysisResult(null)}
+              className="mt-6 px-4 py-2 text-sm font-medium text-gray-600 hover:text-gray-900 hover:bg-gray-200 rounded-lg transition-colors cursor-pointer"
+            >
+              Tutup Hasil
+            </button>
+          </div>
         </DashboardPageContent>
       )}
     </main>
