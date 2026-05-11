@@ -60,7 +60,7 @@ async def _process_report_generation(
 
 @router.get("", response_model=ReportListResponse)
 async def list_reports(
-	current_user: User = Depends(deps.get_current_user),
+	current_user: User = Depends(deps.require_premium_subscription),
 	db: AsyncSession = Depends(deps.get_db),
 	offset: int = Query(0, ge=0),
 	limit: int = Query(50, ge=1, le=100),
@@ -84,7 +84,7 @@ async def list_reports(
 async def generate_report(
 	payload: GenerateReportRequest,
 	background_tasks: BackgroundTasks,
-	current_user: User = Depends(deps.get_current_user),
+	current_user: User = Depends(deps.require_premium_subscription),
 	db: AsyncSession = Depends(deps.get_db),
 ):
 	"""Membuat laporan baru berdasarkan hasil analisis job tertentu atau rentang waktu yang dipilih"""
@@ -125,7 +125,7 @@ async def generate_report(
 @router.get("/{report_id}", response_model=ReportDetailResponse)
 async def get_report(
 	report_id: int,
-	current_user: User = Depends(deps.get_current_user),
+	current_user: User = Depends(deps.require_premium_subscription),
 	db: AsyncSession = Depends(deps.get_db),
 ):
 	"""Mengambil metadata dan ringkasan isi laporan tertentu"""
@@ -137,7 +137,7 @@ async def get_report(
 async def download_report(
 	report_id: int,
 	format: str = Query("csv", regex="^(csv|pdf)$"),
-	current_user: User = Depends(deps.get_current_user),
+	current_user: User = Depends(deps.require_premium_subscription),
 	db: AsyncSession = Depends(deps.get_db),
 ):
 	"""Mengunduh laporan dalam format CSV atau PDF (fitur Premium)"""
