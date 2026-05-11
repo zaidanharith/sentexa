@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, useRef } from "react";
 import axios, { AxiosError } from "axios";
 import { useSession } from "next-auth/react";
 import DashboardPageTitle from "@/components/layout/dashboard/DashboardPageTitle";
@@ -52,6 +52,7 @@ export default function HistoryDashboardPage() {
   const [sortKey, setSortKey] = useState<SortKey>("newest");
   const [currentPage, setCurrentPage] = useState(1);
   const [selectedItemId, setSelectedItemId] = useState<number | null>(null);
+  const detailSectionRef = useRef<HTMLDivElement>(null);
 
   const totalPages = Math.max(1, Math.ceil(totalCount / PAGE_SIZE));
 
@@ -111,6 +112,19 @@ export default function HistoryDashboardPage() {
       isActive = false;
     };
   }, [apiBaseUrl, currentPage, session?.accessToken, status]);
+
+  // Tambahkan useEffect ini untuk auto-scroll:
+  useEffect(() => {
+    if (selectedItemId !== null && detailSectionRef.current) {
+      // Scroll dengan smooth behavior
+      setTimeout(() => {
+        detailSectionRef.current?.scrollIntoView({
+          behavior: "smooth",
+          block: "start",
+        });
+      }, 100);
+    }
+  }, [selectedItemId]);
 
   const filteredItems = useMemo(() => {
     const normalizedSearch = searchTerm.trim().toLowerCase();
@@ -370,96 +384,100 @@ export default function HistoryDashboardPage() {
         </div>
       </DashboardPageContent>
 
-      <DashboardPageContent
-        title="Detail Analisis"
-        subtitle={
-          selectedItem
-            ? "Detail riwayat yang dipilih"
-            : "Pilih salah satu baris untuk melihat detail"
-        }
-      >
-        {!selectedItem ? (
-          <div className="rounded-xl border border-slate-200 bg-slate-50 px-4 py-6 text-sm text-slate-500">
-            Belum ada riwayat yang dipilih.
-          </div>
-        ) : selectedItem.source_type === "batch" ? (
-          <div className="space-y-4">
-            <div className="text-sm text-slate-600">
-              Analisis batch dengan {resolveBatchTexts(selectedItem).length}{" "}
-              teks
+      <div ref={detailSectionRef}>
+        <DashboardPageContent
+          title="Detail Analisis"
+          subtitle={
+            selectedItem
+              ? "Detail riwayat yang dipilih"
+              : "Pilih salah satu baris untuk melihat detail"
+          }
+        >
+          {!selectedItem ? (
+            <div className="rounded-xl border border-slate-200 bg-slate-50 px-4 py-6 text-sm text-slate-500">
+              Belum ada riwayat yang dipilih.
             </div>
-            <div className="overflow-x-auto rounded-xl border border-slate-200">
-              <table className="min-w-full text-sm">
-                <thead className="bg-slate-50 text-slate-600">
-                  <tr>
-                    <th className="px-4 py-3 text-left font-semibold">No</th>
-                    <th className="px-4 py-3 text-left font-semibold">Teks</th>
-                    <th className="px-4 py-3 text-left font-semibold">
-                      Hasil Sentimen
-                    </th>
-                    <th className="px-4 py-3 text-left font-semibold">
-                      Confidence Score
-                    </th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-slate-200">
-                  {resolveBatchTexts(selectedItem).map((text, index) => {
-                    const prediction =
-                      resolveBatchPredictions(selectedItem)[index] ?? {};
-                    return (
-                      <tr key={`${selectedItem.id}-${index}`}>
-                        <td className="px-4 py-3 text-slate-600">
-                          {index + 1}
-                        </td>
-                        <td className="px-4 py-3 text-slate-900 max-w-md">
-                          {text}
-                        </td>
-                        <td className="px-4 py-3">
-                          <span className="rounded-full bg-slate-100 px-2.5 py-1 text-xs font-semibold text-slate-700">
-                            {formatLabel(prediction.label)}
-                          </span>
-                        </td>
-                        <td className="px-4 py-3 text-slate-700">
-                          {formatScore(prediction.score ?? null)}
-                        </td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
-            </div>
-          </div>
-        ) : (
-          <div className="space-y-3 text-sm text-slate-700">
-            <div>
-              <p className="text-xs font-semibold text-slate-500">Teks</p>
-              <p className="mt-1 text-slate-900">
-                {selectedItem.input_text ?? "-"}
-              </p>
-            </div>
-            <div className="flex flex-wrap gap-4">
-              <div>
-                <p className="text-xs font-semibold text-slate-500">Label</p>
-                <p className="mt-1 text-slate-900">
-                  {formatLabel(selectedItem.result_label)}
-                </p>
+          ) : selectedItem.source_type === "batch" ? (
+            <div className="space-y-4">
+              <div className="text-sm text-slate-600">
+                Analisis batch dengan {resolveBatchTexts(selectedItem).length}{" "}
+                teks
               </div>
-              <div>
-                <p className="text-xs font-semibold text-slate-500">Skor</p>
-                <p className="mt-1 text-slate-900">
-                  {formatScore(selectedItem.result_score)}
-                </p>
-              </div>
-              <div>
-                <p className="text-xs font-semibold text-slate-500">Waktu</p>
-                <p className="mt-1 text-slate-900">
-                  {formatTime(selectedItem.created_at)}
-                </p>
+              <div className="overflow-x-auto rounded-xl border border-slate-200">
+                <table className="min-w-full text-sm">
+                  <thead className="bg-slate-50 text-slate-600">
+                    <tr>
+                      <th className="px-4 py-3 text-left font-semibold">No</th>
+                      <th className="px-4 py-3 text-left font-semibold">
+                        Teks
+                      </th>
+                      <th className="px-4 py-3 text-left font-semibold">
+                        Hasil Sentimen
+                      </th>
+                      <th className="px-4 py-3 text-left font-semibold">
+                        Confidence Score
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-200">
+                    {resolveBatchTexts(selectedItem).map((text, index) => {
+                      const prediction =
+                        resolveBatchPredictions(selectedItem)[index] ?? {};
+                      return (
+                        <tr key={`${selectedItem.id}-${index}`}>
+                          <td className="px-4 py-3 text-slate-600">
+                            {index + 1}
+                          </td>
+                          <td className="px-4 py-3 text-slate-900 max-w-md">
+                            {text}
+                          </td>
+                          <td className="px-4 py-3">
+                            <span className="rounded-full bg-slate-100 px-2.5 py-1 text-xs font-semibold text-slate-700">
+                              {formatLabel(prediction.label)}
+                            </span>
+                          </td>
+                          <td className="px-4 py-3 text-slate-700">
+                            {formatScore(prediction.score ?? null)}
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
               </div>
             </div>
-          </div>
-        )}
-      </DashboardPageContent>
+          ) : (
+            <div className="space-y-3 text-sm text-slate-700">
+              <div>
+                <p className="text-xs font-semibold text-slate-500">Teks</p>
+                <p className="mt-1 text-slate-900">
+                  {selectedItem.input_text ?? "-"}
+                </p>
+              </div>
+              <div className="flex flex-wrap gap-4">
+                <div>
+                  <p className="text-xs font-semibold text-slate-500">Label</p>
+                  <p className="mt-1 text-slate-900">
+                    {formatLabel(selectedItem.result_label)}
+                  </p>
+                </div>
+                <div>
+                  <p className="text-xs font-semibold text-slate-500">Skor</p>
+                  <p className="mt-1 text-slate-900">
+                    {formatScore(selectedItem.result_score)}
+                  </p>
+                </div>
+                <div>
+                  <p className="text-xs font-semibold text-slate-500">Waktu</p>
+                  <p className="mt-1 text-slate-900">
+                    {formatTime(selectedItem.created_at)}
+                  </p>
+                </div>
+              </div>
+            </div>
+          )}
+        </DashboardPageContent>
+      </div>
     </main>
   );
 }

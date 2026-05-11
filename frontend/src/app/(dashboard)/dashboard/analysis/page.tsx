@@ -58,17 +58,17 @@ export default function AnalysisDashboardPage() {
     analysis.setLoading(true);
 
     try {
-      if (activeTab === "text" && !analysis.state.textInput.trim()) {
+      if (displayTab === "text" && !analysis.state.textInput.trim()) {
         appToast.warning("Masukkan teks untuk dianalisis");
         return;
       }
 
-      if (activeTab === "upload" && !analysis.state.parsedData) {
+      if (displayTab === "upload" && !analysis.state.parsedData) {
         appToast.warning("Upload file terlebih dahulu");
         return;
       }
 
-      if (activeTab === "text") {
+      if (displayTab === "text") {
         try {
           const API_URL = process.env.NEXT_PUBLIC_API_URL;
           const url = API_URL
