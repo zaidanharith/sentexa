@@ -150,10 +150,10 @@ async def create_sentiment_job(
     )
     await db.commit()
     
-    await analysis_history_service.create_history(
-        db,
-        user_id=current_user.id,
-        source_type="batch",
+	await analysis_history_service.create_history(
+		db,
+		user_id=current_user.id,
+		source_type="job",
         job_id=str(job.id),
         input_text="\n".join([str(t) for t in payload.texts]),
         status="queued",
@@ -229,7 +229,7 @@ async def reprocess_sentiment_job(
         user_id=current_user.id,
         job_id=str(job.id),
         defaults={
-            "source_type": "batch",
+			"source_type": "job",
             "item_count": job.total_texts,
         },
         updates={

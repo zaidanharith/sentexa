@@ -13,6 +13,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models.analysis_history import AnalysisHistory
 from app.models.report_feedback_alert import Report
+from app.services.report_pdf_template import build_report_pdf
 
 
 REPORTS_DIR = Path("data/reports")
@@ -130,11 +131,12 @@ async def generate_report_file(
 	if report.format == "csv":
 		csv_content = _generate_csv_content(analyses)
 		_save_csv_file(csv_content, file_path)
+	elif report.format == "pdf":
+		build_report_pdf(report, analyses, file_path)
 	else:
-		# PDF support can be added here with reportlab or similar
 		raise HTTPException(
-			status_code=status.HTTP_501_NOT_IMPLEMENTED,
-			detail="PDF format not yet implemented",
+			status_code=status.HTTP_400_BAD_REQUEST,
+			detail="Unsupported report format",
 		)
 	
 	return file_path
