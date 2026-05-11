@@ -56,6 +56,16 @@ export default function HistoryDashboardPage() {
 
   const totalPages = Math.max(1, Math.ceil(totalCount / PAGE_SIZE));
 
+  const [sentimentFilter, setSentimentFilter] = useState<{
+    positive: boolean;
+    negative: boolean;
+    neutral: boolean;
+  }>({
+    positive: true,
+    negative: true,
+    neutral: true,
+  });
+
   const apiBaseUrl =
     process.env.NEXT_PUBLIC_API_URL?.replace(/\/$/, "") ??
     "http://localhost:8000/api";
@@ -126,21 +136,57 @@ export default function HistoryDashboardPage() {
     }
   }, [selectedItemId]);
 
+  // Handler untuk mengubah sentiment filter dengan reset pagination
+  const handleSentimentFilterChange = (
+    key: "positive" | "negative" | "neutral",
+    checked: boolean,
+  ) => {
+    setSentimentFilter((prev) => ({
+      ...prev,
+      [key]: checked,
+    }));
+    setCurrentPage(1);
+    setSelectedItemId(null);
+  };
+
   const filteredItems = useMemo(() => {
     const normalizedSearch = searchTerm.trim().toLowerCase();
-    if (!normalizedSearch) {
-      return items;
-    }
+    // if (!normalizedSearch) {
+    //   return items;
+    // }
 
     return items.filter((item) => {
-      const text = item.input_text ?? "";
-      const label = item.result_label ?? "";
-      return (
-        text.toLowerCase().includes(normalizedSearch) ||
-        label.toLowerCase().includes(normalizedSearch)
-      );
+      // Filter berdasarkan search term
+      if (normalizedSearch) {
+        const text = item.input_text ?? "";
+        const label = item.result_label ?? "";
+        const matchesSearch =
+          text.toLowerCase().includes(normalizedSearch) ||
+          label.toLowerCase().includes(normalizedSearch);
+
+        if (!matchesSearch) return false;
+      }
+
+      // Filter berdasarkan sentiment
+      const sentiment =
+        item.source_type === "batch"
+          ? Array.isArray(item.result_payload)
+            ? item.result_payload[0]?.label
+            : null
+          : item.result_label;
+
+      const normalizedSentiment = sentiment?.toLowerCase();
+
+      if (normalizedSentiment === "positive" && !sentimentFilter.positive)
+        return false;
+      if (normalizedSentiment === "negative" && !sentimentFilter.negative)
+        return false;
+      if (normalizedSentiment === "neutral" && !sentimentFilter.neutral)
+        return false;
+
+      return true;
     });
-  }, [items, searchTerm]);
+  }, [items, searchTerm, sentimentFilter]);
 
   const sortedItems = useMemo(() => {
     const nextItems = [...filteredItems];
@@ -263,20 +309,53 @@ export default function HistoryDashboardPage() {
         title="Tabel Riwayat"
         subtitle="Klik baris untuk melihat detail analisis"
       >
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-4">
-          <div className="flex flex-col">
-            <label className="text-xs font-medium text-slate-600 mb-1">
-              Live Search
-            </label>
-            <input
-              type="text"
-              value={searchTerm}
-              onChange={(event) => setSearchTerm(event.target.value)}
-              placeholder="Cari teks atau label..."
-              className="h-10 w-full sm:w-64 rounded-lg border border-slate-300 px-3 text-sm outline-none transition focus:border-sky-500 focus:ring-2 focus:ring-sky-100"
-            />
+        <div className="flex flex-col sm:flex-row sm:items-end justify-between w-full mb-4 gap-6">
+          {/* Grup Kiri: Live Search & Filter (Jarak ~20px menggunakan gap-5) */}
+          <div className="flex flex-col sm:flex-row sm:items-start gap-5">
+            <div className="flex flex-col">
+              <label className="text-xs font-medium text-slate-600 mb-1">
+                Live Search
+              </label>
+              <input
+                type="text"
+                value={searchTerm}
+                onChange={(event) => setSearchTerm(event.target.value)}
+                placeholder="Cari teks atau label..."
+                className="h-10 w-full sm:w-64 rounded-lg border border-slate-300 px-3 text-sm outline-none transition focus:border-sky-500 focus:ring-2 focus:ring-sky-100"
+              />
+            </div>
+
+            <div className="flex flex-col">
+              <label className="text-xs font-medium text-slate-600 mb-3">
+                Filter Sentimen
+              </label>
+              <div className="flex flex-wrap gap-2">
+                {[
+                  { key: "positive" as const, label: "POSITIF" },
+                  { key: "negative" as const, label: "NEGATIF" },
+                  { key: "neutral" as const, label: "NETRAL" },
+                ].map(({ key, label }) => (
+                  <button
+                    key={key}
+                    type="button"
+                    onClick={() =>
+                      handleSentimentFilterChange(key, !sentimentFilter[key])
+                    }
+                    className={`px-3 py-1.5 rounded-full text-xs font-semibold transition cursor-pointer ${
+                      sentimentFilter[key]
+                        ? "bg-sky-500 text-white"
+                        : "bg-slate-100 text-slate-600 hover:bg-slate-200"
+                    }`}
+                  >
+                    {label}
+                  </button>
+                ))}
+              </div>
+            </div>
           </div>
-          <div className="flex flex-col">
+
+          {/* Grup Kanan: Urutkan */}
+          <div className="flex flex-col mt-4 sm:mt-0">
             <label className="text-xs font-medium text-slate-600 mb-1">
               Urutkan
             </label>
