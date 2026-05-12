@@ -811,3 +811,6 @@ backend/.venv/
 node_modules/
 .env
 .DS_Store
+
+backend/.venv/
+backend/run.txt
