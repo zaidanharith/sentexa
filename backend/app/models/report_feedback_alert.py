@@ -27,7 +27,7 @@ class Report(Base):
 	start_date: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True), nullable=True)
 	end_date: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True), nullable=True)
 	status: Mapped[str] = mapped_column(String(50), nullable=False, default="draft")
-	format: Mapped[str] = mapped_column(String(50), nullable=False, default="csv")
+	format: Mapped[str] = mapped_column(String(50), nullable=False, default="pdf")
 	file_path: Mapped[Optional[str]] = mapped_column(String(255), nullable=True)
 	created_at: Mapped[datetime] = mapped_column(
 		DateTime(timezone=True), default=datetime.utcnow, nullable=False

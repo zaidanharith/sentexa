@@ -208,7 +208,7 @@ async def run_job(job_db_id: int) -> None:
                 user_id=job.user_id,
                 job_id=str(job.id),
                 defaults={
-                    "source_type": "batch",
+                    "source_type": "job",
                     "input_text": "\n".join(texts),
                     "item_count": len(texts),
                 },
@@ -245,7 +245,7 @@ async def run_job(job_db_id: int) -> None:
                 user_id=job.user_id,
                 job_id=str(job.id),
                 defaults={
-                    "source_type": "batch",
+                    "source_type": "job",
                     "input_text": "\n".join(texts),
                     "item_count": len(texts),
                 },
@@ -281,7 +281,7 @@ async def run_job(job_db_id: int) -> None:
                         err_db,
                         user_id=job.user_id,
                         job_id=str(job.id),
-                        defaults={"source_type": "batch", "item_count": job.total_texts},
+                        defaults={"source_type": "job", "item_count": job.total_texts},
                         updates={"status": "failed", "error": str(exc)},
                     )
                     await err_db.commit()

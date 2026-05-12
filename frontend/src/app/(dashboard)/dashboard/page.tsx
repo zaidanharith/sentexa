@@ -7,6 +7,7 @@ import DashboardPageTitle from "@/components/layout/dashboard/DashboardPageTitle
 import DashboardPageContent from "@/components/layout/dashboard/DashboardPageContent";
 import KeywordTable from "@/components/layout/dashboard/KeywordTable";
 import TrendChart from "@/components/layout/dashboard/TrendChart";
+import DonutChart from "@/components/layout/dashboard/DonutChart";
 import { FaArrowUp, FaArrowDown } from "react-icons/fa";
 import { appToast } from "@/lib/toast";
 
@@ -254,8 +255,7 @@ export default function DashboardPage() {
             {loading ? "Memuat..." : `${deltaValue} dari kemarin`}
           </p>
         </DashboardPageContent>
-        <DashboardPageContent
-          title="Sentimen Positif"
+        <DashboardPageContent title="Sentimen Positif"
           line={false}
           className="bg-green-100!"
         >
@@ -266,8 +266,7 @@ export default function DashboardPage() {
             {loading ? "Memuat..." : `${positiveCount} Ulasan Positif`}
           </p>
         </DashboardPageContent>
-        <DashboardPageContent
-          title="Sentimen Negatif"
+        <DashboardPageContent title="Sentimen Negatif"
           line={false}
           className="bg-red-100!"
         >
@@ -278,8 +277,7 @@ export default function DashboardPage() {
             {loading ? "Memuat..." : `${negativeCount} Ulasan Negatif`}
           </p>
         </DashboardPageContent>
-        <DashboardPageContent
-          title="Sentimen Netral"
+        <DashboardPageContent title="Sentimen Netral"
           line={false}
           className="bg-gray-100!"
         >
@@ -289,6 +287,19 @@ export default function DashboardPage() {
           <p className="text-gray-600 text-sm mt-1">
             {loading ? "Memuat..." : `${neutralCount} Ulasan Netral`}
           </p>
+        </DashboardPageContent>
+      </div>
+      <div className="grid gap-4 lg:grid-cols-2">
+        <DashboardPageContent title="Chart" line={false}>
+          <DonutChart
+            positivePercent={percent.positive}
+            negativePercent={percent.negative}
+            neutralPercent={percent.neutral}
+            loading={loading}
+          />
+        </DashboardPageContent>
+        <DashboardPageContent title="Tren Analisis" line={false}>
+          <TrendChart data={trendData} loading={trendLoading} />
         </DashboardPageContent>
       </div>
       <div className="grid gap-4 lg:grid-cols-2">
@@ -308,8 +319,8 @@ export default function DashboardPage() {
             />
           </div>
         </DashboardPageContent>
-        <DashboardPageContent title="Tren Analisis" line={false}>
-          <TrendChart data={trendData} loading={trendLoading} />
+        <DashboardPageContent title="Kosong dulu" line={false}>
+            <p className="text-sm text-gray-500">Konten tambahan akan hadir di sini.</p>
         </DashboardPageContent>
       </div>
     </main>

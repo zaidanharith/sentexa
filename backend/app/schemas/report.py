@@ -44,4 +44,4 @@ class GenerateReportRequest(BaseModel):
 	job_id: str | None = None
 	start_date: datetime | None = None
 	end_date: datetime | None = None
-	format: ReportFormat = Field(default="csv")
+	format: ReportFormat = Field(default="pdf")

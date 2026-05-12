@@ -56,7 +56,7 @@ export default function Sidebar({
   const router = useRouter();
   const [collapsed, setCollapsed] = useState(false);
   const [isLoggingOut, setIsLoggingOut] = useState(false);
-  const { logout } = useAuth();
+  const { logout, user } = useAuth();
 
   const handleLogout = async () => {
     if (isLoggingOut) {
@@ -138,19 +138,15 @@ export default function Sidebar({
             const isActive = pathname === item.href;
             const icon = getNavIcon(item.href);
 
-            return (
-              <Link
-                key={item.href}
-                href={item.href}
-                title={collapsed ? item.label : undefined}
-                className={`flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors ${
-                  isActive
-                    ? "bg-sky-50 text-sky-600"
-                    : "text-gray-600 hover:bg-gray-100 hover:text-gray-900"
-                } ${collapsed ? "justify-center" : ""} ${item.isPremiumOnly ? "bg-amber-100" : ""}`}
-              >
+            // Check if item is disabled (premium only but user is not premium)
+            const isPremiumItem = item.isPremiumOnly;
+            const isUserPremium = user?.subscription === "premium";
+            const isDisabled = isPremiumItem && !isUserPremium;
+
+            const navItemContent = (
+              <>
                 <span
-                  className={`${isActive ? "text-sky-500" : "text-gray-400"}`}
+                  className={`${isActive && !isDisabled ? "text-sky-500" : "text-gray-400"}`}
                 >
                   {icon}
                 </span>
@@ -164,6 +160,39 @@ export default function Sidebar({
                 {!collapsed && item.isPremiumOnly && (
                   <GiQueenCrown className="w-5 h-5 text-amber-600" />
                 )}
+              </>
+            );
+
+            if (isDisabled) {
+              return (
+                <div
+                  key={item.href}
+                  title={
+                    collapsed
+                      ? item.label
+                      : "Hanya tersedia untuk pengguna Premium"
+                  }
+                  className={`flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors cursor-not-allowed opacity-60 ${
+                    collapsed ? "justify-center" : ""
+                  }`}
+                >
+                  {navItemContent}
+                </div>
+              );
+            }
+
+            return (
+              <Link
+                key={item.href}
+                href={item.href}
+                title={collapsed ? item.label : undefined}
+                className={`flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors ${
+                  isActive
+                    ? "bg-sky-50 text-sky-600"
+                    : "text-gray-600 hover:bg-gray-100 hover:text-gray-900"
+                } ${collapsed ? "justify-center" : ""}`}
+              >
+                {navItemContent}
               </Link>
             );
           })}
@@ -210,6 +239,24 @@ export default function Sidebar({
         {navItems.slice(0, 4).map((item) => {
           const isActive = pathname === item.href;
           const icon = getNavIcon(item.href);
+
+          // Check if item is disabled (premium only but user is not premium)
+          const isPremiumItem = item.isPremiumOnly;
+          const isUserPremium = user?.subscription === "premium";
+          const isDisabled = isPremiumItem && !isUserPremium;
+
+          if (isDisabled) {
+            return (
+              <div
+                key={item.href}
+                title="Hanya tersedia untuk pengguna Premium"
+                className="flex flex-col items-center gap-0.5 px-3 py-2 rounded-lg text-xs font-medium transition-colors text-gray-300 cursor-not-allowed opacity-60"
+              >
+                <span className="text-gray-300">{icon}</span>
+                <span>{item.label}</span>
+              </div>
+            );
+          }
 
           return (
             <Link

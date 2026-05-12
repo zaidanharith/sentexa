@@ -12,9 +12,9 @@ import {
   HiOutlinePencilSquare,
   HiOutlineShieldCheck,
 } from "react-icons/hi2";
-import { GrUpgrade } from "react-icons/gr";
 import DashboardPageTitle from "@/components/layout/dashboard/DashboardPageTitle";
 import DashboardPageContent from "@/components/layout/dashboard/DashboardPageContent";
+
 
 export default function ProfilePage() {
   const { user, loading } = useAuth();
@@ -166,7 +166,7 @@ function ProfileContent({ user }: { user: AuthUser }) {
             <button
               type="button"
               onClick={() => setIsEditing(true)}
-              className="inline-flex items-center gap-2 px-4 py-2 text-sm bg-sky-600 text-white rounded-lg hover:bg-sky-700 transition-colors cursor-pointer"
+              className="inline-flex items-center gap-2 px-4 py-2 text-sm bg-sky-500 text-white rounded-lg hover:bg-sky-600 transition-colors cursor-pointer"
             >
               <HiOutlinePencilSquare className="h-4 w-4" />
               Edit Profil
@@ -213,9 +213,9 @@ function ProfileContent({ user }: { user: AuthUser }) {
           <button
             type="button"
             onClick={() => router.push("/dashboard/subscription")}
-            className="px-4 py-2 text-sm cursor-pointer bg-slate-900 text-white rounded-lg hover:bg-slate-800 transition-colors flex items-center justify-center gap-2"
+            className="px-4 py-2 text-sm cursor-pointer bg-sky-500 text-white rounded-lg hover:bg-sky-600 transition-colors flex items-center justify-center gap-2"
           >
-            <GrUpgrade /> Upgrade ke Premium
+            Upgrade ke Premium
           </button>
         </div>
       </DashboardPageContent>
