@@ -149,11 +149,11 @@ async def create_sentiment_job(
         include_meta=payload.include_meta,
     )
     await db.commit()
-    
-	await analysis_history_service.create_history(
-		db,
-		user_id=current_user.id,
-		source_type="job",
+
+    await analysis_history_service.create_history(
+        db,
+        user_id=current_user.id,
+        source_type="job",
         job_id=str(job.id),
         input_text="\n".join([str(t) for t in payload.texts]),
         status="queued",
@@ -163,9 +163,9 @@ async def create_sentiment_job(
         item_count=job.total_texts,
     )
     await db.commit()
-    
+
     background_tasks.add_task(sentiment_job_service.run_job, job.id)
-    
+
     return SentimentJobCreateResponse(job=sentiment_job_service.serialize_job(job))
 
 

@@ -37,9 +37,6 @@ gensim>=4.3.2
 tqdm>=4.65.0
 textblob>=0.18.0
 
-# HTTP Client
-# httpx==0.25.2
-
 # Logging
 python-json-logger==2.0.7
 

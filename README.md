@@ -24,8 +24,7 @@ Sentexa adalah aplikasi berbasis web untuk melakukan analisis sentimen berbasis 
 3. Jalankan **Backend** (Terminal 1, dari root project `sentexa`).
 
    ```bash
-   cd backend
-   docker compose -f deployments/docker/docker-compose.yml up --build
+   docker compose up --build
    ```
 
 4. Jalankan **Frontend** (Terminal 2).
