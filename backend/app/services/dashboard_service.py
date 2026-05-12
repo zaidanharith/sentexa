@@ -7,8 +7,12 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models.analysis_history import AnalysisHistory
-from app.nlp.preprocessing.stopwords import remove_stopwords_tokens
 from app.schemas.dashboard import SentimentLabel
+
+import sys
+from pathlib import Path
+sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
+from nlp.preprocessing.stopwords import remove_stopwords_tokens
 
 
 def _tokenize(texts: Iterable[str]) -> list[str]:

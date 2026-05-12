@@ -5,14 +5,18 @@ from typing import Iterable, List, Mapping, Optional, Sequence, Tuple
 
 from fastapi import HTTPException, status
 
-from app.nlp.inference.postprocess import (
+import sys
+from pathlib import Path
+sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
+
+from nlp.inference.postprocess import (
 	DEFAULT_RULES,
 	PostprocessError,
 	PostprocessRuleSet,
 	postprocess_prediction,
 	postprocess_predictions,
 )
-from app.nlp.inference.predictor import (
+from nlp.inference.predictor import (
 	ModelArtifacts,
 	PredictionError,
 	get_default_artifacts,

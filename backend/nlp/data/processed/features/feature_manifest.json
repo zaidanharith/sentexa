@@ -1,0 +1,10 @@
+{
+  "input_path": "D:\\CODING\\JS\\sentexa\\backend\\nlp\\data\\processed\\dataset_preprocessed.csv",
+  "rows": 20,
+  "feature_column": "stems_parsed",
+  "pretokenized": true,
+  "tfidf_shape": [
+    20,
+    63
+  ]
+}

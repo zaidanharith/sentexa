@@ -11,7 +11,11 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.core.database import AsyncSessionLocal
 from app.models.sentiment_job import SentimentJob as SentimentJobModel
 from app.models.sentiment_job import SentimentJobResult
-from app.nlp.inference.postprocess import PostprocessRuleSet
+
+import sys
+from pathlib import Path
+sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
+from nlp.inference.postprocess import PostprocessRuleSet
 from app.services import analysis_history_service
 from app.services import sentiment_service
 

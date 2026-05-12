@@ -1,0 +1,21 @@
+text,label,label_id
+ini produk bagus banget,positive,2
+kualitas terbaik,positive,2
+harga terjangkau dan baik,positive,2
+pengiriman cepat terima kasih,positive,2
+sangat puas dengan produk ini,positive,2
+rekomendasi produk terbaik,positive,2
+pelayanan excellent,positive,2
+produk berkualitas premium,positive,2
+oke banget deh,positive,2
+memuaskan sekali,positive,2
+kualitas jelek sekali,negative,0
+barang rusak tidak merekomendasikan,negative,0
+tidak sesuai gambar,negative,0
+pengiriman lambat,negative,0
+pelayanan kurang memuaskan,negative,0
+harga mahal banget,negative,0
+produk mengecewakan,negative,0
+tidak worth it,negative,0
+jelek sekali,negative,0
+sangat kecewa,negative,0
