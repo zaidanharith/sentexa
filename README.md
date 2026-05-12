@@ -27,11 +27,11 @@ Sentexa adalah aplikasi berbasis web untuk melakukan analisis sentimen berbasis 
    docker compose up --build
    ```
 
-4. Jalankan **Frontend** (Terminal 2).
+4. Jalankan **Frontend** (Terminal 2, dari root project `sentexa`).
 
    ```bash
    cd frontend
-   npm i
+   npm install
    npm run dev
    ```
 

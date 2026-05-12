@@ -74,8 +74,8 @@ jobs:
 
       - name: Validate docker-compose config
         run: |
-          cp backend/.env.example .env 2>/dev/null || \
-            echo -e "DATABASE_URL=postgresql://user:pass@localhost:5432/db\nSECRET_KEY=ci-secret\nENVIRONMENT=production" > .env
+          cp backend/.env.example backend/.env 2>/dev/null || \
+            echo -e "DATABASE_URL=postgresql://user:pass@localhost:5432/db\nSECRET_KEY=ci-secret\nENVIRONMENT=production" > backend/.env
           docker compose config --quiet
 
       - name: Build backend Docker image
