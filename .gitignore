@@ -814,3 +814,8 @@ node_modules/
 
 backend/.venv/
 backend/run.txt
+
+backend/ml/checkpoint/
+backend/ml/model/final_model/
+backend/ml/**/__pycache__/
+*.pyc

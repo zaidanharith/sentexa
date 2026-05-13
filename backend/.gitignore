@@ -220,4 +220,9 @@ ml/data/raw/*
 
 ml/data/processed/*.csv
 
-!ml/model/checkpoint/*
+ml/model/checkpoint/
+ml/model/final_model/
+ml/**/__pycache__/
+ml/**/*.pyc
+.kaggle/
+kaggle.json
