@@ -1,6 +1,13 @@
 "use client";
 
-import { PieChart, Pie, Cell, Legend, Tooltip, ResponsiveContainer } from "recharts";
+import {
+  PieChart,
+  Pie,
+  Cell,
+  Legend,
+  Tooltip,
+  ResponsiveContainer,
+} from "recharts";
 
 type DonutChartProps = {
   positivePercent: number;
@@ -61,7 +68,6 @@ export default function DonutChart({
     },
   ];
 
-  // Filter out zero values for better visualization
   const filteredData = data.filter((item) => item.value > 0);
 
   if (filteredData.length === 0) {
@@ -69,7 +75,7 @@ export default function DonutChart({
   }
 
   return (
-    <div className="h-80 w-full flex flex-col items-center justify-center">
+    <div className="h-80 w-full min-w-0 flex flex-col items-center justify-center">
       <ResponsiveContainer width="100%" height="100%">
         <PieChart>
           <Pie

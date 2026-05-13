@@ -37,7 +37,6 @@ function getAccessTokenExpiryMs(
     return payload.exp * 1000;
   }
 
-  // Fallback when token payload cannot be parsed.
   return Date.now() + 25 * 60 * 1000;
 }
 
@@ -95,12 +94,15 @@ export const authOptions: NextAuthOptions = {
         try {
           const tokens = await backendAuthApi.login({ email, password });
           const user = await backendAuthApi.me(tokens.access_token);
-
           return {
             id: String(user.id),
             name: user.name,
             email: user.email,
-            subscription: user.subscription,
+            subscription_plan: user.subscription_plan,
+            subscription_status: user.subscription_status,
+            subscription_start: user.subscription_start,
+            subscription_end: user.subscription_end,
+            analysis_quota: user.analysis_quota,
             accessToken: tokens.access_token,
             refreshToken: tokens.refresh_token ?? null,
           };
@@ -119,7 +121,11 @@ export const authOptions: NextAuthOptions = {
         token.sub = user.id;
         token.name = user.name;
         token.email = user.email;
-        token.subscription = user.subscription;
+        token.subscription_plan = user.subscription_plan;
+        token.subscription_status = user.subscription_status;
+        token.subscription_start = user.subscription_start;
+        token.subscription_end = user.subscription_end;
+        token.analysis_quota = user.analysis_quota;
         token.accessToken = user.accessToken;
         token.refreshToken = user.refreshToken;
         token.accessTokenExpires = getAccessTokenExpiryMs(user.accessToken);
@@ -143,9 +149,25 @@ export const authOptions: NextAuthOptions = {
         session.user.id = token.sub ?? "";
         session.user.name = token.name ?? "";
         session.user.email = token.email ?? "";
-        session.user.subscription =
-          typeof token.subscription === "string"
-            ? token.subscription
+        session.user.subscription_plan =
+          typeof token.subscription_plan === "string"
+            ? token.subscription_plan
+            : undefined;
+        session.user.subscription_status =
+          typeof token.subscription_status === "string"
+            ? token.subscription_status
+            : undefined;
+        session.user.subscription_start =
+          typeof token.subscription_start === "string"
+            ? token.subscription_start
+            : undefined;
+        session.user.subscription_end =
+          typeof token.subscription_end === "string"
+            ? token.subscription_end
+            : undefined;
+        session.user.analysis_quota =
+          typeof token.analysis_quota === "number"
+            ? token.analysis_quota
             : undefined;
       }
 

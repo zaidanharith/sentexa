@@ -31,8 +31,6 @@ class AnalysisHistory(Base):
 	job_id: Mapped[Optional[str]] = mapped_column(String(255), nullable=True, unique=True)
 	status: Mapped[str] = mapped_column(String(50), nullable=False, default="completed")
 	include_scores: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True)
-	apply_postprocess: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True)
-	include_meta: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
 	item_count: Mapped[Optional[int]] = mapped_column(Integer, nullable=True)
 	result_label: Mapped[Optional[str]] = mapped_column(String(50), nullable=True)
 	result_score: Mapped[Optional[float]] = mapped_column(Float, nullable=True)

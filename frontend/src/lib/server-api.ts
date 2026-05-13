@@ -1,8 +1,6 @@
 import type { SubscriptionPlan } from "@/lib/api";
 
-const API_BASE_URL =
-  process.env.NEXT_PUBLIC_API_URL?.replace(/\/$/, "") ??
-  "http://localhost:8000/api";
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL?.replace(/\/$/, "");
 
 const SUBSCRIPTION_TIMEOUT_MS = 1500;
 
@@ -14,6 +12,10 @@ function buildApiUrl(path: string) {
 export async function getSubscriptionPlansForHome(): Promise<
   SubscriptionPlan[]
 > {
+  if (!API_BASE_URL) {
+    return [];
+  }
+
   try {
     const response = await fetch(buildApiUrl("/subscription/plans"), {
       cache: "force-cache",

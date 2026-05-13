@@ -7,14 +7,9 @@ import { backendAuthApi } from "@/lib/api";
 import { getSubscriptionName, isPremiumSubscription } from "@/lib/subscription";
 import { appToast } from "@/lib/toast";
 import { useSession } from "next-auth/react";
-import {
-  HiOutlineCheckCircle,
-  HiOutlinePencilSquare,
-  HiOutlineShieldCheck,
-} from "react-icons/hi2";
+import { HiOutlineCheckCircle, HiOutlinePencilSquare } from "react-icons/hi2";
 import DashboardPageTitle from "@/components/layout/dashboard/DashboardPageTitle";
 import DashboardPageContent from "@/components/layout/dashboard/DashboardPageContent";
-
 
 export default function ProfilePage() {
   const { user, loading } = useAuth();
@@ -83,10 +78,10 @@ function ProfileContent({ user }: { user: AuthUser }) {
 
   const displayName = user.name || "Pengguna";
   const avatarInitial = displayName.charAt(0).toUpperCase() || "U";
-  const hasPremium = isPremiumSubscription(user.subscription);
-  const planName = getSubscriptionName(user.subscription);
+  const hasPremium = isPremiumSubscription(user.subscription_plan);
+  const planName = getSubscriptionName(user.subscription_plan);
 
-  const getExpiryDateDisplay = () => "Tanggal tidak tersedia";
+  console.log(user);
 
   return (
     <main className="w-full mx-auto flex flex-col gap-4 max-w-4xl">
@@ -195,6 +190,36 @@ function ProfileContent({ user }: { user: AuthUser }) {
         </div>
       </DashboardPageContent>
 
+      <DashboardPageContent title="Kuota Analisis">
+        <div className="flex flex-col gap-3">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm font-semibold text-slate-800 mb-1">
+                Sisa Kuota
+              </p>
+              <p className="text-xs text-slate-500">
+                Anda memiliki {user.analysis_quota} analisis tersisa untuk
+                digunakan
+              </p>
+            </div>
+            <div className="text-right">
+              <div className="text-3xl font-bold text-sky-600">
+                {user.analysis_quota}
+              </div>
+              <p className="text-xs text-slate-500">analisis</p>
+            </div>
+          </div>
+          <div className="w-full bg-slate-200 rounded-full h-2">
+            <div
+              className="bg-sky-500 h-2 rounded-full transition-all"
+              style={{
+                width: `${Math.min(((user.analysis_quota ?? 0) / 100) * 100, 100)}%`,
+              }}
+            ></div>
+          </div>
+        </div>
+      </DashboardPageContent>
+
       <DashboardPageContent title="Status Langganan">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div>
@@ -205,18 +230,26 @@ function ProfileContent({ user }: { user: AuthUser }) {
               </span>
             </div>
             <p className="text-xs text-slate-500">
-              {hasPremium
-                ? `Kadaluarsa: ${getExpiryDateDisplay()}`
+              {hasPremium && user.subscription_end
+                ? `Kadaluarsa: ${new Date(
+                    user.subscription_end,
+                  ).toLocaleDateString("id-ID", {
+                    year: "numeric",
+                    month: "long",
+                    day: "numeric",
+                  })}`
                 : "Akun Anda saat ini menggunakan paket gratis"}
             </p>
           </div>
-          <button
-            type="button"
-            onClick={() => router.push("/dashboard/subscription")}
-            className="px-4 py-2 text-sm cursor-pointer bg-sky-500 text-white rounded-lg hover:bg-sky-600 transition-colors flex items-center justify-center gap-2"
-          >
-            Upgrade ke Premium
-          </button>
+          {!hasPremium && (
+            <button
+              type="button"
+              onClick={() => router.push("/dashboard/subscription")}
+              className="px-4 py-2 text-sm cursor-pointer bg-sky-500 text-white rounded-lg hover:bg-sky-600 transition-colors flex items-center justify-center gap-2"
+            >
+              Upgrade ke Premium
+            </button>
+          )}
         </div>
       </DashboardPageContent>
     </main>

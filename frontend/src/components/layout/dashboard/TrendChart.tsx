@@ -42,7 +42,7 @@ export default function TrendChart({ data, loading = false }: TrendChartProps) {
   }
 
   return (
-    <div className="h-60 w-full">
+    <div className="h-60 w-full min-w-0">
       <ResponsiveContainer width="100%" height="100%">
         <LineChart
           data={data}

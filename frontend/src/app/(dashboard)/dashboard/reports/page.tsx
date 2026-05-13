@@ -6,7 +6,13 @@ import { useSession } from "next-auth/react";
 import DashboardPageTitle from "@/components/layout/dashboard/DashboardPageTitle";
 import DashboardPageContent from "@/components/layout/dashboard/DashboardPageContent";
 import { appToast } from "@/lib/toast";
-import { FaArrowLeft, FaArrowRight, FaDownload, FaTrash, FaPlus } from "react-icons/fa6";
+import {
+  FaArrowLeft,
+  FaArrowRight,
+  FaDownload,
+  FaTrash,
+  FaPlus,
+} from "react-icons/fa6";
 
 type Report = {
   id: number;
@@ -139,27 +145,35 @@ export default function ReportsDashboardPage() {
       return;
     }
     try {
-      const response = await axios.get(`${apiBaseUrl}/reports/${report.id}/download`, {
-        headers: {
-          Authorization: `Bearer ${session?.accessToken}`,
+      const response = await axios.get(
+        `${apiBaseUrl}/reports/${report.id}/download`,
+        {
+          headers: {
+            Authorization: `Bearer ${session?.accessToken}`,
+          },
+          responseType: "blob",
         },
-        responseType: "blob",
-      });
+      );
       const url = window.URL.createObjectURL(new Blob([response.data]));
       const link = document.createElement("a");
       link.href = url;
-      link.setAttribute("download", `${report.title || `report_${report.id}`}.pdf`);
+      link.setAttribute(
+        "download",
+        `${report.title || `report_${report.id}`}.pdf`,
+      );
       document.body.appendChild(link);
       link.click();
       link.remove();
       window.URL.revokeObjectURL(url);
-    } catch (err) {
+    } catch {
       appToast.error("Gagal mengunduh laporan.");
     }
   };
 
   const handleDelete = async (report: Report) => {
-    if (!confirm(`Apakah Anda yakin ingin menghapus laporan "${report.title}"?`)) {
+    if (
+      !confirm(`Apakah Anda yakin ingin menghapus laporan "${report.title}"?`)
+    ) {
       return;
     }
     try {
@@ -171,7 +185,7 @@ export default function ReportsDashboardPage() {
       setItems((prev) => prev.filter((item) => item.id !== report.id));
       setTotalCount((prev) => prev - 1);
       appToast.success("Laporan berhasil dihapus.");
-    } catch (err) {
+    } catch {
       appToast.error("Gagal menghapus laporan.");
     }
   };
@@ -215,7 +229,9 @@ export default function ReportsDashboardPage() {
                   <th className="text-left py-3 px-4 font-semibold">Format</th>
                   <th className="text-left py-3 px-4 font-semibold">Status</th>
                   <th className="text-left py-3 px-4 font-semibold">Dibuat</th>
-                  <th className="text-left py-3 px-4 font-semibold">Diperbarui</th>
+                  <th className="text-left py-3 px-4 font-semibold">
+                    Diperbarui
+                  </th>
                   <th className="text-center py-3 px-4 font-semibold">Aksi</th>
                 </tr>
               </thead>
@@ -235,44 +251,57 @@ export default function ReportsDashboardPage() {
                 ) : filteredItems.length === 0 ? (
                   <tr>
                     <td colSpan={6} className="text-center py-8 text-gray-500">
-                      {searchTerm ? "Tidak ada laporan yang cocok dengan pencarian." : "Belum ada laporan."}
+                      {searchTerm
+                        ? "Tidak ada laporan yang cocok dengan pencarian."
+                        : "Belum ada laporan."}
                     </td>
                   </tr>
                 ) : (
                   filteredItems.map((item) => (
-                    <tr key={item.id} className="border-b border-gray-100 hover:bg-gray-50">
+                    <tr
+                      key={item.id}
+                      className="border-b border-gray-100 hover:bg-gray-50"
+                    >
                       <td className="py-3 px-4">
                         <div>
                           <div className="font-medium">{item.title}</div>
                           {item.description && (
-                            <div className="text-gray-500 text-xs mt-1">{item.description}</div>
+                            <div className="text-gray-500 text-xs mt-1">
+                              {item.description}
+                            </div>
                           )}
                         </div>
                       </td>
-                      <td className="py-3 px-4 uppercase text-xs font-medium">{item.format}</td>
+                      <td className="py-3 px-4 uppercase text-xs font-medium">
+                        {item.format}
+                      </td>
                       <td className="py-3 px-4">
                         <span
                           className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${
                             item.status === "completed"
                               ? "bg-green-100 text-green-800"
                               : item.status === "processing"
-                              ? "bg-yellow-100 text-yellow-800"
-                              : item.status === "failed"
-                              ? "bg-red-100 text-red-800"
-                              : "bg-gray-100 text-gray-800"
+                                ? "bg-yellow-100 text-yellow-800"
+                                : item.status === "failed"
+                                  ? "bg-red-100 text-red-800"
+                                  : "bg-gray-100 text-gray-800"
                           }`}
                         >
                           {item.status === "completed"
                             ? "Selesai"
                             : item.status === "processing"
-                            ? "Diproses"
-                            : item.status === "failed"
-                            ? "Gagal"
-                            : item.status}
+                              ? "Diproses"
+                              : item.status === "failed"
+                                ? "Gagal"
+                                : item.status}
                         </span>
                       </td>
-                      <td className="py-3 px-4 text-gray-600">{formatDate(item.created_at)}</td>
-                      <td className="py-3 px-4 text-gray-600">{formatDate(item.updated_at)}</td>
+                      <td className="py-3 px-4 text-gray-600">
+                        {formatDate(item.created_at)}
+                      </td>
+                      <td className="py-3 px-4 text-gray-600">
+                        {formatDate(item.updated_at)}
+                      </td>
                       <td className="py-3 px-4">
                         <div className="flex items-center justify-center gap-2">
                           {item.status === "completed" && item.file_path && (
@@ -304,12 +333,16 @@ export default function ReportsDashboardPage() {
           {totalPages > 1 && (
             <div className="flex items-center justify-between">
               <div className="text-sm text-gray-500">
-                Menampilkan {Math.min((currentPage - 1) * PAGE_SIZE + 1, totalCount)} -{" "}
-                {Math.min(currentPage * PAGE_SIZE, totalCount)} dari {totalCount} laporan
+                Menampilkan{" "}
+                {Math.min((currentPage - 1) * PAGE_SIZE + 1, totalCount)} -{" "}
+                {Math.min(currentPage * PAGE_SIZE, totalCount)} dari{" "}
+                {totalCount} laporan
               </div>
               <div className="flex items-center gap-2">
                 <button
-                  onClick={() => setCurrentPage((prev) => Math.max(1, prev - 1))}
+                  onClick={() =>
+                    setCurrentPage((prev) => Math.max(1, prev - 1))
+                  }
                   disabled={currentPage === 1}
                   className="p-2 rounded-md border border-gray-300 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
@@ -319,7 +352,9 @@ export default function ReportsDashboardPage() {
                   Halaman {currentPage} dari {totalPages}
                 </span>
                 <button
-                  onClick={() => setCurrentPage((prev) => Math.min(totalPages, prev + 1))}
+                  onClick={() =>
+                    setCurrentPage((prev) => Math.min(totalPages, prev + 1))
+                  }
                   disabled={currentPage === totalPages}
                   className="p-2 rounded-md border border-gray-300 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
                 >

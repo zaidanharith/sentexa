@@ -23,14 +23,20 @@ class User(Base):
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), default=datetime.utcnow, nullable=False
     )
-    subscription: Mapped[str] = mapped_column(
+    subscription_plan: Mapped[str] = mapped_column(
         String(50), nullable=False, default="free", server_default="free"
     )
-    subscription_quota_remaining: Mapped[int] = mapped_column(
-        Integer, nullable=False, default=100, server_default="100"
+    subscription_status: Mapped[str] = mapped_column(
+        String(50), nullable=False, default="active", server_default="active"
     )
-    subscription_expires_at: Mapped[datetime | None] = mapped_column(
+    subscription_start: Mapped[datetime | None] = mapped_column(
         DateTime(timezone=True), nullable=True
+    )
+    subscription_end: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True
+    )
+    analysis_quota: Mapped[int] = mapped_column(
+        Integer, nullable=False, default=100, server_default="100"
     )
 
     reviews: Mapped[list["Review"]] = relationship(

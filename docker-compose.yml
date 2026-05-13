@@ -5,19 +5,26 @@ services:
       dockerfile: Dockerfile
     container_name: sentexa_backend
     restart: unless-stopped
+
     env_file:
       - ./backend/.env
+
     environment:
       ENVIRONMENT: ${ENVIRONMENT:-production}
+
     ports:
       - "8000:8000"
+
     networks:
       - sentexa_network
+
     volumes:
-      - ./backend/nlp/data/raw:/app/nlp/data/raw:ro
-      - ./backend/nlp/data/processed:/app/nlp/data/processed
+      - ./backend/app:/app/app
+      - ./backend/ml/model/checkpoint:/app/ml/model/checkpoint
+
     security_opt:
       - no-new-privileges:true
+
     develop:
       watch:
         - action: sync
@@ -28,8 +35,20 @@ services:
             - "*.pyc"
             - .pytest_cache/
             - .ruff_cache/
+
+        - action: sync
+          path: ./backend/ml/model/checkpoint
+          target: /app/ml/model/checkpoint
+
         - action: rebuild
-          path: ./backend/requirements.txt
+          path: ./backend/requirements/production.txt
+
+        - action: rebuild
+          path: ./backend/requirements/base.txt
+
+        - action: rebuild
+          path: ./backend/Dockerfile
+
         - action: rebuild
           path: ./backend/alembic.ini
 

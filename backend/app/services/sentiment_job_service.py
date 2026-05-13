@@ -12,10 +12,6 @@ from app.core.database import AsyncSessionLocal
 from app.models.sentiment_job import SentimentJob as SentimentJobModel
 from app.models.sentiment_job import SentimentJobResult
 
-import sys
-from pathlib import Path
-sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
-from nlp.inference.postprocess import PostprocessRuleSet
 from app.services import analysis_history_service
 from app.services import sentiment_service
 
@@ -83,9 +79,6 @@ async def create_job(
     user_id: int,
     texts: Iterable[object],
     include_scores: bool = True,
-    apply_postprocess: bool = True,
-    include_meta: bool = False,
-    rules: Optional[PostprocessRuleSet] = None,
 ) -> SentimentJobModel:
     """Create a new sentiment job in database"""
     resolved_texts = _coerce_texts(texts)
@@ -223,8 +216,6 @@ async def run_job(job_db_id: int) -> None:
             predictions = sentiment_service.analyze_texts(
                 texts,
                 include_scores=True,
-                apply_postprocess=True,
-                include_meta=False,
             )
             
             for idx, (job_result, prediction) in enumerate(zip(job_results, predictions)):

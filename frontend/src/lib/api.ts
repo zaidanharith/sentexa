@@ -28,7 +28,11 @@ export interface AuthUser {
   id: number;
   name: string;
   email: string;
-  subscription?: string;
+  subscription_plan?: string;
+  subscription_status?: string;
+  subscription_start?: string;
+  subscription_end?: string;
+  analysis_quota?: number;
 }
 
 export interface TokenResponse {

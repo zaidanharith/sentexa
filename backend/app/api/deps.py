@@ -58,7 +58,7 @@ async def require_premium_subscription(
     current_user: User = Depends(get_current_user),
 ) -> User:
     """Verify user has premium subscription"""
-    if current_user.subscription != "premium":
+    if current_user.subscription_plan != "premium":
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Premium subscription required to access this resource",

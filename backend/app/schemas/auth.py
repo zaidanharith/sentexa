@@ -28,9 +28,13 @@ class UserOut(BaseModel):
 	id: int
 	name: str
 	email: EmailStr
-	subscription: str
 	created_at: datetime
-
+	analysis_quota: int
+	subscription_plan: str
+	subscription_status: str
+	subscription_start: datetime | None = None
+	subscription_end: datetime | None = None
+ 
 	model_config = ConfigDict(from_attributes=True)
 
 

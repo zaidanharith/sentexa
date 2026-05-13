@@ -258,8 +258,7 @@ Akses Backend dapat melalui [**http://localhost:8000**](http://localhost:8000)
          "negative": 0.25071774770516725,
          "neutral": 0.04314375181957588,
          "positive": 0.7061385004752568
-       },
-       "postprocess": null
+       }
      }
   ```
 
@@ -289,8 +288,7 @@ Akses Backend dapat melalui [**http://localhost:8000**](http://localhost:8000)
              "negative": 0.04,
              "neutral": 0.04,
              "positive": 0.92
-           },
-           "postprocess": null
+           }
          },
          {
            "label": "negative",
@@ -300,8 +298,7 @@ Akses Backend dapat melalui [**http://localhost:8000**](http://localhost:8000)
              "negative": 0.81,
              "neutral": 0.12,
              "positive": 0.07
-           },
-           "postprocess": null
+           }
          }
        ],
        "count": 2

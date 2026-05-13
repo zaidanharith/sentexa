@@ -1,19 +1,12 @@
 from __future__ import annotations
 
-from dataclasses import replace
-
-from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, Query, status
+from fastapi import APIRouter, BackgroundTasks, Depends, Query
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api import deps
 from app.models.user import User
 
-import sys
-from pathlib import Path
-sys.path.insert(0, str(Path(__file__).resolve().parents[3]))
-from nlp.inference.postprocess import PostprocessError, PostprocessRuleSet, postprocess_predictions
 from app.schemas.sentiment import (
-	PostprocessRules,
 	SentimentBatchPredictRequest,
 	SentimentBatchPredictResponse,
 	SentimentJobCreateResponse,
@@ -21,12 +14,10 @@ from app.schemas.sentiment import (
 	SentimentJobListResponse,
 	SentimentJobReprocessRequest,
 	SentimentJobResultsResponse,
-	SentimentPostprocessRequest,
-	SentimentPostprocessResponse,
 	SentimentPredictRequest,
 	SentimentPredictResponse,
 )
-from app.services import analysis_history_service, sentiment_job_service, sentiment_service
+from app.services import analysis_history_service, sentiment_job_service, sentiment_service, subscription_service
 
 
 router = APIRouter(prefix="/sentiment", tags=["sentiment"])
@@ -44,29 +35,17 @@ def _build_label_counts(items: list[dict]) -> dict[str, int]:
 	return counts
 
 
-def _resolve_postprocess_rules(rules: PostprocessRules | None) -> PostprocessRuleSet | None:
-	if rules is None:
-		return None
-
-	base = sentiment_service.get_default_rules()
-	updates = {field: getattr(rules, field) for field in rules.model_fields_set}
-	if not updates:
-		return base
-	return replace(base, **updates)
-
-
 @router.post("/predict", response_model=SentimentPredictResponse)
 async def predict_sentiment(
 	payload: SentimentPredictRequest,
 	db: AsyncSession = Depends(deps.get_db),
 	current_user: User = Depends(deps.get_current_user),
 ):
-	_ = current_user
+	await subscription_service.validate_and_reduce_quota(db, current_user, 1)
+	
 	result = sentiment_service.analyze_text(
 		payload.text,
 		include_scores=payload.include_scores,
-		apply_postprocess=payload.apply_postprocess,
-		include_meta=payload.include_meta,
 	)
 	await analysis_history_service.create_history(
 		db,
@@ -75,12 +54,11 @@ async def predict_sentiment(
 		input_text=payload.text,
 		status="completed",
 		include_scores=payload.include_scores,
-		apply_postprocess=payload.apply_postprocess,
-		include_meta=payload.include_meta,
 		result_label=result.get("label") if isinstance(result, dict) else None,
 		result_score=result.get("score") if isinstance(result, dict) else None,
 		result_payload=result,
 	)
+	await db.commit()
 	return result
 
 
@@ -90,12 +68,12 @@ async def predict_sentiment_batch(
 	db: AsyncSession = Depends(deps.get_db),
 	current_user: User = Depends(deps.get_current_user),
 ):
-	_ = current_user
+	quota_needed = len(payload.texts)
+	await subscription_service.validate_and_reduce_quota(db, current_user, quota_needed)
+	
 	items = sentiment_service.analyze_texts(
 		payload.texts,
 		include_scores=payload.include_scores,
-		apply_postprocess=payload.apply_postprocess,
-		include_meta=payload.include_meta,
 	)
 	await analysis_history_service.create_history(
 		db,
@@ -104,38 +82,12 @@ async def predict_sentiment_batch(
 		input_text="\n".join(payload.texts),
 		status="completed",
 		include_scores=payload.include_scores,
-		apply_postprocess=payload.apply_postprocess,
-		include_meta=payload.include_meta,
 		item_count=len(items),
 		label_counts=_build_label_counts(items),
 		result_payload=items,
 	)
+	await db.commit()
 	return SentimentBatchPredictResponse(items=items, count=len(items))
-
-
-@router.post("/postprocess", response_model=SentimentPostprocessResponse)
-async def postprocess_sentiment(
-	payload: SentimentPostprocessRequest,
-	current_user: User = Depends(deps.get_current_user),
-):
-	_ = current_user
-	resolved_rules = _resolve_postprocess_rules(payload.rules) or sentiment_service.get_default_rules()
-	predictions = [prediction.model_dump() for prediction in payload.predictions]
-
-	try:
-		items = postprocess_predictions(
-			predictions,
-			rules=resolved_rules,
-			include_meta=payload.include_meta,
-		)
-	except PostprocessError as exc:
-		raise HTTPException(
-			status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-			detail=f"Postprocess failed: {exc}",
-		) from exc
-
-	return SentimentPostprocessResponse(items=items, count=len(items))
-
 
 @router.post("/predict/jobs", response_model=SentimentJobCreateResponse)
 async def create_sentiment_job(
@@ -144,13 +96,14 @@ async def create_sentiment_job(
     db: AsyncSession = Depends(deps.get_db),
     current_user: User = Depends(deps.get_current_user),
 ):
+    quota_needed = len(payload.texts)
+    await subscription_service.validate_and_reduce_quota(db, current_user, quota_needed)
+    
     job = await sentiment_job_service.create_job(
         db,
         user_id=current_user.id,
         texts=payload.texts,
         include_scores=payload.include_scores,
-        apply_postprocess=payload.apply_postprocess,
-        include_meta=payload.include_meta,
     )
     await db.commit()
 
@@ -162,8 +115,6 @@ async def create_sentiment_job(
         input_text="\n".join([str(t) for t in payload.texts]),
         status="queued",
         include_scores=payload.include_scores,
-        apply_postprocess=payload.apply_postprocess,
-        include_meta=payload.include_meta,
         item_count=job.total_texts,
     )
     await db.commit()
@@ -239,8 +190,6 @@ async def reprocess_sentiment_job(
         updates={
             "status": "queued",
             "include_scores": payload.include_scores,
-            "apply_postprocess": payload.apply_postprocess,
-            "include_meta": payload.include_meta,
             "error": None,
         },
     )

@@ -90,7 +90,7 @@ def get_subscription_plans() -> list[SubscriptionPlan]:
 
 def get_user_subscription_status(user: User) -> SubscriptionStatus:
 	now = datetime.now(timezone.utc)
-	expires_at = user.subscription_expires_at
+	expires_at = user.subscription_end
 
 	if expires_at is not None and expires_at.tzinfo is None:
 		expires_at = expires_at.replace(tzinfo=timezone.utc)
@@ -100,10 +100,10 @@ def get_user_subscription_status(user: User) -> SubscriptionStatus:
 		status = "expired"
 
 	return SubscriptionStatus(
-		plan=_normalized_plan(user.subscription),
+		plan=_normalized_plan(user.subscription_plan),
 		status=status,
-		remaining_quota=user.subscription_quota_remaining,
-		expires_at=user.subscription_expires_at,
+		remaining_quota=user.analysis_quota,
+		expires_at=user.subscription_end,
 	)
 
 async def subscribe_user(
@@ -113,11 +113,13 @@ async def subscribe_user(
 	duration_code: PremiumDurationCode | None,
 ) -> SubscriptionStatus:
 	plan = _PLANS[plan_code]
-	user.subscription = plan_code
-	user.subscription_quota_remaining = plan["quota"]
+	user.subscription_plan = plan_code
+	user.analysis_quota = plan["quota"]
 
 	if plan_code == "free":
-		user.subscription_expires_at = None
+		user.subscription_end = None
+		user.subscription_start = None
+		user.subscription_status = "active"
 	elif duration_code is None:
 		raise HTTPException(
 			status_code=status.HTTP_400_BAD_REQUEST,
@@ -125,10 +127,27 @@ async def subscribe_user(
 		)
 	else:
 		duration = _get_duration_option(duration_code)
-		user.subscription_expires_at = datetime.now(timezone.utc) + timedelta(
-			days=duration.duration_days
-		)
+		now = datetime.now(timezone.utc)
+		user.subscription_start = now
+		user.subscription_end = now + timedelta(days=duration.duration_days)
+		user.subscription_status = "active"
 
 	await db.flush()
 	await db.refresh(user)
 	return get_user_subscription_status(user)
+
+
+async def validate_and_reduce_quota(
+	db: AsyncSession,
+	user: User,
+	amount_needed: int,
+) -> None:
+	if user.analysis_quota < amount_needed:
+		raise HTTPException(
+			status_code=status.HTTP_429_TOO_MANY_REQUESTS,
+			detail=f"Insufficient quota. Required: {amount_needed}, Available: {user.analysis_quota}",
+		)
+	
+	user.analysis_quota -= amount_needed
+	await db.flush()
+	await db.refresh(user)

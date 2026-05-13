@@ -33,15 +33,13 @@ export default function AnalysisDashboardPage() {
     null,
   );
 
-  // Get subscription tier and features
-  const subscriptionTier = getSubscriptionTier(session?.user?.subscription);
-  const features = getFeatureAccess(session?.user?.subscription);
+  const subscriptionTier = getSubscriptionTier(
+    session?.user?.subscription_plan,
+  );
+  const features = getFeatureAccess(session?.user?.subscription_plan);
 
-  // If free user, default to text tab
   const defaultTab = !features.canUploadFile ? "text" : "upload";
   const displayTab = features.canUploadFile ? activeTab : "text";
-
-  console.log(session);
 
   const handleFileSelected = async (file: File) => {
     analysis.setLoading(true);

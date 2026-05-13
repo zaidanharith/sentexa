@@ -10,7 +10,11 @@ export interface AuthUser {
   id: number;
   name: string;
   email: string;
-  subscription?: string;
+  analysis_quota?: number;
+  subscription_plan?: string;
+  subscription_status?: string;
+  subscription_start?: string;
+  subscription_end?: string;
 }
 
 export interface AuthContextValue {
@@ -39,7 +43,11 @@ export function AuthProvider({ children }: AuthProviderProps) {
         id: Number(session.user.id),
         name: session.user.name,
         email: session.user.email,
-        subscription: session.user.subscription,
+        analysis_quota: session.user.analysis_quota,
+        subscription_plan: session.user.subscription_plan,
+        subscription_status: session.user.subscription_status,
+        subscription_start: session.user.subscription_start,
+        subscription_end: session.user.subscription_end,
       }
     : null;
 

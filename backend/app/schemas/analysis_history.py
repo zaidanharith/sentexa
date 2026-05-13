@@ -19,8 +19,6 @@ class AnalysisHistoryItem(BaseModel):
 	job_id: str | None = None
 	status: AnalysisHistoryStatus
 	include_scores: bool
-	apply_postprocess: bool
-	include_meta: bool
 	item_count: int | None = None
 	result_label: str | None = None
 	result_score: float | None = None

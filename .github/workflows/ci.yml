@@ -27,7 +27,27 @@ jobs:
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
-          pip install -r requirements.txt
+          pip install -r requirements/base.txt
+
+      - name: Verify project structure
+        run: |
+          echo "Checking requirements files..."
+          test -f requirements/base.txt && echo "✓ base.txt found"
+          test -f requirements/training.txt && echo "✓ training.txt found"
+          test -f requirements/production.txt && echo "✓ production.txt found"
+
+          echo "Checking ML module structure..."
+          test -d ml/model && echo "✓ ml/model directory found"
+          test -d ml/reports && echo "✓ ml/reports directory found"
+          test -d ml/reports/plots && echo "✓ ml/reports/plots directory found"
+          test -d ml/reports/metrics && echo "✓ ml/reports/metrics directory found"
+
+      - name: Check Python syntax
+        run: |
+          python -m py_compile app/main.py
+          python -m py_compile ml/model/config.py
+          python -m py_compile ml/model/train.py
+          python -m py_compile ml/model/evaluate.py
 
       - name: Run tests
         run: |

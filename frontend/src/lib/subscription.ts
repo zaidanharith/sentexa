@@ -19,7 +19,7 @@ export function isPremiumSubscription(value?: string | null): boolean {
   return getSubscriptionName(value).toLowerCase() === "premium";
 }
 
-export type SubscriptionTier = 'free' | 'premium';
+export type SubscriptionTier = "free" | "premium";
 
 export interface FeatureAccess {
   canUploadFile: boolean;
@@ -28,8 +28,10 @@ export interface FeatureAccess {
   maxTextLength?: number;
 }
 
-export function getFeatureAccess(subscription: string | undefined): FeatureAccess {
-  const tier = (subscription?.toLowerCase() || 'free') as SubscriptionTier;
+export function getFeatureAccess(
+  subscription: string | undefined,
+): FeatureAccess {
+  const tier = (subscription?.toLowerCase() || "free") as SubscriptionTier;
 
   const features: Record<SubscriptionTier, FeatureAccess> = {
     free: {
@@ -48,6 +50,8 @@ export function getFeatureAccess(subscription: string | undefined): FeatureAcces
   return features[tier] || features.free;
 }
 
-export function getSubscriptionTier(subscription: string | undefined): SubscriptionTier {
-  return (subscription?.toLowerCase() as SubscriptionTier) || 'free';
+export function getSubscriptionTier(
+  subscription: string | undefined,
+): SubscriptionTier {
+  return (subscription?.toLowerCase() as SubscriptionTier) || "free";
 }

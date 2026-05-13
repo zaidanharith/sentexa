@@ -7,39 +7,20 @@ import DashboardPageTitle from "@/components/layout/dashboard/DashboardPageTitle
 import DashboardPageContent from "@/components/layout/dashboard/DashboardPageContent";
 import { appToast } from "@/lib/toast";
 import { FaArrowLeft, FaArrowRight } from "react-icons/fa6";
-
-type AnalysisPrediction = {
-  label?: string;
-  score?: number | null;
-  scores?: Record<string, number> | null;
-};
-
-type AnalysisHistoryItem = {
-  id: number;
-  source_type: string;
-  input_text: string | null;
-  result_label: string | null;
-  result_score: number | null;
-  result_payload: AnalysisPrediction[] | Record<string, unknown> | null;
-  status: string;
-  created_at: string;
-};
-
-type AnalysisHistoryResponse = {
-  items: AnalysisHistoryItem[];
-  count: number;
-};
-
-type SentimentJobItem = {
-  job_id: string;
-  status: string;
-  total: number;
-  completed: number;
-  created_at: string;
-  updated_at: string;
-  label_counts?: Record<string, number> | null;
-  error?: string | null;
-};
+import {
+  type AnalysisPrediction,
+  type AnalysisHistoryItem,
+  type AnalysisHistoryResponse,
+  type SentimentJobItem,
+  resolveBatchTexts,
+  resolveBatchPredictions,
+  resolveAggregateLabelKey,
+  resolveAggregateScore,
+  formatScore,
+  resolveJobTopLabel,
+  resolveJobTopLabelKey,
+  resolveJobAverageScore,
+} from "@/lib/analysisHistoryHelpers";
 
 type SentimentJobListResponse = {
   items: SentimentJobItem[];
@@ -109,8 +90,12 @@ export default function HistoryDashboardPage() {
   const [expandedSingleId, setExpandedSingleId] = useState<number | null>(null);
   const [expandedBatchId, setExpandedBatchId] = useState<number | null>(null);
   const [expandedJobId, setExpandedJobId] = useState<string | null>(null);
-  const [jobDetails, setJobDetails] = useState<Record<string, SentimentJobItem>>({});
-  const [jobResults, setJobResults] = useState<Record<string, SentimentJobResultItem[]>>({});
+  const [jobDetails, setJobDetails] = useState<
+    Record<string, SentimentJobItem>
+  >({});
+  const [jobResults, setJobResults] = useState<
+    Record<string, SentimentJobResultItem[]>
+  >({});
   const [jobLoading, setJobLoading] = useState<Record<string, boolean>>({});
 
   const apiBaseUrl =
@@ -237,13 +222,6 @@ export default function HistoryDashboardPage() {
     return "bg-slate-100 text-slate-700";
   }
 
-  function formatScore(value?: number | null) {
-    if (typeof value !== "number" || Number.isNaN(value) || value < 0) {
-      return "-";
-    }
-    return (value * 100).toFixed(2) + "%";
-  }
-
   function formatTime(value: string) {
     const date = new Date(value);
     if (Number.isNaN(date.getTime())) {
@@ -258,119 +236,6 @@ export default function HistoryDashboardPage() {
     });
   }
 
-  function resolveBatchTexts(item: AnalysisHistoryItem) {
-    if (!item.input_text) {
-      return [];
-    }
-    return item.input_text
-      .split(/\r?\n/)
-      .map((value) => value.trim())
-      .filter(Boolean);
-  }
-
-  function resolveBatchPredictions(item: AnalysisHistoryItem): AnalysisPrediction[] {
-    if (!Array.isArray(item.result_payload)) {
-      return [];
-    }
-
-    return item.result_payload.map((entry) => {
-      if (entry && typeof entry === "object" && "prediction" in entry) {
-        const record = entry as { prediction?: AnalysisPrediction };
-        return record.prediction ?? {};
-      }
-      return entry as AnalysisPrediction;
-    });
-  }
-
-  function resolveAggregateStats(item: AnalysisHistoryItem) {
-    const predictions = resolveBatchPredictions(item);
-    const labelTotals: Record<string, { sum: number; count: number }> = {};
-
-    for (const prediction of predictions) {
-      if (!prediction.label || typeof prediction.score !== "number") {
-        continue;
-      }
-      const normalized = prediction.label.toLowerCase();
-      if (!labelTotals[normalized]) {
-        labelTotals[normalized] = { sum: 0, count: 0 };
-      }
-      labelTotals[normalized].sum += prediction.score;
-      labelTotals[normalized].count += 1;
-    }
-
-    let bestLabel: string | null = null;
-    let bestAvg = -1;
-    for (const [label, stats] of Object.entries(labelTotals)) {
-      const avg = stats.count > 0 ? stats.sum / stats.count : -1;
-      if (avg > bestAvg) {
-        bestAvg = avg;
-        bestLabel = label;
-      }
-    }
-
-    return { bestLabel, bestAvg };
-  }
-
-  function resolveAggregateLabelKey(item: AnalysisHistoryItem) {
-    return resolveAggregateStats(item).bestLabel;
-  }
-
-  function resolveAggregateScore(item: AnalysisHistoryItem) {
-    return resolveAggregateStats(item).bestAvg;
-  }
-
-  function resolveAggregateLabel(item: AnalysisHistoryItem) {
-    const bestLabel = resolveAggregateLabelKey(item);
-    return bestLabel ? formatLabel(bestLabel) : "-";
-  }
-
-  function resolveJobTopLabel(job: SentimentJobItem) {
-    const counts = job.label_counts ?? {};
-    let bestLabel: string | null = null;
-    let bestCount = -1;
-    for (const [label, count] of Object.entries(counts)) {
-      if (typeof count !== "number") {
-        continue;
-      }
-      if (count > bestCount) {
-        bestCount = count;
-        bestLabel = label;
-      }
-    }
-    return bestLabel ? formatLabel(bestLabel) : "-";
-  }
-
-  function resolveJobTopLabelKey(job: SentimentJobItem) {
-    const counts = job.label_counts ?? {};
-    let bestLabel: string | null = null;
-    let bestCount = -1;
-    for (const [label, count] of Object.entries(counts)) {
-      if (typeof count !== "number") {
-        continue;
-      }
-      if (count > bestCount) {
-        bestCount = count;
-        bestLabel = label;
-      }
-    }
-    return bestLabel;
-  }
-
-  function resolveJobAverageScore(job: SentimentJobItem) {
-    const results = jobResults[job.job_id] ?? [];
-    if (results.length === 0) {
-      return -1;
-    }
-    const scoreSum = results.reduce((sum, item) => {
-      const scores = item.prediction?.scores ?? {};
-      const positive = typeof scores.positive === "number" ? scores.positive : 0;
-      const negative = typeof scores.negative === "number" ? scores.negative : 0;
-      const neutral = typeof scores.neutral === "number" ? scores.neutral : 0;
-      return sum + Math.max(positive, negative, neutral);
-    }, 0);
-    return scoreSum / results.length;
-  }
-
   function resolveScoreTriple(prediction?: AnalysisPrediction | null) {
     const scores = prediction?.scores ?? {};
     return {
@@ -380,11 +245,14 @@ export default function HistoryDashboardPage() {
     };
   }
 
-  function shouldIncludeLabel(labelKey: string | null | undefined, filter: {
-    positive: boolean;
-    negative: boolean;
-    neutral: boolean;
-  }) {
+  function shouldIncludeLabel(
+    labelKey: string | null | undefined,
+    filter: {
+      positive: boolean;
+      negative: boolean;
+      neutral: boolean;
+    },
+  ) {
     if (!labelKey) {
       return true;
     }
@@ -461,8 +329,11 @@ export default function HistoryDashboardPage() {
       ]);
 
       setJobDetails((prev) => ({ ...prev, [jobId]: detailResponse.data.job }));
-      setJobResults((prev) => ({ ...prev, [jobId]: resultsResponse.data.items ?? [] }));
-    } catch (err) {
+      setJobResults((prev) => ({
+        ...prev,
+        [jobId]: resultsResponse.data.items ?? [],
+      }));
+    } catch {
       appToast.error("Gagal memuat detail job.");
     } finally {
       setJobLoading((prev) => ({ ...prev, [jobId]: false }));
@@ -471,7 +342,10 @@ export default function HistoryDashboardPage() {
 
   const singleRows = useMemo(() => {
     const filtered = items.filter((item) => {
-      if (BATCH_TYPES.has(item.source_type) || JOB_TYPES.has(item.source_type)) {
+      if (
+        BATCH_TYPES.has(item.source_type) ||
+        JOB_TYPES.has(item.source_type)
+      ) {
         return false;
       }
       return shouldIncludeLabel(item.result_label, singleFilter);
@@ -481,7 +355,8 @@ export default function HistoryDashboardPage() {
       filtered,
       singleSort,
       (item) => item.created_at,
-      (item) => (typeof item.result_score === "number" ? item.result_score : -1),
+      (item) =>
+        typeof item.result_score === "number" ? item.result_score : -1,
     );
 
     const start = (singlePage - 1) * PAGE_SIZE;
@@ -495,7 +370,10 @@ export default function HistoryDashboardPage() {
 
   const singleTotal = useMemo(() => {
     return items.filter((item) => {
-      if (BATCH_TYPES.has(item.source_type) || JOB_TYPES.has(item.source_type)) {
+      if (
+        BATCH_TYPES.has(item.source_type) ||
+        JOB_TYPES.has(item.source_type)
+      ) {
         return false;
       }
       return shouldIncludeLabel(item.result_label, singleFilter);
@@ -566,7 +444,7 @@ export default function HistoryDashboardPage() {
         displayScore: formatScore(resolveJobAverageScore(job)),
       };
     });
-  }, [jobItems, jobFilter, jobSort, jobPage, jobResults]);
+  }, [jobItems, jobFilter, jobSort, jobPage]);
 
   const jobTotal = useMemo(() => {
     return jobItems.filter((job) =>
@@ -642,15 +520,23 @@ export default function HistoryDashboardPage() {
                 <tr>
                   <th className="px-4 py-3 text-left font-semibold">No</th>
                   <th className="px-4 py-3 text-left font-semibold">Teks</th>
-                  <th className="px-4 py-3 text-left font-semibold">Hasil Sentimen</th>
-                  <th className="px-4 py-3 text-left font-semibold">Confidence Score</th>
-                  <th className="px-4 py-3 text-left font-semibold">Waktu Analisis</th>
+                  <th className="px-4 py-3 text-left font-semibold">
+                    Hasil Sentimen
+                  </th>
+                  <th className="px-4 py-3 text-left font-semibold">
+                    Confidence Score
+                  </th>
+                  <th className="px-4 py-3 text-left font-semibold">
+                    Waktu Analisis
+                  </th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-200">
                 {singleRows.map((item) => {
                   const scores = resolveScoreTriple(
-                    typeof item.result_payload === "object" ? item.result_payload as AnalysisPrediction : null,
+                    typeof item.result_payload === "object"
+                      ? (item.result_payload as AnalysisPrediction)
+                      : null,
                   );
                   const isExpanded = expandedSingleId === item.id;
                   return (
@@ -658,27 +544,43 @@ export default function HistoryDashboardPage() {
                       <tr
                         className="cursor-pointer hover:bg-slate-50"
                         onClick={() =>
-                          setExpandedSingleId((prev) => (prev === item.id ? null : item.id))
+                          setExpandedSingleId((prev) =>
+                            prev === item.id ? null : item.id,
+                          )
                         }
                       >
-                        <td className="px-4 py-3 text-slate-600">{item.rowIndex}</td>
+                        <td className="px-4 py-3 text-slate-600">
+                          {item.rowIndex}
+                        </td>
                         <td className="px-4 py-3 text-slate-900 max-w-xs">
-                          <span className="line-clamp-2">{item.input_text ?? "-"}</span>
+                          <span className="line-clamp-2">
+                            {item.input_text ?? "-"}
+                          </span>
                         </td>
                         <td className="px-4 py-3">
-                          <span className={`rounded-full px-2.5 py-1 text-xs font-semibold ${getLabelColorClasses(item.result_label)}`}>
+                          <span
+                            className={`rounded-full px-2.5 py-1 text-xs font-semibold ${getLabelColorClasses(item.result_label)}`}
+                          >
                             {item.displayLabel}
                           </span>
                         </td>
-                        <td className="px-4 py-3 text-slate-700">{item.displayScore}</td>
-                        <td className="px-4 py-3 text-slate-600">{formatTime(item.created_at)}</td>
+                        <td className="px-4 py-3 text-slate-700">
+                          {item.displayScore}
+                        </td>
+                        <td className="px-4 py-3 text-slate-600">
+                          {formatTime(item.created_at)}
+                        </td>
                       </tr>
                       {isExpanded && (
                         <tr className="bg-slate-50">
                           <td colSpan={5} className="px-4 py-3">
                             <div className="grid gap-2 text-xs text-slate-600 sm:grid-cols-3">
-                              <div>Positive: {formatScore(scores.positive)}</div>
-                              <div>Negative: {formatScore(scores.negative)}</div>
+                              <div>
+                                Positive: {formatScore(scores.positive)}
+                              </div>
+                              <div>
+                                Negative: {formatScore(scores.negative)}
+                              </div>
                               <div>Neutral: {formatScore(scores.neutral)}</div>
                             </div>
                           </td>
@@ -693,7 +595,9 @@ export default function HistoryDashboardPage() {
         )}
         {singleTotal > PAGE_SIZE && (
           <div className="mt-3 flex items-center justify-between text-xs text-slate-600">
-            <span>Halaman {singlePage} dari {Math.ceil(singleTotal / PAGE_SIZE)}</span>
+            <span>
+              Halaman {singlePage} dari {Math.ceil(singleTotal / PAGE_SIZE)}
+            </span>
             <div className="flex gap-2">
               <button
                 type="button"
@@ -705,7 +609,11 @@ export default function HistoryDashboardPage() {
               </button>
               <button
                 type="button"
-                onClick={() => setSinglePage((prev) => Math.min(Math.ceil(singleTotal / PAGE_SIZE), prev + 1))}
+                onClick={() =>
+                  setSinglePage((prev) =>
+                    Math.min(Math.ceil(singleTotal / PAGE_SIZE), prev + 1),
+                  )
+                }
                 disabled={singlePage >= Math.ceil(singleTotal / PAGE_SIZE)}
                 className="rounded border border-slate-200 px-2 py-1 disabled:opacity-50"
               >
@@ -775,11 +683,21 @@ export default function HistoryDashboardPage() {
               <thead className="bg-slate-50 text-slate-600">
                 <tr>
                   <th className="px-4 py-3 text-left font-semibold">No</th>
-                  <th className="px-4 py-3 text-left font-semibold">Teks (Pertama)</th>
-                  <th className="px-4 py-3 text-left font-semibold">Label Sentimen Dominan</th>
-                  <th className="px-4 py-3 text-left font-semibold">Confidence Score Rata-rata</th>
-                  <th className="px-4 py-3 text-left font-semibold">Jumlah Teks</th>
-                  <th className="px-4 py-3 text-left font-semibold">Waktu Analisis</th>
+                  <th className="px-4 py-3 text-left font-semibold">
+                    Teks (Pertama)
+                  </th>
+                  <th className="px-4 py-3 text-left font-semibold">
+                    Label Sentimen Dominan
+                  </th>
+                  <th className="px-4 py-3 text-left font-semibold">
+                    Confidence Score Rata-rata
+                  </th>
+                  <th className="px-4 py-3 text-left font-semibold">
+                    Jumlah Teks
+                  </th>
+                  <th className="px-4 py-3 text-left font-semibold">
+                    Waktu Analisis
+                  </th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-200">
@@ -792,21 +710,35 @@ export default function HistoryDashboardPage() {
                       <tr
                         className="cursor-pointer hover:bg-slate-50"
                         onClick={() =>
-                          setExpandedBatchId((prev) => (prev === item.id ? null : item.id))
+                          setExpandedBatchId((prev) =>
+                            prev === item.id ? null : item.id,
+                          )
                         }
                       >
-                        <td className="px-4 py-3 text-slate-600">{item.rowIndex}</td>
+                        <td className="px-4 py-3 text-slate-600">
+                          {item.rowIndex}
+                        </td>
                         <td className="px-4 py-3 text-slate-900 max-w-xs">
-                          <span className="line-clamp-2">{item.displayText}</span>
+                          <span className="line-clamp-2">
+                            {item.displayText}
+                          </span>
                         </td>
                         <td className="px-4 py-3">
-                          <span className={`rounded-full px-2.5 py-1 text-xs font-semibold ${getLabelColorClasses(item.aggregateLabel)}`}>
+                          <span
+                            className={`rounded-full px-2.5 py-1 text-xs font-semibold ${getLabelColorClasses(item.aggregateLabel)}`}
+                          >
                             {item.displayLabel}
                           </span>
                         </td>
-                        <td className="px-4 py-3 text-slate-700">{item.displayScore}</td>
-                        <td className="px-4 py-3 text-slate-600">{item.textCount}</td>
-                        <td className="px-4 py-3 text-slate-600">{formatTime(item.created_at)}</td>
+                        <td className="px-4 py-3 text-slate-700">
+                          {item.displayScore}
+                        </td>
+                        <td className="px-4 py-3 text-slate-600">
+                          {item.textCount}
+                        </td>
+                        <td className="px-4 py-3 text-slate-600">
+                          {formatTime(item.created_at)}
+                        </td>
                       </tr>
                       {isExpanded && (
                         <tr className="bg-slate-50">
@@ -815,15 +747,25 @@ export default function HistoryDashboardPage() {
                               <table className="min-w-full text-xs">
                                 <thead className="bg-white text-slate-600">
                                   <tr>
-                                    <th className="px-3 py-2 text-left font-semibold">Teks</th>
-                                    <th className="px-3 py-2 text-left font-semibold">Positive</th>
-                                    <th className="px-3 py-2 text-left font-semibold">Negative</th>
-                                    <th className="px-3 py-2 text-left font-semibold">Neutral</th>
+                                    <th className="px-3 py-2 text-left font-semibold">
+                                      Teks
+                                    </th>
+                                    <th className="px-3 py-2 text-left font-semibold">
+                                      Positive
+                                    </th>
+                                    <th className="px-3 py-2 text-left font-semibold">
+                                      Negative
+                                    </th>
+                                    <th className="px-3 py-2 text-left font-semibold">
+                                      Neutral
+                                    </th>
                                   </tr>
                                 </thead>
                                 <tbody className="divide-y divide-slate-200">
                                   {texts.map((text, index) => {
-                                    const scores = resolveScoreTriple(predictions[index]);
+                                    const scores = resolveScoreTriple(
+                                      predictions[index],
+                                    );
                                     return (
                                       <tr key={`${item.id}-${index}`}>
                                         <td className="px-3 py-2 text-slate-700 max-w-md">
@@ -856,7 +798,9 @@ export default function HistoryDashboardPage() {
         )}
         {batchTotal > PAGE_SIZE && (
           <div className="mt-3 flex items-center justify-between text-xs text-slate-600">
-            <span>Halaman {batchPage} dari {Math.ceil(batchTotal / PAGE_SIZE)}</span>
+            <span>
+              Halaman {batchPage} dari {Math.ceil(batchTotal / PAGE_SIZE)}
+            </span>
             <div className="flex gap-2">
               <button
                 type="button"
@@ -868,7 +812,11 @@ export default function HistoryDashboardPage() {
               </button>
               <button
                 type="button"
-                onClick={() => setBatchPage((prev) => Math.min(Math.ceil(batchTotal / PAGE_SIZE), prev + 1))}
+                onClick={() =>
+                  setBatchPage((prev) =>
+                    Math.min(Math.ceil(batchTotal / PAGE_SIZE), prev + 1),
+                  )
+                }
                 disabled={batchPage >= Math.ceil(batchTotal / PAGE_SIZE)}
                 className="rounded border border-slate-200 px-2 py-1 disabled:opacity-50"
               >
@@ -942,11 +890,19 @@ export default function HistoryDashboardPage() {
               <thead className="bg-slate-50 text-slate-600">
                 <tr>
                   <th className="px-4 py-3 text-left font-semibold">No</th>
-                  <th className="px-4 py-3 text-left font-semibold">Label Sentimen Dominan</th>
-                  <th className="px-4 py-3 text-left font-semibold">Confidence Score Rata-rata</th>
+                  <th className="px-4 py-3 text-left font-semibold">
+                    Label Sentimen Dominan
+                  </th>
+                  <th className="px-4 py-3 text-left font-semibold">
+                    Confidence Score Rata-rata
+                  </th>
                   <th className="px-4 py-3 text-left font-semibold">Status</th>
-                  <th className="px-4 py-3 text-left font-semibold">Total Teks</th>
-                  <th className="px-4 py-3 text-left font-semibold">Waktu Dibuat</th>
+                  <th className="px-4 py-3 text-left font-semibold">
+                    Total Teks
+                  </th>
+                  <th className="px-4 py-3 text-left font-semibold">
+                    Waktu Dibuat
+                  </th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-200">
@@ -961,59 +917,90 @@ export default function HistoryDashboardPage() {
                         className="cursor-pointer hover:bg-slate-50"
                         onClick={() => handleToggleJob(item.job_id)}
                       >
-                        <td className="px-4 py-3 text-slate-600">{item.rowIndex}</td>
+                        <td className="px-4 py-3 text-slate-600">
+                          {item.rowIndex}
+                        </td>
                         <td className="px-4 py-3">
-                          <span className={`rounded-full px-2.5 py-1 text-xs font-semibold ${getLabelColorClasses(item.topLabelKey)}`}>
+                          <span
+                            className={`rounded-full px-2.5 py-1 text-xs font-semibold ${getLabelColorClasses(item.topLabelKey)}`}
+                          >
                             {item.displayLabel}
                           </span>
                         </td>
-                        <td className="px-4 py-3 text-slate-700">{item.displayScore}</td>
+                        <td className="px-4 py-3 text-slate-700">
+                          {item.displayScore}
+                        </td>
                         <td className="px-4 py-3">
-                          <span className={`inline-block px-2 py-1 rounded text-xs font-medium ${
-                            item.status === "completed"
-                              ? "bg-green-100 text-green-700"
-                              : item.status === "processing"
-                              ? "bg-blue-100 text-blue-700"
-                              : item.status === "queued"
-                              ? "bg-yellow-100 text-yellow-700"
-                              : "bg-red-100 text-red-700"
-                          }`}>
-                            {item.status.charAt(0).toUpperCase() + item.status.slice(1)}
+                          <span
+                            className={`inline-block px-2 py-1 rounded text-xs font-medium ${
+                              item.status === "completed"
+                                ? "bg-green-100 text-green-700"
+                                : item.status === "processing"
+                                  ? "bg-blue-100 text-blue-700"
+                                  : item.status === "queued"
+                                    ? "bg-yellow-100 text-yellow-700"
+                                    : "bg-red-100 text-red-700"
+                            }`}
+                          >
+                            {item.status.charAt(0).toUpperCase() +
+                              item.status.slice(1)}
                           </span>
                         </td>
-                        <td className="px-4 py-3 text-slate-600">{item.total}</td>
-                        <td className="px-4 py-3 text-slate-600">{formatTime(item.created_at)}</td>
+                        <td className="px-4 py-3 text-slate-600">
+                          {item.total_texts}
+                        </td>
+                        <td className="px-4 py-3 text-slate-600">
+                          {formatTime(item.created_at)}
+                        </td>
                       </tr>
                       {isExpanded && (
                         <tr className="bg-slate-50">
                           <td colSpan={6} className="px-4 py-3">
                             {isLoading ? (
-                              <div className="text-xs text-slate-500">Memuat detail job...</div>
+                              <div className="text-xs text-slate-500">
+                                Memuat detail job...
+                              </div>
                             ) : results.length === 0 ? (
-                              <div className="text-xs text-slate-500">Detail job belum tersedia.</div>
+                              <div className="text-xs text-slate-500">
+                                Detail job belum tersedia.
+                              </div>
                             ) : (
                               <div className="space-y-3">
                                 <div className="grid gap-2 text-xs text-slate-600 sm:grid-cols-4">
                                   <div>Status: {detail.status}</div>
-                                  <div>Total: {detail.total}</div>
-                                  <div>Selesai: {detail.completed}</div>
-                                  <div>Update: {formatTime(detail.updated_at)}</div>
+                                  <div>Total: {detail.total_texts}</div>
+                                  <div>Selesai: {detail.completed_count}</div>
+                                  <div>
+                                    Update: {formatTime(detail.updated_at)}
+                                  </div>
                                 </div>
                                 <div className="overflow-x-auto rounded-lg border border-slate-200">
                                   <table className="min-w-full text-xs">
                                     <thead className="bg-white text-slate-600">
                                       <tr>
-                                        <th className="px-3 py-2 text-left font-semibold">Teks</th>
-                                        <th className="px-3 py-2 text-left font-semibold">Positive</th>
-                                        <th className="px-3 py-2 text-left font-semibold">Negative</th>
-                                        <th className="px-3 py-2 text-left font-semibold">Neutral</th>
+                                        <th className="px-3 py-2 text-left font-semibold">
+                                          Teks
+                                        </th>
+                                        <th className="px-3 py-2 text-left font-semibold">
+                                          Positive
+                                        </th>
+                                        <th className="px-3 py-2 text-left font-semibold">
+                                          Negative
+                                        </th>
+                                        <th className="px-3 py-2 text-left font-semibold">
+                                          Neutral
+                                        </th>
                                       </tr>
                                     </thead>
                                     <tbody className="divide-y divide-slate-200">
                                       {results.map((result) => {
-                                        const scores = resolveScoreTriple(result.prediction);
+                                        const scores = resolveScoreTriple(
+                                          result.prediction,
+                                        );
                                         return (
-                                          <tr key={`${item.job_id}-${result.index}`}>
+                                          <tr
+                                            key={`${item.job_id}-${result.index}`}
+                                          >
                                             <td className="px-3 py-2 text-slate-700 max-w-md">
                                               {result.text}
                                             </td>
@@ -1046,7 +1033,9 @@ export default function HistoryDashboardPage() {
         )}
         {jobTotal > PAGE_SIZE && (
           <div className="mt-3 flex items-center justify-between text-xs text-slate-600">
-            <span>Halaman {jobPage} dari {Math.ceil(jobTotal / PAGE_SIZE)}</span>
+            <span>
+              Halaman {jobPage} dari {Math.ceil(jobTotal / PAGE_SIZE)}
+            </span>
             <div className="flex gap-2">
               <button
                 type="button"
@@ -1058,7 +1047,11 @@ export default function HistoryDashboardPage() {
               </button>
               <button
                 type="button"
-                onClick={() => setJobPage((prev) => Math.min(Math.ceil(jobTotal / PAGE_SIZE), prev + 1))}
+                onClick={() =>
+                  setJobPage((prev) =>
+                    Math.min(Math.ceil(jobTotal / PAGE_SIZE), prev + 1),
+                  )
+                }
                 disabled={jobPage >= Math.ceil(jobTotal / PAGE_SIZE)}
                 className="rounded border border-slate-200 px-2 py-1 disabled:opacity-50"
               >

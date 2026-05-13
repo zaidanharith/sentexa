@@ -138,9 +138,8 @@ export default function Sidebar({
             const isActive = pathname === item.href;
             const icon = getNavIcon(item.href);
 
-            // Check if item is disabled (premium only but user is not premium)
             const isPremiumItem = item.isPremiumOnly;
-            const isUserPremium = user?.subscription === "premium";
+            const isUserPremium = user?.subscription_plan === "premium";
             const isDisabled = isPremiumItem && !isUserPremium;
 
             const navItemContent = (
@@ -242,7 +241,7 @@ export default function Sidebar({
 
           // Check if item is disabled (premium only but user is not premium)
           const isPremiumItem = item.isPremiumOnly;
-          const isUserPremium = user?.subscription === "premium";
+          const isUserPremium = user?.subscription_plan === "premium";
           const isDisabled = isPremiumItem && !isUserPremium;
 
           if (isDisabled) {

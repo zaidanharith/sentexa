@@ -202,3 +202,22 @@ backend/deployments/docker/nginx/ssl/*
 *.pem
 *.key
 
+ml/data/raw/*
+!ml/data/raw/.gitkeep
+
+ml/model/checkpoint/*
+!ml/model/checkpoint/.gitkeep
+
+.kaggle/
+kaggle.json
+.env
+
+ml/**/__pycache__/
+ml/**/*.pyc
+
+ml/data/raw/*
+!ml/data/raw/.gitkeep
+
+ml/data/processed/*.csv
+
+!ml/model/checkpoint/*

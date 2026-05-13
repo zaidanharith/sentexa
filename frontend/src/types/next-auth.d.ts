@@ -10,7 +10,11 @@ declare module "next-auth" {
       id: string;
       name: string;
       email: string;
-      subscription?: string;
+      subscription_plan?: string;
+      subscription_status?: string;
+      subscription_start?: string;
+      subscription_end?: string;
+      analysis_quota?: number;
     };
   }
 
@@ -18,7 +22,11 @@ declare module "next-auth" {
     id: string;
     name: string;
     email: string;
-    subscription?: string;
+    subscription_plan?: string;
+    subscription_status?: string;
+    subscription_start?: string;
+    subscription_end?: string;
+    analysis_quota?: number;
     accessToken?: string;
     refreshToken?: string | null;
   }
@@ -26,7 +34,11 @@ declare module "next-auth" {
 
 declare module "next-auth/jwt" {
   interface JWT {
-    subscription?: string;
+    subscription_plan?: string;
+    subscription_status?: string;
+    subscription_start?: string;
+    subscription_end?: string;
+    analysis_quota?: number;
     accessToken?: string;
     refreshToken?: string | null;
     accessTokenExpires?: number;
