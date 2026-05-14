@@ -2,17 +2,17 @@ import torch
 from transformers import AutoModelForSequenceClassification, AutoTokenizer
 from pathlib import Path
 import json
-from typing import Dict, List, Optional
+from typing import Dict, List, Optional, cast
 import pandas as pd
-from ml.model.config import CHECKPOINT_DIR, MODEL_NAME, DEVICE, MAX_LENGTH, LABEL_MAP
+from ml.model.config import CHECKPOINT_DIR, HF_MODEL, DEVICE, MAX_LENGTH, LABEL_MAP
 from ml.preprocessing.cleaning import clean_text
 from ml.preprocessing.normalization import normalize_text
+from ml.preprocessing.stopwords import remove_stopwords_tokens
 
 
 model = None
 tokenizer = None
 label_map = None
-
 
 class PredictionError(ValueError):
     pass
@@ -21,17 +21,23 @@ class PredictionError(ValueError):
 def load_model():
     global model
     if model is None:
-        config_path = CHECKPOINT_DIR / "config.json"
-        model_safetensors = CHECKPOINT_DIR / "model.safetensors"
-        model_bin = CHECKPOINT_DIR / "pytorch_model.bin"
-        
-        if not config_path.exists():
-            raise FileNotFoundError(f"Model config not found in {CHECKPOINT_DIR}")
-        
-        if not model_safetensors.exists() and not model_bin.exists():
-            raise FileNotFoundError(f"Model weights not found in {CHECKPOINT_DIR} (looking for model.safetensors or pytorch_model.bin)")
-        
-        model = AutoModelForSequenceClassification.from_pretrained(CHECKPOINT_DIR)
+        try:
+            model = AutoModelForSequenceClassification.from_pretrained(HF_MODEL)
+            print(f"Loaded model from Hugging Face Hub: {HF_MODEL}")
+        except Exception as e:
+            print(f"Error loading model from Hugging Face Hub: {e}")
+            config_path = CHECKPOINT_DIR / "config.json"
+            model_safetensors = CHECKPOINT_DIR / "model.safetensors"
+            model_bin = CHECKPOINT_DIR / "pytorch_model.bin"
+
+            if not config_path.exists():
+                raise FileNotFoundError(f"Model config not found in {CHECKPOINT_DIR}")
+
+            if not model_safetensors.exists() and not model_bin.exists():
+                raise FileNotFoundError(f"Model weights not found in {CHECKPOINT_DIR} (looking for model.safetensors or pytorch_model.bin)")
+
+            model = AutoModelForSequenceClassification.from_pretrained(CHECKPOINT_DIR)
+
         model.to(DEVICE)
         model.eval()
     
@@ -42,9 +48,9 @@ def load_tokenizer():
     global tokenizer
     if tokenizer is None:
         try:
-            tokenizer = AutoTokenizer.from_pretrained(CHECKPOINT_DIR)
+            tokenizer = AutoTokenizer.from_pretrained(HF_MODEL)
         except:
-            tokenizer = AutoTokenizer.from_pretrained(MODEL_NAME)
+            tokenizer = AutoTokenizer.from_pretrained(CHECKPOINT_DIR)
     
     return tokenizer
 
@@ -52,8 +58,17 @@ def load_tokenizer():
 def load_label_map() -> Dict[int, str]:
     global label_map
     if label_map is None:
+        model_instance = load_model()
+        model_id2label = getattr(model_instance.config, "id2label", None)
+        if model_id2label:
+            # Avoid generic labels like LABEL_0 when custom mapping is available elsewhere.
+            values = [str(v) for v in model_id2label.values()]
+            if not all(v.startswith("LABEL_") for v in values):
+                label_map = {int(k): str(v) for k, v in model_id2label.items()}
+                return label_map
+
         checkpoint_label_map_path = CHECKPOINT_DIR / "label_map.json"
-        processed_label_map_path = Path(__file__).resolve().parents[2] / "data" / "processed" / "label_map.json"
+        processed_label_map_path = Path(__file__).resolve().parents[1] / "data" / "processed" / "label_map.json"
         
         label_map_path = None
         if checkpoint_label_map_path.exists():
@@ -66,8 +81,7 @@ def load_label_map() -> Dict[int, str]:
                 loaded_map = json.load(f)
                 label_map = {v: k for k, v in loaded_map.items()}
         else:
-            inverse_map = {v: k for k, v in LABEL_MAP.items()}
-            label_map = {v: k for k, v in inverse_map.items()}
+            label_map = {v: k for k, v in LABEL_MAP.items()}
     
     return label_map
 
@@ -82,8 +96,12 @@ def preprocess_text(text: str) -> str:
     
     cleaned = clean_text(text)
     normalized = normalize_text(cleaned)
-    
-    return normalized
+    removed_stopwords = remove_stopwords_tokens(normalized)
+
+    if isinstance(removed_stopwords, list):
+        return " ".join(str(token) for token in removed_stopwords if str(token).strip())
+
+    return str(removed_stopwords)
 
 
 def _ensure_text(value: object, *, index: Optional[int] = None) -> str:
@@ -173,7 +191,7 @@ def predict(text: str) -> Dict:
     api_result = predict_text(original_text, include_scores=True)
     pred_id = api_result["label_id"]
     predicted_label = api_result["label"]
-    confidence = api_result["score"]
+    confidence = cast(float, api_result["score"])
     
     return {
         "text": original_text,
@@ -199,7 +217,7 @@ def predict_batch(texts: List[str]) -> List[Dict]:
     return results
 
 
-def predict_csv(input_csv: str, output_csv: str = None):
+def predict_csv(input_csv: str, output_csv: Optional[str] = None):
     input_path = Path(input_csv)
     if not input_path.exists():
         raise FileNotFoundError(f"Input CSV not found: {input_path}")

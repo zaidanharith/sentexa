@@ -202,27 +202,21 @@ backend/deployments/docker/nginx/ssl/*
 *.pem
 *.key
 
-ml/data/raw/*
-!ml/data/raw/.gitkeep
-
-ml/model/checkpoint/*
-!ml/model/checkpoint/.gitkeep
-
-.kaggle/
-kaggle.json
-.env
-
+# ML artifacts
 ml/**/__pycache__/
 ml/**/*.pyc
 
+# ML datasets and generated outputs
 ml/data/raw/*
 !ml/data/raw/.gitkeep
-
 ml/data/processed/*.csv
+ml/reports/plots/
+ml/reports/metrics/*.csv
 
-ml/model/checkpoint/
+# Local model artifacts
+ml/checkpoints/
 ml/model/final_model/
-ml/**/__pycache__/
-ml/**/*.pyc
+
+# Kaggle credentials
 .kaggle/
 kaggle.json

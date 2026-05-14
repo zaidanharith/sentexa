@@ -1,11 +1,15 @@
+import os
+from dotenv import load_dotenv
 from pathlib import Path
 import torch
+
+load_dotenv()
 
 BASE_DIR = Path(__file__).resolve().parents[2]
 DATA_DIR = BASE_DIR / "ml" / "data"
 RAW_DATA_DIR = DATA_DIR / "raw"
 PROCESSED_DATA_DIR = DATA_DIR / "processed"
-CHECKPOINT_DIR = BASE_DIR / "ml" / "model" / "checkpoint"
+CHECKPOINT_DIR = BASE_DIR / "ml" / "checkpoints"
 REPORTS_DIR = BASE_DIR / "ml" / "reports"
 PLOTS_DIR = REPORTS_DIR / "plots"
 METRICS_DIR = REPORTS_DIR / "metrics"
@@ -18,12 +22,13 @@ TRAIN_FILE = PROCESSED_DATA_DIR / "train.csv"
 VALID_FILE = PROCESSED_DATA_DIR / "valid.csv"
 TEST_FILE = PROCESSED_DATA_DIR / "test.csv"
 
-MODEL_NAME = "indobenchmark/indobert-base-p1"
+MODEL_NAME = "indobenchmark/indobert-base-p2"
+HF_MODEL = os.getenv("HF_MODEL", MODEL_NAME)
 
 MAX_LENGTH = 128
 BATCH_SIZE = 16
 LEARNING_RATE = 2e-5
-NUM_EPOCHS = 5
+NUM_EPOCHS = 4
 RANDOM_SEED = 42
 
 LABEL_MAP = {

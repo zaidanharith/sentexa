@@ -8,7 +8,7 @@ from pathlib import Path
 import json
 from tqdm import tqdm
 from typing import Dict, Tuple
-from sklearn.metrics import accuracy_score, f1_score
+from sklearn.metrics import accuracy_score, f1_score, precision_score, recall_score
 import matplotlib.pyplot as plt
 import matplotlib
 matplotlib.use('Agg') 
@@ -23,7 +23,7 @@ from ml.model.config import (
     PLOTS_DIR,
     METRICS_DIR,
 )
-from ml.model.dataset import create_train_dataloader, create_valid_dataloader
+from ml.model.dataset import create_train_dataloader, create_valid_dataloader, compute_class_weights
 
 
 def set_seed(seed: int = RANDOM_SEED):
@@ -45,7 +45,11 @@ def load_model():
     return model
 
 
-def train_one_epoch(model, train_loader, optimizer) -> float:
+def get_loss_fn(class_weights):
+    return nn.CrossEntropyLoss(weight=class_weights)
+
+
+def train_one_epoch(model, train_loader, optimizer, loss_fn) -> float:
     model.train()
     total_loss = 0.0
     
@@ -60,10 +64,10 @@ def train_one_epoch(model, train_loader, optimizer) -> float:
         outputs = model(
             input_ids=input_ids,
             attention_mask=attention_mask,
-            labels=labels
         )
         
-        loss = outputs.loss
+        logits = outputs.logits
+        loss = loss_fn(logits, labels)
         loss.backward()
         optimizer.step()
         
@@ -74,11 +78,13 @@ def train_one_epoch(model, train_loader, optimizer) -> float:
     return avg_loss
 
 
-def validate(model, valid_loader) -> Tuple[float, float, float]:
+def validate(model, valid_loader) -> Tuple[float, float, float, float, float]:
     model.eval()
     total_loss = 0.0
     all_preds = []
     all_labels = []
+    
+    loss_fn = nn.CrossEntropyLoss()
     
     with torch.no_grad():
         for batch in tqdm(valid_loader, desc="Validating"):
@@ -89,11 +95,10 @@ def validate(model, valid_loader) -> Tuple[float, float, float]:
             outputs = model(
                 input_ids=input_ids,
                 attention_mask=attention_mask,
-                labels=labels
             )
             
-            loss = outputs.loss
             logits = outputs.logits
+            loss = loss_fn(logits, labels)
             
             total_loss += loss.item()
             
@@ -103,9 +108,11 @@ def validate(model, valid_loader) -> Tuple[float, float, float]:
     
     avg_loss = total_loss / len(valid_loader)
     accuracy = accuracy_score(all_labels, all_preds)
+    precision = precision_score(all_labels, all_preds, average="macro", zero_division=0)
+    recall = recall_score(all_labels, all_preds, average="macro", zero_division=0)
     f1 = f1_score(all_labels, all_preds, average="macro", zero_division=0)
     
-    return avg_loss, accuracy, f1
+    return avg_loss, accuracy, precision, recall, f1
 
 
 def save_checkpoint(model, tokenizer):
@@ -118,7 +125,6 @@ def save_checkpoint(model, tokenizer):
 
 
 def plot_loss_curve(training_history: Dict):
-    """Generate and save loss curve plot"""
     plt.figure(figsize=(10, 6))
     plt.plot(training_history["epochs"], training_history["train_losses"], label="Training Loss", marker='o')
     plt.plot(training_history["epochs"], training_history["val_losses"], label="Validation Loss", marker='s')
@@ -137,7 +143,6 @@ def plot_loss_curve(training_history: Dict):
 
 
 def plot_accuracy_curve(training_history: Dict):
-    """Generate and save accuracy curve plot"""
     plt.figure(figsize=(10, 6))
     plt.plot(training_history["epochs"], training_history["val_accuracies"], label="Validation Accuracy", marker='o', color='green')
     plt.xlabel("Epoch")
@@ -155,12 +160,11 @@ def plot_accuracy_curve(training_history: Dict):
 
 
 def plot_f1_curve(training_history: Dict):
-    """Generate and save F1 score curve plot"""
     plt.figure(figsize=(10, 6))
-    plt.plot(training_history["epochs"], training_history["val_f1_scores"], label="Validation F1 Score", marker='o', color='orange')
+    plt.plot(training_history["epochs"], training_history["val_f1_scores"], label="Validation F1 Score (Macro)", marker='o', color='orange')
     plt.xlabel("Epoch")
     plt.ylabel("F1 Score")
-    plt.title("Validation F1 Score Curve")
+    plt.title("Validation F1 Score Curve (Macro)")
     plt.legend()
     plt.grid(True, alpha=0.3)
     plt.tight_layout()
@@ -170,6 +174,34 @@ def plot_f1_curve(training_history: Dict):
     plt.close()
     
     print(f"F1 curve saved to: {output_path}")
+
+
+def plot_precision_recall_curves(training_history: Dict):
+    plt.figure(figsize=(12, 5))
+    
+    plt.subplot(1, 2, 1)
+    plt.plot(training_history["epochs"], training_history["val_precisions"], label="Validation Precision (Macro)", marker='o', color='blue')
+    plt.xlabel("Epoch")
+    plt.ylabel("Precision")
+    plt.title("Validation Precision Curve (Macro)")
+    plt.legend()
+    plt.grid(True, alpha=0.3)
+    
+    plt.subplot(1, 2, 2)
+    plt.plot(training_history["epochs"], training_history["val_recalls"], label="Validation Recall (Macro)", marker='o', color='red')
+    plt.xlabel("Epoch")
+    plt.ylabel("Recall")
+    plt.title("Validation Recall Curve (Macro)")
+    plt.legend()
+    plt.grid(True, alpha=0.3)
+    
+    plt.tight_layout()
+    
+    output_path = PLOTS_DIR / "precision_recall_curves.png"
+    plt.savefig(output_path, dpi=300, bbox_inches='tight')
+    plt.close()
+    
+    print(f"Precision/Recall curves saved to: {output_path}")
 
 
 def save_training_metrics(metrics: Dict, output_path: Path = None):
@@ -193,11 +225,15 @@ def train():
     print(f"Device: {DEVICE}")
     print(f"Epochs: {NUM_EPOCHS}")
     print(f"Learning Rate: {LEARNING_RATE}")
-    print(f"Batch Size: {16}")
+    print(f"Batch Size: 16")
     print("="*60 + "\n")
     
     model = load_model()
     tokenizer = AutoTokenizer.from_pretrained(MODEL_NAME)
+    
+    class_weights = compute_class_weights().to(DEVICE)
+    loss_fn = get_loss_fn(class_weights)
+    
     optimizer = AdamW(model.parameters(), lr=LEARNING_RATE)
     
     train_loader = create_train_dataloader()
@@ -210,6 +246,8 @@ def train():
         "train_losses": [],
         "val_losses": [],
         "val_accuracies": [],
+        "val_precisions": [],
+        "val_recalls": [],
         "val_f1_scores": []
     }
     
@@ -217,39 +255,45 @@ def train():
         print(f"\nEpoch {epoch+1}/{NUM_EPOCHS}")
         print("-"*60)
         
-        train_loss = train_one_epoch(model, train_loader, optimizer)
+        train_loss = train_one_epoch(model, train_loader, optimizer, loss_fn)
         print(f"Training Loss: {train_loss:.4f}")
         
-        val_loss, val_acc, val_f1 = validate(model, valid_loader)
+        val_loss, val_acc, val_prec, val_rec, val_f1 = validate(model, valid_loader)
         print(f"Validation Loss: {val_loss:.4f}")
         print(f"Validation Accuracy: {val_acc:.4f}")
-        print(f"Validation F1 Score: {val_f1:.4f}")
+        print(f"Validation Precision (Macro): {val_prec:.4f}")
+        print(f"Validation Recall (Macro): {val_rec:.4f}")
+        print(f"Validation F1 Score (Macro): {val_f1:.4f}")
         
         training_history["epochs"].append(epoch + 1)
         training_history["train_losses"].append(train_loss)
         training_history["val_losses"].append(val_loss)
         training_history["val_accuracies"].append(val_acc)
+        training_history["val_precisions"].append(val_prec)
+        training_history["val_recalls"].append(val_rec)
         training_history["val_f1_scores"].append(val_f1)
         
         if val_f1 > best_f1:
             best_f1 = val_f1
             best_epoch = epoch + 1
-            print(f"\n✓ New best F1 score: {val_f1:.4f}")
+            print(f"\n* New best Macro F1 score: {val_f1:.4f}")
             save_checkpoint(model, tokenizer)
     
     print("\n" + "="*60)
     print("Training Complete!")
     print("="*60)
     print(f"Best Epoch: {best_epoch}")
-    print(f"Best F1 Score: {best_f1:.4f}")
+    print(f"Best Macro F1 Score: {best_f1:.4f}")
     print("="*60 + "\n")
     
     final_metrics = {
         "best_epoch": best_epoch,
-        "best_f1": best_f1,
+        "best_f1_macro": best_f1,
+        "best_accuracy": training_history["val_accuracies"][best_epoch-1],
+        "best_precision_macro": training_history["val_precisions"][best_epoch-1],
+        "best_recall_macro": training_history["val_recalls"][best_epoch-1],
         "num_epochs": NUM_EPOCHS,
         "learning_rate": LEARNING_RATE,
-        "final_val_accuracy": training_history["val_accuracies"][best_epoch-1],
         "training_history": training_history
     }
     
@@ -259,6 +303,7 @@ def train():
     plot_loss_curve(training_history)
     plot_accuracy_curve(training_history)
     plot_f1_curve(training_history)
+    plot_precision_recall_curves(training_history)
     print("All plots saved successfully!")
 
 

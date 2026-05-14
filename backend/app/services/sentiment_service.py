@@ -9,7 +9,7 @@ import sys
 from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
 
-from ml.model.predict import PredictionError, predict_text, predict_texts
+from ml.inference.predict import PredictionError, predict_text, predict_texts
 from app.models.user import User
 
 

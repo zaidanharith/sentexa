@@ -3,7 +3,7 @@ from transformers import AutoModelForSequenceClassification, AutoTokenizer
 from pathlib import Path
 import json
 import numpy as np
-from typing import Dict, List, Tuple
+from typing import Dict
 from sklearn.metrics import (
     accuracy_score,
     precision_score,
@@ -11,11 +11,12 @@ from sklearn.metrics import (
     f1_score,
     classification_report,
     confusion_matrix,
+    
 )
 import matplotlib.pyplot as plt
 import seaborn as sns
 import matplotlib
-matplotlib.use('Agg') 
+matplotlib.use('Agg')
 from ml.model.config import CHECKPOINT_DIR, DEVICE, MODEL_NAME, ID_TO_LABEL, PLOTS_DIR, METRICS_DIR
 from ml.model.dataset import create_test_dataloader
 
@@ -24,58 +25,10 @@ def load_model():
     if not CHECKPOINT_DIR.exists():
         raise FileNotFoundError(f"Checkpoint directory not found: {CHECKPOINT_DIR}")
     
-    has_pytorch_bin = (CHECKPOINT_DIR / "pytorch_model.bin").exists()
-    has_safetensors = (CHECKPOINT_DIR / "model.safetensors").exists()
-    has_config = (CHECKPOINT_DIR / "config.json").exists()
-    
-    if not (has_pytorch_bin or has_safetensors or has_config):
-        raise FileNotFoundError(
-            f"No model files found in {CHECKPOINT_DIR}. "
-            f"Expected: pytorch_model.bin, model.safetensors, or config.json"
-        )
-    
     model = AutoModelForSequenceClassification.from_pretrained(CHECKPOINT_DIR)
     model.to(DEVICE)
     model.eval()
     return model
-
-
-def load_label_map() -> Dict[int, str]:
-    label_map_path = Path(__file__).resolve().parents[2] / "data" / "processed" / "label_map.json"
-    
-    if label_map_path.exists():
-        with open(label_map_path, "r") as f:
-            label_map = json.load(f)
-            return {int(k): v for k, v in label_map.items()}
-    else:
-        return ID_TO_LABEL
-
-
-def plot_confusion_matrix(results: Dict) -> None:
-    """Generate and save confusion matrix heatmap"""
-    conf_matrix = np.array(results["confusion_matrix"])
-    labels = [ID_TO_LABEL[i] for i in sorted(ID_TO_LABEL.keys())]
-    
-    plt.figure(figsize=(10, 8))
-    sns.heatmap(
-        conf_matrix,
-        annot=True,
-        fmt='d',
-        cmap='Blues',
-        xticklabels=labels,
-        yticklabels=labels,
-        cbar_kws={'label': 'Count'}
-    )
-    plt.title("Confusion Matrix")
-    plt.ylabel("True Label")
-    plt.xlabel("Predicted Label")
-    plt.tight_layout()
-    
-    output_path = PLOTS_DIR / "confusion_matrix.png"
-    plt.savefig(output_path, dpi=300, bbox_inches='tight')
-    plt.close()
-    
-    print(f"Confusion matrix saved to: {output_path}")
 
 
 def evaluate_model(dataloader) -> Dict:
@@ -105,9 +58,9 @@ def evaluate_model(dataloader) -> Dict:
     all_labels = np.array(all_labels)
     
     accuracy = accuracy_score(all_labels, all_preds)
-    precision = precision_score(all_labels, all_preds, average="weighted", zero_division=0)
-    recall = recall_score(all_labels, all_preds, average="weighted", zero_division=0)
-    f1 = f1_score(all_labels, all_preds, average="weighted", zero_division=0)
+    precision_macro = precision_score(all_labels, all_preds, average="macro", zero_division=0)
+    recall_macro = recall_score(all_labels, all_preds, average="macro", zero_division=0)
+    f1_macro = f1_score(all_labels, all_preds, average="macro", zero_division=0)
     
     conf_matrix = confusion_matrix(all_labels, all_preds)
     class_report = classification_report(
@@ -120,9 +73,9 @@ def evaluate_model(dataloader) -> Dict:
     
     results = {
         "accuracy": float(accuracy),
-        "precision": float(precision),
-        "recall": float(recall),
-        "f1": float(f1),
+        "precision_macro": float(precision_macro),
+        "recall_macro": float(recall_macro),
+        "f1_macro": float(f1_macro),
         "confusion_matrix": conf_matrix.tolist(),
         "classification_report": class_report,
     }
@@ -130,14 +83,40 @@ def evaluate_model(dataloader) -> Dict:
     return results
 
 
+def plot_confusion_matrix(results: Dict) -> None:
+    conf_matrix = np.array(results["confusion_matrix"])
+    labels = [ID_TO_LABEL[i] for i in sorted(ID_TO_LABEL.keys())]
+    
+    plt.figure(figsize=(10, 8))
+    sns.heatmap(
+        conf_matrix,
+        annot=True,
+        fmt='d',
+        cmap='Blues',
+        xticklabels=labels,
+        yticklabels=labels,
+        cbar_kws={'label': 'Count'}
+    )
+    plt.title("Confusion Matrix")
+    plt.ylabel("True Label")
+    plt.xlabel("Predicted Label")
+    plt.tight_layout()
+    
+    output_path = PLOTS_DIR / "confusion_matrix.png"
+    plt.savefig(output_path, dpi=300, bbox_inches='tight')
+    plt.close()
+    
+    print(f"Confusion matrix saved to: {output_path}")
+
+
 def print_metrics(results: Dict) -> None:
     print("\n" + "="*50)
     print("EVALUATION METRICS")
     print("="*50)
-    print(f"Accuracy:  {results['accuracy']:.4f}")
-    print(f"Precision: {results['precision']:.4f}")
-    print(f"Recall:    {results['recall']:.4f}")
-    print(f"F1 Score:  {results['f1']:.4f}")
+    print(f"Accuracy:         {results['accuracy']:.4f}")
+    print(f"Precision (Macro): {results['precision_macro']:.4f}")
+    print(f"Recall (Macro):    {results['recall_macro']:.4f}")
+    print(f"F1 Score (Macro):  {results['f1_macro']:.4f}")
     print("\n" + "-"*50)
     print("CLASSIFICATION REPORT")
     print("-"*50)

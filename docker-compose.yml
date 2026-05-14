@@ -21,6 +21,7 @@ services:
     volumes:
       - ./backend/app:/app/app
       - ./backend/ml/model/checkpoint:/app/ml/model/checkpoint
+      - hf_cache:/root/.cache/huggingface
 
     security_opt:
       - no-new-privileges:true
@@ -78,3 +79,6 @@ services:
 networks:
   sentexa_network:
     driver: bridge
+
+volumes:
+  hf_cache:

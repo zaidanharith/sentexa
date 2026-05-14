@@ -4,6 +4,7 @@ from torch.utils.data import Dataset, DataLoader
 from transformers import AutoTokenizer
 from pathlib import Path
 from typing import Dict, List, Tuple
+import numpy as np
 from ml.model.config import (
     PROCESSED_DATA_DIR,
     TRAIN_FILE,
@@ -117,3 +118,21 @@ def create_all_dataloaders() -> Tuple[DataLoader, DataLoader, DataLoader]:
     valid_loader = create_valid_dataloader()
     test_loader = create_test_dataloader()
     return train_loader, valid_loader, test_loader
+
+
+def compute_class_weights() -> torch.Tensor:
+    df = load_dataframe(TRAIN_FILE)
+    labels = df["label"].astype(int).tolist()
+    
+    unique_labels = np.unique(labels)
+    num_samples = len(labels)
+    num_classes = len(unique_labels)
+    
+    weights = []
+    for label_id in sorted(unique_labels):
+        count = (np.array(labels) == label_id).sum()
+        weight = num_samples / (num_classes * count)
+        weights.append(weight)
+    
+    weights = torch.tensor(weights, dtype=torch.float32)
+    return weights
