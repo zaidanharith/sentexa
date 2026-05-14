@@ -1,6 +1,6 @@
 # Keep Docker build context small and deterministic
 
-# Python cache/artifacts
+# Python cache and test artifacts
 __pycache__/
 *.py[cod]
 *$py.class
@@ -8,6 +8,7 @@ __pycache__/
 .mypy_cache/
 .ruff_cache/
 .coverage
+.coverage.*
 coverage.xml
 htmlcov/
 
@@ -15,13 +16,16 @@ htmlcov/
 .venv/
 venv/
 env/
+ENV/
 
-# Local configs/secrets
+# Local configs and secrets
 .env
 .env.*
 !.env.example
+.kaggle/
+kaggle.json
 
-# VCS/editor/OS files
+# VCS, editor, and OS files
 .git/
 .gitignore
 .vscode/
@@ -31,18 +35,42 @@ env/
 .DS_Store
 Thumbs.db
 
-# Logs/temp
+# Logs and temporary files
 *.log
 tmp/
 temp/
 
-# Local data artifacts
+# Local uploads and generated data
 uploads/
+ml/data/raw/*
+!ml/data/raw/.gitkeep
+ml/data/processed/*.csv
 
-# Build/deployment files not needed inside image runtime
+# ML artifacts and checkpoints
+ml/checkpoints/
+ml/models/
+ml/reports/
+ml_tuning_output/
+*.pt
+*.pth
+*.bin
+*.safetensors
+
+# Build artifacts
+dist/
+build/
+coverage/
+node_modules/
+
+# Deployment and docs not needed in the image
 deployments/
 docs/
 scripts/
 
-# Ensure entrypoint is always included
+# SSL and private keys
+deployments/docker/nginx/ssl/*
+*.pem
+*.key
+
+# Keep entrypoint available in the image
 !entrypoint.sh

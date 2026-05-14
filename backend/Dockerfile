@@ -11,7 +11,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 COPY requirements/ ./requirements/
 
 RUN pip install --upgrade pip && \
-    pip install --no-cache-dir --prefix=/install -r requirements/production.txt
+    pip install --no-cache-dir --prefix=/install -r requirements/requirements.txt
 
 FROM python:3.11-slim AS runtime
 

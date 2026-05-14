@@ -1,6 +1,7 @@
 import torch
 import torch.nn as nn
 from transformers import AutoModelForSequenceClassification, AutoTokenizer
+from transformers import get_linear_schedule_with_warmup
 from torch.optim import AdamW
 import random
 import numpy as np
@@ -16,8 +17,12 @@ from ml.model.config import (
     MODEL_NAME,
     CHECKPOINT_DIR,
     DEVICE,
+    BATCH_SIZE,
     LEARNING_RATE,
     NUM_EPOCHS,
+    MAX_LENGTH,
+    WEIGHT_DECAY,
+    WARMUP_RATIO,
     RANDOM_SEED,
     LABEL_MAP,
     PLOTS_DIR,
@@ -39,9 +44,7 @@ def load_model():
     model = AutoModelForSequenceClassification.from_pretrained(
         MODEL_NAME,
         num_labels=num_labels,
-        ignore_mismatched_sizes=True
     )
-    model.to(DEVICE)
     return model
 
 
@@ -49,7 +52,7 @@ def get_loss_fn(class_weights):
     return nn.CrossEntropyLoss(weight=class_weights)
 
 
-def train_one_epoch(model, train_loader, optimizer, loss_fn) -> float:
+def train_one_epoch(model, train_loader, optimizer, scheduler, loss_fn) -> float:
     model.train()
     total_loss = 0.0
     
@@ -70,6 +73,7 @@ def train_one_epoch(model, train_loader, optimizer, loss_fn) -> float:
         loss = loss_fn(logits, labels)
         loss.backward()
         optimizer.step()
+        scheduler.step()
         
         total_loss += loss.item()
         progress_bar.set_postfix({"loss": loss.item()})
@@ -204,7 +208,7 @@ def plot_precision_recall_curves(training_history: Dict):
     print(f"Precision/Recall curves saved to: {output_path}")
 
 
-def save_training_metrics(metrics: Dict, output_path: Path = None):
+def save_training_metrics(metrics: Dict, output_path: Path | None = None):
     if output_path is None:
         output_path = METRICS_DIR / "training_metrics.json"
     
@@ -225,19 +229,29 @@ def train():
     print(f"Device: {DEVICE}")
     print(f"Epochs: {NUM_EPOCHS}")
     print(f"Learning Rate: {LEARNING_RATE}")
-    print(f"Batch Size: 16")
+    print(f"Batch Size: {BATCH_SIZE}")
+    print(f"Max Length: {MAX_LENGTH}")
+    print(f"Weight Decay: {WEIGHT_DECAY}")
+    print(f"Warmup Ratio: {WARMUP_RATIO}")
     print("="*60 + "\n")
     
-    model = load_model()
+    model = load_model().to(DEVICE)
     tokenizer = AutoTokenizer.from_pretrained(MODEL_NAME)
     
     class_weights = compute_class_weights().to(DEVICE)
     loss_fn = get_loss_fn(class_weights)
     
-    optimizer = AdamW(model.parameters(), lr=LEARNING_RATE)
-    
     train_loader = create_train_dataloader()
     valid_loader = create_valid_dataloader()
+
+    optimizer = AdamW(model.parameters(), lr=LEARNING_RATE, weight_decay=WEIGHT_DECAY)
+    total_steps = len(train_loader) * NUM_EPOCHS
+    warmup_steps = int(total_steps * WARMUP_RATIO)
+    scheduler = get_linear_schedule_with_warmup(
+        optimizer,
+        num_warmup_steps=warmup_steps,
+        num_training_steps=total_steps,
+    )
     
     best_f1 = 0.0
     best_epoch = 0
@@ -255,7 +269,7 @@ def train():
         print(f"\nEpoch {epoch+1}/{NUM_EPOCHS}")
         print("-"*60)
         
-        train_loss = train_one_epoch(model, train_loader, optimizer, loss_fn)
+        train_loss = train_one_epoch(model, train_loader, optimizer, scheduler, loss_fn)
         print(f"Training Loss: {train_loss:.4f}")
         
         val_loss, val_acc, val_prec, val_rec, val_f1 = validate(model, valid_loader)
@@ -294,6 +308,10 @@ def train():
         "best_recall_macro": training_history["val_recalls"][best_epoch-1],
         "num_epochs": NUM_EPOCHS,
         "learning_rate": LEARNING_RATE,
+        "weight_decay": WEIGHT_DECAY,
+        "warmup_ratio": WARMUP_RATIO,
+        "batch_size": BATCH_SIZE,
+        "max_length": MAX_LENGTH,
         "training_history": training_history
     }
     

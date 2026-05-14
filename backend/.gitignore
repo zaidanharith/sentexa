@@ -210,8 +210,6 @@ ml/**/*.pyc
 ml/data/raw/*
 !ml/data/raw/.gitkeep
 ml/data/processed/*.csv
-ml/reports/plots/
-ml/reports/metrics/*.csv
 
 # Local model artifacts
 ml/checkpoints/
@@ -220,3 +218,5 @@ ml/model/final_model/
 # Kaggle credentials
 .kaggle/
 kaggle.json
+
+ml/model/tuning_output
