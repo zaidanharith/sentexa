@@ -17,8 +17,8 @@ services:
 
     volumes:
       - ./backend/app:/app/app
-      - ./backend/ml/model/checkpoint:/app/ml/model/checkpoint
-      - hf_cache:/root/.cache/huggingface
+      - ./backend/ml/checkpoints:/app/ml/checkpoints
+      - hf_cache:/app/.cache/huggingface
 
     security_opt:
       - no-new-privileges:true
@@ -35,8 +35,8 @@ services:
             - .ruff_cache/
 
         - action: sync
-          path: ./backend/ml/model/checkpoint
-          target: /app/ml/model/checkpoint
+          path: ./backend/ml/checkpoints
+          target: /app/ml/checkpoints
 
         - action: rebuild
           path: ./backend/requirements/production.txt

@@ -36,7 +36,10 @@ USER appuser
 
 ENV PYTHONDONTWRITEBYTECODE=1 \
     PYTHONUNBUFFERED=1 \
-    PORT=8000
+    PORT=8000 \
+    HF_HOME=/app/.cache/huggingface \
+    TRANSFORMERS_CACHE=/app/.cache/huggingface/transformers \
+    HF_HUB_CACHE=/app/.cache/huggingface/hub
 
 EXPOSE 8000
 
