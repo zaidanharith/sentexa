@@ -91,8 +91,8 @@ export default function AnalysisDashboardPage() {
             { text: analysis.state.textInput },
             {
               headers: {
-                Authorization: session?.accessToken
-                  ? `Bearer ${session.accessToken}`
+                Authorization: session?.user?.accessToken
+                  ? `Bearer ${session.user.accessToken}`
                   : undefined,
               },
             },

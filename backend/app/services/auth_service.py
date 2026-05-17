@@ -54,6 +54,38 @@ async def create_user(
 	await db.refresh(user)
 	return user
 
+async def create_user_from_social(
+	db: AsyncSession,
+	*,
+	name: str,
+	email: str,
+	google_id: Optional[str] = None,
+) -> User:
+	"""Create user dari social login (Google, GitHub, etc)"""
+	existing = await get_user_by_email(db, email)
+	if existing:
+		return existing
+
+	user = User(
+		name=name,
+		email=email,
+		google_id=google_id,
+		password=None,  # Password is None for social login
+	)
+
+	db.add(user)
+	try:
+		await db.flush()
+	except IntegrityError as exc:
+		logger.warning("Integrity error creating social user: %s", exc)
+		await db.rollback()
+		raise HTTPException(
+			status_code=status.HTTP_409_CONFLICT, detail="Email already registered"
+		) from exc
+
+	await db.refresh(user)
+	return user
+
 async def authenticate_user(
 	db: AsyncSession, *, email: str, password: str
 ) -> User:
@@ -174,3 +206,28 @@ def verify_refresh_token(token: str) -> dict:
 		)
 
 	return payload
+
+async def create_user_from_social(
+    db: AsyncSession,
+    *,
+    name: str,
+    email: str,
+    google_id: str,
+) -> User:
+    """Create user dari social login (Google, GitHub, etc)"""
+    existing = await get_user_by_email(db, email)
+    if existing:
+        return existing
+    
+    user = User(
+        name=name,
+        email=email,
+        google_id=google_id,
+        # Password di-set ke None karena user login via Google
+        password=None,
+    )
+    
+    db.add(user)
+    await db.flush()
+    await db.refresh(user)
+    return user

@@ -41,13 +41,24 @@ export function AuthProvider({ children }: AuthProviderProps) {
   const user: AuthUser | null = session?.user
     ? {
         id: Number(session.user.id),
-        name: session.user.name,
-        email: session.user.email,
-        analysis_quota: session.user.analysis_quota,
-        subscription_plan: session.user.subscription_plan,
-        subscription_status: session.user.subscription_status,
-        subscription_start: session.user.subscription_start,
-        subscription_end: session.user.subscription_end,
+        name: session.user.name || "",
+        email: session.user.email || "",
+        analysis_quota: Number(
+          (session.user as Record<string, unknown>).analysis_quota || 100
+        ),
+        subscription_plan: String(
+          (session.user as Record<string, unknown>).subscription_plan || "free"
+        ),
+        subscription_status: String(
+          (session.user as Record<string, unknown>).subscription_status ||
+            "active"
+        ),
+        subscription_start: (session.user as Record<
+          string,
+          unknown
+        >).subscription_start as string | undefined,
+        subscription_end: (session.user as Record<string, unknown>)
+          .subscription_end as string | undefined,
       }
     : null;
 
@@ -91,10 +102,13 @@ export function AuthProvider({ children }: AuthProviderProps) {
   };
 
   const logout = async () => {
-    if (session?.accessToken) {
-      try {
-        await backendAuthApi.logout(session.accessToken);
-      } catch {}
+    if (session?.user) {
+      const userWithToken = session.user as Record<string, unknown>;
+      if (userWithToken.accessToken) {
+        try {
+          await backendAuthApi.logout(userWithToken.accessToken as string);
+        } catch {}
+      }
     }
 
     await signOut({ redirect: false });

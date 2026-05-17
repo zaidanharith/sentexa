@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import Image from "next/image";
 import { usePathname, useRouter } from "next/navigation";
+import { signIn } from "next-auth/react";
 
 import { ApiError } from "@/lib/api";
 import { useAuth } from "@/hooks/useAuth";
@@ -62,6 +63,27 @@ export default function LoginModal({
       }
     } finally {
       setSubmitting(false);
+    }
+  };
+
+  const handleGoogleLogin = async () => {
+    try {
+      const result = await signIn("google", { 
+        redirect: false,
+        callbackUrl: "/dashboard"
+      });
+
+      if (result?.error) {
+        appToast.error("Login Google gagal. Coba lagi.");
+      } else {
+        appToast.success("Login dengan Google berhasil!");
+        onClose();
+        router.push("/dashboard");
+        router.refresh();
+      }
+    } catch (error) {
+      console.error("Google login error:", error);
+      appToast.error("Terjadi kesalahan. Coba lagi.");
     }
   };
 
@@ -166,7 +188,11 @@ export default function LoginModal({
               <div className="flex-1 border-t border-gray-300" />
             </div>
 
-            <button className="w-full border border-gray-300 text-gray-700 font-semibold py-2.5 rounded-lg hover:bg-gray-50 transition-colors flex items-center justify-center gap-2">
+            <button 
+              type="button"
+              onClick={handleGoogleLogin}
+              className="w-full border border-gray-300 text-gray-700 font-semibold py-2.5 rounded-lg hover:bg-gray-50 transition-colors flex items-center justify-center gap-2"
+            >
               <Image src="/google.png" alt="Google" width={20} height={20} />
               Masuk dengan Google
             </button>

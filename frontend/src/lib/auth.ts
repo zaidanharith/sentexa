@@ -1,186 +1,159 @@
-import type { NextAuthOptions } from "next-auth";
-import type { JWT } from "next-auth/jwt";
-import Credentials from "next-auth/providers/credentials";
+import type { NextAuthOptions, DefaultSession } from "next-auth";
+import type { DefaultJWT } from "next-auth/jwt";
+import CredentialsProvider from "next-auth/providers/credentials";
+import GoogleProvider from "next-auth/providers/google";
+import { backendAuthApi } from "@/lib/api";
 
-import { ApiError, backendAuthApi } from "@/lib/api";
-
-type JwtPayload = {
-  exp?: number;
-};
-
-function parseJwtPayload(token: string): JwtPayload | null {
-  const parts = token.split(".");
-  if (parts.length < 2) {
-    return null;
+declare module "next-auth" {
+  interface Session {
+    accessToken?: string;
+    refreshToken?: string;
+    user: DefaultSession["user"] & {
+      id: string;
+      accessToken?: string;
+      refreshToken?: string;
+      subscription_plan?: string;
+    };
   }
 
-  try {
-    const normalizedPayload = parts[1].replace(/-/g, "+").replace(/_/g, "/");
-    const padding = (4 - (normalizedPayload.length % 4 || 4)) % 4;
-    const paddedPayload = `${normalizedPayload}${"=".repeat(padding)}`;
-    const json = Buffer.from(paddedPayload, "base64").toString("utf8");
-    return JSON.parse(json) as JwtPayload;
-  } catch {
-    return null;
+  interface User {
+    id: string;
+    accessToken?: string;
+    refreshToken?: string;
+    subscription_plan?: string;
   }
 }
 
-function getAccessTokenExpiryMs(
-  accessToken: string | null | undefined,
-): number {
-  if (!accessToken) {
-    return Date.now();
-  }
-
-  const payload = parseJwtPayload(accessToken);
-  if (typeof payload?.exp === "number") {
-    return payload.exp * 1000;
-  }
-
-  return Date.now() + 25 * 60 * 1000;
-}
-
-async function refreshAccessToken(token: JWT): Promise<JWT> {
-  if (
-    typeof token.refreshToken !== "string" ||
-    token.refreshToken.length === 0
-  ) {
-    return {
-      ...token,
-      accessToken: undefined,
-      accessTokenExpires: Date.now(),
-      error: "RefreshTokenMissing",
-    };
-  }
-
-  try {
-    const refreshed = await backendAuthApi.refresh(token.refreshToken);
-    return {
-      ...token,
-      accessToken: refreshed.access_token,
-      refreshToken: refreshed.refresh_token ?? token.refreshToken,
-      accessTokenExpires: getAccessTokenExpiryMs(refreshed.access_token),
-      error: undefined,
-    };
-  } catch {
-    return {
-      ...token,
-      accessToken: undefined,
-      accessTokenExpires: Date.now(),
-      error: "RefreshAccessTokenError",
-    };
+declare module "next-auth/jwt" {
+  interface JWT extends DefaultJWT {
+    accessToken?: string;
+    refreshToken?: string;
+    subscription_plan?: string;
   }
 }
 
 export const authOptions: NextAuthOptions = {
-  session: {
-    strategy: "jwt",
-  },
   providers: [
-    Credentials({
+    CredentialsProvider({
       name: "Credentials",
       credentials: {
         email: { label: "Email", type: "email" },
         password: { label: "Password", type: "password" },
       },
       async authorize(credentials) {
-        const email = credentials?.email as string | undefined;
-        const password = credentials?.password as string | undefined;
-
-        if (!email || !password) {
-          return null;
+        if (!credentials?.email || !credentials?.password) {
+          throw new Error("Email dan password harus diisi");
         }
 
         try {
-          const tokens = await backendAuthApi.login({ email, password });
-          const user = await backendAuthApi.me(tokens.access_token);
-          return {
-            id: String(user.id),
-            name: user.name,
-            email: user.email,
-            subscription_plan: user.subscription_plan,
-            subscription_status: user.subscription_status,
-            subscription_start: user.subscription_start,
-            subscription_end: user.subscription_end,
-            analysis_quota: user.analysis_quota,
-            accessToken: tokens.access_token,
-            refreshToken: tokens.refresh_token ?? null,
-          };
-        } catch (error) {
-          if (error instanceof ApiError && error.status === 401) {
-            return null;
+          const response = await backendAuthApi.login({
+            email: credentials.email,
+            password: credentials.password,
+          });
+
+          // Fetch user data
+          const userResponse = await fetch(
+            `${process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000/api"}/auth/me`,
+            {
+              headers: {
+                Authorization: `Bearer ${response.access_token}`,
+              },
+            }
+          );
+
+          if (!userResponse.ok) {
+            throw new Error("Failed to fetch user data");
           }
-          throw error;
+
+          const userData = await userResponse.json();
+
+          return {
+            id: userData.id.toString(),
+            name: userData.name,
+            email: userData.email,
+            accessToken: response.access_token,
+            refreshToken: response.refresh_token ?? undefined,
+            subscription_plan: userData.subscription_plan || "free",
+          };
+        } catch {
+          throw new Error("Email atau password tidak valid");
         }
       },
     }),
+
+    GoogleProvider({
+      clientId: process.env.GOOGLE_CLIENT_ID || "",
+      clientSecret: process.env.GOOGLE_CLIENT_SECRET || "",
+    }),
   ],
+
   callbacks: {
+    async signIn({ user, account }) {
+      if (account?.provider === "google") {
+        try {
+          const response = await fetch(
+            `${process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000/api"}/auth/google-callback`,
+            {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({
+                email: user.email,
+                name: user.name,
+                googleId: user.id,
+                image: user.image,
+              }),
+            }
+          );
+
+          if (!response.ok) {
+            return false;
+          }
+
+          const data = await response.json();
+          user.accessToken = data.access_token;
+          user.refreshToken = data.refresh_token;
+
+          return true;
+        } catch (error) {
+          console.error("Google callback error:", error);
+          return false;
+        }
+      }
+
+      return true;
+    },
+
     async jwt({ token, user }) {
       if (user) {
-        token.sub = user.id;
-        token.name = user.name;
-        token.email = user.email;
-        token.subscription_plan = user.subscription_plan;
-        token.subscription_status = user.subscription_status;
-        token.subscription_start = user.subscription_start;
-        token.subscription_end = user.subscription_end;
-        token.analysis_quota = user.analysis_quota;
+        token.id = user.id;
         token.accessToken = user.accessToken;
         token.refreshToken = user.refreshToken;
-        token.accessTokenExpires = getAccessTokenExpiryMs(user.accessToken);
-        token.error = undefined;
-        return token;
+        token.subscription_plan = user.subscription_plan;
       }
-
-      const accessTokenExpires =
-        typeof token.accessTokenExpires === "number"
-          ? token.accessTokenExpires
-          : Date.now();
-
-      if (Date.now() < accessTokenExpires - 5000) {
-        return token;
-      }
-
-      return refreshAccessToken(token);
+      return token;
     },
+
     async session({ session, token }) {
       if (session.user) {
-        session.user.id = token.sub ?? "";
-        session.user.name = token.name ?? "";
-        session.user.email = token.email ?? "";
-        session.user.subscription_plan =
-          typeof token.subscription_plan === "string"
-            ? token.subscription_plan
-            : undefined;
-        session.user.subscription_status =
-          typeof token.subscription_status === "string"
-            ? token.subscription_status
-            : undefined;
-        session.user.subscription_start =
-          typeof token.subscription_start === "string"
-            ? token.subscription_start
-            : undefined;
-        session.user.subscription_end =
-          typeof token.subscription_end === "string"
-            ? token.subscription_end
-            : undefined;
-        session.user.analysis_quota =
-          typeof token.analysis_quota === "number"
-            ? token.analysis_quota
-            : undefined;
+        session.user.id = token.sub || "";
+        session.user.accessToken = token.accessToken;
+        session.user.refreshToken = token.refreshToken;
+        session.user.subscription_plan = token.subscription_plan;
       }
-
-      session.accessToken =
-        typeof token.accessToken === "string" ? token.accessToken : undefined;
-      session.refreshToken =
-        typeof token.refreshToken === "string" ? token.refreshToken : undefined;
-      session.error = typeof token.error === "string" ? token.error : undefined;
-
       return session;
     },
   },
+
   pages: {
     signIn: "/",
+  },
+
+  session: {
+    strategy: "jwt",
+    maxAge: 30 * 60,
+  },
+
+  jwt: {
+    maxAge: 30 * 60,
   },
 };

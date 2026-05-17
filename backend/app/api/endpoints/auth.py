@@ -1,4 +1,6 @@
+from typing import Optional
 from fastapi import APIRouter, Depends
+from pydantic import BaseModel, EmailStr
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api import deps
@@ -16,6 +18,14 @@ from app.services import auth_service
 
 router = APIRouter(prefix="/auth", tags=["auth"])
 
+
+class GoogleCallbackRequest(BaseModel):
+	email: EmailStr
+	name: str
+	googleId: str
+	image: Optional[str] = None
+
+
 @router.post("/register", response_model=TokenResponse, status_code=201)
 async def register(payload: RegisterRequest, db: AsyncSession = Depends(deps.get_db)):
 	user = await auth_service.create_user(
@@ -25,6 +35,7 @@ async def register(payload: RegisterRequest, db: AsyncSession = Depends(deps.get
 		password=payload.password,
 	)
 	return auth_service.issue_tokens(user)
+
 
 @router.post("/login", response_model=TokenResponse)
 async def login(payload: LoginRequest, db: AsyncSession = Depends(deps.get_db)):
@@ -41,9 +52,11 @@ async def refresh_token(
 ):
 	return await auth_service.refresh_tokens(db, refresh_token=payload.refresh_token)
 
+
 @router.get("/me", response_model=UserOut)
 async def me(current_user: User = Depends(deps.get_current_user)):
 	return current_user
+
 
 @router.put("/me", response_model=UserOut)
 async def update_profile(
@@ -60,9 +73,31 @@ async def update_profile(
 	)
 	return user
 
+
+@router.post("/google-callback", response_model=TokenResponse)
+async def google_callback(
+	payload: GoogleCallbackRequest,
+	db: AsyncSession = Depends(deps.get_db)
+):
+	"""
+	Handle Google OAuth callback.
+	Create user if doesn't exist, or login if already exists.
+	"""
+	user = await auth_service.get_user_by_email(db, payload.email)
+	
+	if not user:
+		# Create new user from Google
+		user = await auth_service.create_user_from_social(
+			db,
+			name=payload.name,
+			email=payload.email,
+			google_id=payload.googleId,
+		)
+	
+	return auth_service.issue_tokens(user)
+
+
 @router.post("/logout", response_model=LogoutResponse)
 async def logout(current_user: User = Depends(deps.get_current_user)):
 	_ = current_user
 	return LogoutResponse(detail="Logout successful")
-
-
