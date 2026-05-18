@@ -1,6 +1,7 @@
 import torch
 import torch.nn as nn
 from transformers import (
+    AutoConfig,
     AutoModelForSequenceClassification,
     AutoTokenizer,
     TrainingArguments,
@@ -143,21 +144,38 @@ def objective(trial):
     assert valid_dataset is not None
     assert class_weights is not None
 
-    learning_rate = trial.suggest_float("learning_rate", 1e-5, 3e-5, log=True)
-    batch_size = trial.suggest_categorical("batch_size", [BATCH_SIZE])
-    num_epochs = trial.suggest_categorical("num_epochs", [max(1, NUM_EPOCHS - 1), NUM_EPOCHS])
-    weight_decay = trial.suggest_float("weight_decay", 0.01, 0.1)
+    learning_rate = trial.suggest_float("learning_rate", 8e-6, 5e-5, log=True)
+    batch_size = trial.suggest_categorical(
+        "batch_size",
+        sorted({max(4, BATCH_SIZE // 2), BATCH_SIZE}),
+    )
+    num_epochs = trial.suggest_categorical(
+        "num_epochs",
+        [max(1, NUM_EPOCHS - 1), NUM_EPOCHS],
+    )
+    weight_decay = trial.suggest_float("weight_decay", 0.0, 0.05)
+    warmup_ratio = trial.suggest_float("warmup_ratio", 0.02, 0.1)
     
-    model = AutoModelForSequenceClassification.from_pretrained(
+    id2label = {v: k for k, v in LABEL_MAP.items()}
+    config = AutoConfig.from_pretrained(
         MODEL_NAME,
         num_labels=len(LABEL_MAP),
+        id2label=id2label,
+        label2id=LABEL_MAP,
     )
-    
-    model.config.id2label = {v: k for k, v in LABEL_MAP.items()}
-    model.config.label2id = LABEL_MAP
+
+    model = AutoModelForSequenceClassification.from_pretrained(
+        MODEL_NAME,
+        config=config,
+        ignore_mismatched_sizes=True,
+    )
     
     output_dir = TUNING_OUTPUT_DIR / f"trial_{trial.number}"
     
+    steps_per_epoch = max(1, len(train_dataset) // batch_size)
+    total_steps = max(1, steps_per_epoch * num_epochs)
+    warmup_steps = max(1, int(total_steps * warmup_ratio))
+
     training_args = TrainingArguments(
         output_dir=str(output_dir),
         num_train_epochs=num_epochs,
@@ -165,7 +183,7 @@ def objective(trial):
         per_device_eval_batch_size=batch_size,
         learning_rate=learning_rate,
         weight_decay=weight_decay,
-        warmup_steps=max(1, int((len(train_dataset) * num_epochs / batch_size) * WARMUP_RATIO)),
+        warmup_steps=warmup_steps,
         eval_strategy="epoch",
         logging_strategy="epoch",
         save_strategy="epoch",
@@ -175,6 +193,7 @@ def objective(trial):
         metric_for_best_model="eval_f1_macro",
         greater_is_better=True,
         seed=42,
+        data_seed=42,
         fp16=torch.cuda.is_available(),
         disable_tqdm=True,
     )
@@ -188,7 +207,7 @@ def objective(trial):
         compute_metrics=compute_metrics,
         callbacks=[
             EarlyStoppingCallback(
-                early_stopping_patience=1,
+                early_stopping_patience=2,
                 early_stopping_threshold=0.0,
             ),
             OptunaCallback(trial),
@@ -218,7 +237,7 @@ def run_tuning():
     print("\nStarting Optuna hyperparameter tuning...\n")
     
     sampler = optuna.samplers.TPESampler(seed=42)
-    pruner = MedianPruner(n_startup_trials=2, n_warmup_steps=1)
+    pruner = MedianPruner(n_startup_trials=3, n_warmup_steps=2)
     
     study = optuna.create_study(
         direction="maximize",
@@ -226,7 +245,7 @@ def run_tuning():
         pruner=pruner,
     )
     
-    study.optimize(objective, n_trials=8, show_progress_bar=True)
+    study.optimize(objective, n_trials=6, show_progress_bar=True)
     
     best_trial = study.best_trial
     best_hyperparameters = best_trial.params

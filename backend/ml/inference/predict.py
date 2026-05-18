@@ -1,12 +1,9 @@
-import json
-import os
-from pathlib import Path
-from typing import Dict, List, Optional, cast
-
-import pandas as pd
 import torch
 from transformers import AutoModelForSequenceClassification, AutoTokenizer
-
+from pathlib import Path
+import json
+from typing import Dict, List, Optional, cast
+import pandas as pd
 from ml.model.config import CHECKPOINT_DIR, HF_MODEL, DEVICE, MAX_LENGTH, LABEL_MAP
 from ml.preprocessing.cleaning import clean_text
 from ml.preprocessing.normalization import normalize_text
@@ -16,63 +13,30 @@ from ml.preprocessing.stopwords import remove_stopwords_tokens
 model = None
 tokenizer = None
 label_map = None
-HF_CACHE_DIR = Path(os.getenv("HF_HOME", "/tmp/sentexa/huggingface"))
-HF_CACHE_DIR.mkdir(parents=True, exist_ok=True)
 
 class PredictionError(ValueError):
     pass
 
 
-def _checkpoint_is_ready() -> bool:
-    config_path = CHECKPOINT_DIR / "config.json"
-    model_safetensors = CHECKPOINT_DIR / "model.safetensors"
-    model_bin = CHECKPOINT_DIR / "pytorch_model.bin"
-
-    return config_path.exists() and (model_safetensors.exists() or model_bin.exists())
-
-
-def _save_model_artifacts(model_instance) -> None:
-    try:
-        CHECKPOINT_DIR.mkdir(parents=True, exist_ok=True)
-        model_instance.save_pretrained(CHECKPOINT_DIR)
-        print(f"Saved model artifacts to {CHECKPOINT_DIR}")
-    except Exception as e:
-        print(f"Warning: could not save model artifacts to {CHECKPOINT_DIR}: {e}")
-
-
-def _save_tokenizer_artifacts(tokenizer_instance) -> None:
-    try:
-        CHECKPOINT_DIR.mkdir(parents=True, exist_ok=True)
-        tokenizer_instance.save_pretrained(CHECKPOINT_DIR)
-        print(f"Saved tokenizer artifacts to {CHECKPOINT_DIR}")
-    except Exception as e:
-        print(f"Warning: could not save tokenizer artifacts to {CHECKPOINT_DIR}: {e}")
-
-
 def load_model():
     global model
     if model is None:
-        local_error = None
         try:
-            if _checkpoint_is_ready():
-                try:
-                    model = AutoModelForSequenceClassification.from_pretrained(CHECKPOINT_DIR)
-                    print(f"Loaded model from checkpoint directory: {CHECKPOINT_DIR}")
-                except Exception as e:
-                    local_error = e
-                    print(f"Error loading model from checkpoint directory {CHECKPOINT_DIR}: {e}")
-
-            if model is None:
-                model = AutoModelForSequenceClassification.from_pretrained(
-                    HF_MODEL,
-                    cache_dir=str(HF_CACHE_DIR),
-                )
-                print(f"Loaded model from Hugging Face Hub: {HF_MODEL}")
-                _save_model_artifacts(model)
+            model = AutoModelForSequenceClassification.from_pretrained(HF_MODEL)
+            print(f"Loaded model from Hugging Face Hub: {HF_MODEL}")
         except Exception as e:
-            raise FileNotFoundError(
-                f"Unable to load model from {HF_MODEL} or {CHECKPOINT_DIR}: {e}"
-            ) from e
+            print(f"Error loading model from Hugging Face Hub: {e}")
+            config_path = CHECKPOINT_DIR / "config.json"
+            model_safetensors = CHECKPOINT_DIR / "model.safetensors"
+            model_bin = CHECKPOINT_DIR / "pytorch_model.bin"
+
+            if not config_path.exists():
+                raise FileNotFoundError(f"Model config not found in {CHECKPOINT_DIR}")
+
+            if not model_safetensors.exists() and not model_bin.exists():
+                raise FileNotFoundError(f"Model weights not found in {CHECKPOINT_DIR} (looking for model.safetensors or pytorch_model.bin)")
+
+            model = AutoModelForSequenceClassification.from_pretrained(CHECKPOINT_DIR)
 
         model.to(DEVICE)
         model.eval()
@@ -83,25 +47,10 @@ def load_model():
 def load_tokenizer():
     global tokenizer
     if tokenizer is None:
-        local_error = None
         try:
-            if _checkpoint_is_ready():
-                try:
-                    tokenizer = AutoTokenizer.from_pretrained(CHECKPOINT_DIR)
-                except Exception as e:
-                    local_error = e
-                    print(f"Error loading tokenizer from checkpoint directory {CHECKPOINT_DIR}: {e}")
-
-            if tokenizer is None:
-                tokenizer = AutoTokenizer.from_pretrained(
-                    HF_MODEL,
-                    cache_dir=str(HF_CACHE_DIR),
-                )
-                _save_tokenizer_artifacts(tokenizer)
-        except Exception as e:
-            raise FileNotFoundError(
-                f"Unable to load tokenizer from {HF_MODEL} or {CHECKPOINT_DIR}: {e}"
-            ) from e
+            tokenizer = AutoTokenizer.from_pretrained(HF_MODEL)
+        except:
+            tokenizer = AutoTokenizer.from_pretrained(CHECKPOINT_DIR)
     
     return tokenizer
 
@@ -147,7 +96,7 @@ def preprocess_text(text: str) -> str:
     
     cleaned = clean_text(text)
     normalized = normalize_text(cleaned)
-    removed_stopwords = remove_stopwords_tokens(normalized)
+    removed_stopwords = remove_stopwords_tokens(normalized.split())
 
     if isinstance(removed_stopwords, list):
         return " ".join(str(token) for token in removed_stopwords if str(token).strip())

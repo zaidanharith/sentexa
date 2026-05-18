@@ -6,7 +6,6 @@ from pathlib import Path
 from typing import Dict, List, Tuple
 import numpy as np
 from ml.model.config import (
-    PROCESSED_DATA_DIR,
     TRAIN_FILE,
     VALID_FILE,
     TEST_FILE,

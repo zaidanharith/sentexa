@@ -25,11 +25,6 @@ export default async function Home() {
       <section className="border-b border-gray-200 bg-white w-full pb-16">
         <div className="relative mx-auto grid md:grid-cols-2 gap-12 items-center max-w-7xl">
           <div>
-            <span className="inline-flex items-center gap-1.5 bg-sky-50 border border-sky-200 text-sky-600 text-xs font-semibold px-3 py-1 rounded-full mb-5">
-              <HiSparkles className="text-sky-400" />
-              Khusus Pelaku UMKM
-            </span>
-
             <h1 className="text-4xl md:text-5xl font-extrabold text-gray-900 leading-tight tracking-tight mb-5">
               Analisis Ribuan{" "}
               <span className="text-sky-500">Ulasan Pelanggan</span> Secara

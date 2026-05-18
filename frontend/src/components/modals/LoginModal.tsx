@@ -68,9 +68,9 @@ export default function LoginModal({
 
   const handleGoogleLogin = async () => {
     try {
-      const result = await signIn("google", { 
+      const result = await signIn("google", {
         redirect: false,
-        callbackUrl: "/dashboard"
+        callbackUrl: "/dashboard",
       });
 
       if (result?.error) {
@@ -188,10 +188,10 @@ export default function LoginModal({
               <div className="flex-1 border-t border-gray-300" />
             </div>
 
-            <button 
+            <button
               type="button"
               onClick={handleGoogleLogin}
-              className="w-full border border-gray-300 text-gray-700 font-semibold py-2.5 rounded-lg hover:bg-gray-50 transition-colors flex items-center justify-center gap-2"
+              className="w-full border border-gray-300 text-gray-700 font-semibold py-2.5 rounded-lg hover:bg-gray-50 transition-colors flex items-center justify-center gap-2 cursor-pointer"
             >
               <Image src="/google.png" alt="Google" width={20} height={20} />
               Masuk dengan Google

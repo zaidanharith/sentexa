@@ -11,6 +11,8 @@ from ml.model.config import LABEL_MAP, PROCESSED_DATA_DIR, RAW_DATA_DIR
 
 TEXT_COLUMN_CANDIDATES = ["text", "review", "content", "sentence"]
 LABEL_COLUMN_CANDIDATES = ["label", "sentiment", "target"]
+MIN_LABEL_COUNT_WARNING = 50
+MIN_LABEL_COUNT_HARD_FAIL = 10
 
 
 def detect_text_column(df: pd.DataFrame) -> str:
@@ -109,6 +111,44 @@ def encode_labels(df: pd.DataFrame) -> pd.DataFrame:
     return df
 
 
+def validate_split_distribution(df: pd.DataFrame, split_name: str) -> None:
+    """Validate minimum label distribution for a split.
+
+    - Hard fail when one or more labels are too scarce.
+    - Warn when all labels exist but one is still relatively small.
+    """
+    expected_labels = set(LABEL_MAP.values())
+    counts = df['label'].value_counts().to_dict()
+    present_labels = set(counts.keys())
+    missing_labels = sorted(expected_labels - present_labels)
+
+    if missing_labels:
+        label_names = {v: k for k, v in LABEL_MAP.items()}
+        missing_names = [label_names.get(x, str(x)) for x in missing_labels]
+        raise ValueError(
+            f"{split_name} split missing labels: {missing_names}. "
+            "Please review source data or split ratios."
+        )
+
+    low_hard_fail = sorted([k for k, v in counts.items() if v < MIN_LABEL_COUNT_HARD_FAIL])
+    if low_hard_fail:
+        label_names = {v: k for k, v in LABEL_MAP.items()}
+        low_hard_fail_names = [f"{label_names.get(x, x)}={counts[x]}" for x in low_hard_fail]
+        raise ValueError(
+            f"{split_name} split has too few samples for labels: {', '.join(low_hard_fail_names)}. "
+            f"Minimum hard-fail threshold is {MIN_LABEL_COUNT_HARD_FAIL}."
+        )
+
+    low_warning = sorted([k for k, v in counts.items() if v < MIN_LABEL_COUNT_WARNING])
+    if low_warning:
+        label_names = {v: k for k, v in LABEL_MAP.items()}
+        low_warning_names = [f"{label_names.get(x, x)}={counts[x]}" for x in low_warning]
+        print(
+            f"Warning: {split_name} split has low label counts: {', '.join(low_warning_names)}. "
+            f"Recommended minimum is {MIN_LABEL_COUNT_WARNING}."
+        )
+
+
 def create_stratified_split(df: pd.DataFrame, 
                            train_ratio: float = 0.7,
                            valid_ratio: float = 0.15,
@@ -135,6 +175,10 @@ def create_stratified_split(df: pd.DataFrame,
 
 def save_splits(train_df, valid_df, test_df) -> None:
     PROCESSED_DATA_DIR.mkdir(parents=True, exist_ok=True)
+
+    validate_split_distribution(train_df, "train")
+    validate_split_distribution(valid_df, "valid")
+    validate_split_distribution(test_df, "test")
     
     for name, df in [('train', train_df), ('valid', valid_df), ('test', test_df)]:
         output_path = PROCESSED_DATA_DIR / f"{name}.csv"
@@ -162,9 +206,9 @@ def save_label_map() -> None:
     print(f"Label map saved to {checkpoint_label_map_path}")
 
 
-def prepare_combine_mode() -> None:
+def prepare_data() -> None:
     print("="*60)
-    print("DATA PREPARATION: COMBINE + STRATIFIED SPLIT")
+    print("DATA PREPARATION: COMBINED RAW SPLITS + STRATIFIED SPLIT")
     print("="*60)
     
     df = load_raw_data()
@@ -180,63 +224,13 @@ def prepare_combine_mode() -> None:
     print("="*60)
 
 
-def prepare_process_mode() -> None:
-    print("="*60)
-    print("DATA PREPARATION: PROCESS INDIVIDUAL SPLITS")
-    print("="*60)
-    
-    PROCESSED_DATA_DIR.mkdir(parents=True, exist_ok=True)
-    
-    for split_name in ["train", "valid", "test"]:
-        input_path = RAW_DATA_DIR / f"{split_name}.csv"
-        output_path = PROCESSED_DATA_DIR / f"{split_name}.csv"
-        
-        if not input_path.exists():
-            print(f"Skipping {split_name}: file not found")
-            continue
-        
-        print(f"\nPreparing {split_name}...")
-        df = load_csv_file(input_path)
-        
-        if df.empty:
-            raise ValueError(f"{split_name} is empty")
-        
-        # Detect and rename columns
-        text_col = detect_text_column(df)
-        label_col = detect_label_column(df)
-        df = df[[text_col, label_col]].rename(columns={text_col: 'text', label_col: 'label'}).copy()
-        
-        df = preprocess_dataframe(df)
-        df = encode_labels(df)
-        
-        df.to_csv(output_path, index=False)
-        
-        label_dist = df['label'].value_counts().sort_index().to_dict()
-        label_names = {v: k for k, v in LABEL_MAP.items()}
-        label_dist_named = {label_names.get(k, k): v for k, v in label_dist.items()}
-        print(f"Saved {split_name}: {len(df)} samples, distribution: {label_dist_named}")
-    
-    print("\n" + "="*60)
-    print("Data preparation complete!")
-    print("="*60)
-
-
 def main() -> None:
     parser = argparse.ArgumentParser(description="Prepare data for sentiment analysis")
-    parser.add_argument(
-        "--combine",
-        action="store_true",
-        help="Combine all raw data and create stratified train/valid/test split"
-    )
-    
-    args = parser.parse_args()
-    
+    parser.parse_args()
+
     save_label_map()
-    
-    if args.combine:
-        prepare_combine_mode()
-    else:
-        prepare_process_mode()
+
+    prepare_data()
 
 
 if __name__ == "__main__":
