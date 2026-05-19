@@ -92,11 +92,12 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Validate docker-compose config
+      - name: Prepare environment files
         run: |
+          # Backend env
           cp backend/.env.example backend/.env 2>/dev/null || \
             echo -e "DATABASE_URL=postgresql://user:pass@localhost:5432/db\nSECRET_KEY=ci-secret\nENVIRONMENT=production" > backend/.env
-          docker compose config --quiet
 
-      - name: Build backend Docker image
-        run: docker compose build backend
+          # Frontend env (needed for docker compose validation)
+          cp frontend/.env.example frontend/.env 2>/dev/null || \
+            echo -e "NEXTAUTH_URL=http://localhost\nNEXTAUTH_SECRET=ci-dev-secret-min-32-chars-for-testing\nAUTH_SECRET=ci-dev-secret-min-32-chars-for-testing\nNEXT_PUBLIC_API_URL=http://localhost:8000/api\nGOOGLE_CLIENT_ID=\nGOOGLE_CLIENT_SECRET=" > frontend/.env

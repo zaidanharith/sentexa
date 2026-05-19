@@ -1,4 +1,50 @@
 services:
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: sentexa_frontend
+    restart: unless-stopped
+
+    ports:
+      - "3000:3000"
+
+    networks:
+      - sentexa_network
+
+    environment:
+      - NODE_ENV=production
+      - PORT=3000
+      - NEXTAUTH_URL=${NEXTAUTH_URL:-http://localhost}
+      - NEXTAUTH_SECRET=${NEXTAUTH_SECRET:-dev-nextauth-secret-change-me-32chars}
+      - AUTH_SECRET=${AUTH_SECRET:-dev-nextauth-secret-change-me-32chars}
+      - GOOGLE_CLIENT_ID=${GOOGLE_CLIENT_ID:-}
+      - GOOGLE_CLIENT_SECRET=${GOOGLE_CLIENT_SECRET:-}
+      - NEXT_PUBLIC_API_URL=${NEXT_PUBLIC_API_URL:-http://localhost:8000/api}
+
+    volumes:
+      - ./frontend/src:/app/src
+      - ./frontend/public:/app/public
+
+    security_opt:
+      - no-new-privileges:true
+
+    develop:
+      watch:
+        - action: sync
+          path: ./frontend/src
+          target: /app/src
+
+        - action: sync
+          path: ./frontend/public
+          target: /app/public
+
+        - action: rebuild
+          path: ./frontend/package.json
+
+        - action: rebuild
+          path: ./frontend/Dockerfile
+
   backend:
     build:
       context: ./backend
@@ -59,6 +105,7 @@ services:
     volumes:
       - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
     depends_on:
+      - frontend
       - backend
     networks:
       - sentexa_network

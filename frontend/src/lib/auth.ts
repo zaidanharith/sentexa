@@ -32,60 +32,66 @@ declare module "next-auth/jwt" {
   }
 }
 
-export const authOptions: NextAuthOptions = {
-  providers: [
-    CredentialsProvider({
-      name: "Credentials",
-      credentials: {
-        email: { label: "Email", type: "email" },
-        password: { label: "Password", type: "password" },
-      },
-      async authorize(credentials) {
-        if (!credentials?.email || !credentials?.password) {
-          throw new Error("Email dan password harus diisi");
+const providers: any[] = [
+  CredentialsProvider({
+    name: "Credentials",
+    credentials: {
+      email: { label: "Email", type: "email" },
+      password: { label: "Password", type: "password" },
+    },
+    async authorize(credentials) {
+      if (!credentials?.email || !credentials?.password) {
+        throw new Error("Email dan password harus diisi");
+      }
+
+      try {
+        const response = await backendAuthApi.login({
+          email: credentials.email,
+          password: credentials.password,
+        });
+
+        const userResponse = await fetch(
+          `${process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000/api"}/auth/me`,
+          {
+            headers: {
+              Authorization: `Bearer ${response.access_token}`,
+            },
+          },
+        );
+
+        if (!userResponse.ok) {
+          throw new Error("Failed to fetch user data");
         }
 
-        try {
-          const response = await backendAuthApi.login({
-            email: credentials.email,
-            password: credentials.password,
-          });
+        const userData = await userResponse.json();
 
-          // Fetch user data
-          const userResponse = await fetch(
-            `${process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000/api"}/auth/me`,
-            {
-              headers: {
-                Authorization: `Bearer ${response.access_token}`,
-              },
-            }
-          );
+        return {
+          id: userData.id.toString(),
+          name: userData.name,
+          email: userData.email,
+          accessToken: response.access_token,
+          refreshToken: response.refresh_token ?? undefined,
+          subscription_plan: userData.subscription_plan || "free",
+        };
+      } catch {
+        throw new Error("Email atau password tidak valid");
+      }
+    },
+  }),
+];
 
-          if (!userResponse.ok) {
-            throw new Error("Failed to fetch user data");
-          }
-
-          const userData = await userResponse.json();
-
-          return {
-            id: userData.id.toString(),
-            name: userData.name,
-            email: userData.email,
-            accessToken: response.access_token,
-            refreshToken: response.refresh_token ?? undefined,
-            subscription_plan: userData.subscription_plan || "free",
-          };
-        } catch {
-          throw new Error("Email atau password tidak valid");
-        }
-      },
-    }),
-
+// Only add Google provider if credentials are configured
+if (process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET) {
+  providers.push(
     GoogleProvider({
-      clientId: process.env.GOOGLE_CLIENT_ID || "",
-      clientSecret: process.env.GOOGLE_CLIENT_SECRET || "",
+      clientId: process.env.GOOGLE_CLIENT_ID,
+      clientSecret: process.env.GOOGLE_CLIENT_SECRET,
     }),
-  ],
+  );
+}
+
+export const authOptions: NextAuthOptions = {
+  providers,
 
   callbacks: {
     async signIn({ user, account }) {
@@ -102,7 +108,7 @@ export const authOptions: NextAuthOptions = {
                 googleId: user.id,
                 image: user.image,
               }),
-            }
+            },
           );
 
           if (!response.ok) {

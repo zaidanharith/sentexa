@@ -1,5 +1,6 @@
 import torch
 import torch.nn as nn
+import warnings
 from transformers import (
     AutoConfig,
     AutoModelForSequenceClassification,
@@ -9,6 +10,9 @@ from transformers import (
     EarlyStoppingCallback,
 )
 from transformers.trainer_callback import TrainerCallback
+
+# Suppress non-critical warnings
+warnings.filterwarnings("ignore", message=".*num_labels.*incompatible.*")
 from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_score
 from sklearn.utils.class_weight import compute_class_weight
 import numpy as np
@@ -147,14 +151,13 @@ def objective(trial):
     learning_rate = trial.suggest_float("learning_rate", 8e-6, 5e-5, log=True)
     batch_size = trial.suggest_categorical(
         "batch_size",
-        sorted({max(4, BATCH_SIZE // 2), BATCH_SIZE}),
+        [BATCH_SIZE, BATCH_SIZE * 2],
     )
-    num_epochs = trial.suggest_categorical(
-        "num_epochs",
-        [max(1, NUM_EPOCHS - 1), NUM_EPOCHS],
-    )
+    num_epochs = 2  # Fixed to 2 epochs for speed
     weight_decay = trial.suggest_float("weight_decay", 0.0, 0.05)
     warmup_ratio = trial.suggest_float("warmup_ratio", 0.02, 0.1)
+    
+    print(f"\n[Trial {trial.number}] LR={learning_rate:.2e}, BS={batch_size}, WD={weight_decay:.4f}, WR={warmup_ratio:.3f}")
     
     id2label = {v: k for k, v in LABEL_MAP.items()}
     config = AutoConfig.from_pretrained(
@@ -245,7 +248,7 @@ def run_tuning():
         pruner=pruner,
     )
     
-    study.optimize(objective, n_trials=6, show_progress_bar=True)
+    study.optimize(objective, n_trials=4, show_progress_bar=True)
     
     best_trial = study.best_trial
     best_hyperparameters = best_trial.params
