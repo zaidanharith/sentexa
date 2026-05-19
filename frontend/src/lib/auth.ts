@@ -1,5 +1,6 @@
 import type { NextAuthOptions, DefaultSession } from "next-auth";
 import type { DefaultJWT } from "next-auth/jwt";
+import type { Provider } from "next-auth/providers";
 import CredentialsProvider from "next-auth/providers/credentials";
 import GoogleProvider from "next-auth/providers/google";
 import { backendAuthApi } from "@/lib/api";
@@ -32,7 +33,7 @@ declare module "next-auth/jwt" {
   }
 }
 
-const providers: any[] = [
+const providers: Provider[] = [
   CredentialsProvider({
     name: "Credentials",
     credentials: {

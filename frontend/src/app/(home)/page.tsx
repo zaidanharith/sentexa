@@ -5,7 +5,6 @@ import {
   FiArrowRight,
 } from "react-icons/fi";
 import { MdAutoAwesome } from "react-icons/md";
-import { HiSparkles } from "react-icons/hi2";
 import Link from "next/link";
 import { Suspense } from "react";
 import { getSubscriptionPlansForHome } from "@/lib/server-api";
