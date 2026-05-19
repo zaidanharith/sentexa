@@ -3,7 +3,6 @@ services:
     build:
       context: ./frontend
       dockerfile: Dockerfile
-    container_name: sentexa_frontend
     restart: unless-stopped
 
     ports:
@@ -49,7 +48,6 @@ services:
     build:
       context: ./backend
       dockerfile: Dockerfile
-    container_name: sentexa_backend
     restart: unless-stopped
 
     env_file:
@@ -98,7 +96,6 @@ services:
 
   nginx:
     image: nginx:alpine
-    container_name: sentexa_nginx
     restart: unless-stopped
     ports:
       - "80:80"

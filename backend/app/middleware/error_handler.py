@@ -5,11 +5,22 @@ from typing import Any
 from fastapi import FastAPI, Request
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
+from sqlalchemy.exc import DBAPIError, InterfaceError, OperationalError
 from starlette.exceptions import HTTPException as StarletteHTTPException
 
 from app.middleware.request_context import get_request_id
 
 logger = logging.getLogger(__name__)
+
+
+def _is_database_connectivity_error(exc: Exception) -> bool:
+    current: BaseException | None = exc
+    while current is not None:
+        if isinstance(current, (OperationalError, InterfaceError, DBAPIError, OSError, ConnectionError)):
+            return True
+        current = current.__cause__ or current.__context__
+
+    return False
 
 def _build_error_payload(
     detail: str, errors: Sequence[Any] | None = None
@@ -50,6 +61,12 @@ async def validation_exception_handler(request: Request, exc: Exception) -> JSON
     )
 
 async def internal_error_handler(request: Request, exc: Exception) -> JSONResponse:
+    if _is_database_connectivity_error(exc):
+        return JSONResponse(
+            status_code=503,
+            content=_build_error_payload("Database unavailable"),
+        )
+
     logger.exception(
         "Unhandled error on %s %s [request_id=%s]",
         request.method,
