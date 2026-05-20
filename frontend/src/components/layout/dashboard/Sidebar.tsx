@@ -36,8 +36,6 @@ function getNavIcon(href: string) {
       return <MdOutlineAttachMoney className="w-4 h-4" />;
     case "/dashboard/analysis":
       return <HiOutlineChartBar className="w-4 h-4" />;
-    case "/dashboard/reviews":
-      return <HiOutlineChatAlt2 className="w-4 h-4" />;
     case "/dashboard/reports":
       return <HiOutlineDocumentReport className="w-4 h-4" />;
     case "/dashboard/history":
