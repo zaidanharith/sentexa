@@ -79,6 +79,7 @@ export default function Sidebar({
 
   return (
     <>
+      {/* DESKTOP SIDEBAR */}
       <aside
         className={`hidden md:flex flex-col h-screen sticky top-0 border-r border-gray-200 bg-white transition-all duration-300 ${
           collapsed ? "w-16" : "w-60"
@@ -90,7 +91,7 @@ export default function Sidebar({
           }`}
         >
           {!collapsed && (
-            <Link href="/" className="flex items-center gap-2">
+            <Link href="/" className="flex items-center gap-2 shrink-0">
               <Image
                 src="/logo1.svg"
                 alt="Sentexa"
@@ -102,7 +103,7 @@ export default function Sidebar({
             </Link>
           )}
           {collapsed && (
-            <Link href="/">
+            <Link href="/" className="shrink-0">
               <Image
                 src="/logo1.svg"
                 alt="Sentexa"
@@ -133,6 +134,7 @@ export default function Sidebar({
           </button>
         )}
 
+        {/* NAVIGATION ITEMS */}
         <nav className="flex flex-col gap-1 flex-1 overflow-y-auto px-2 py-4">
           {navItems.map((item) => {
             const isActive = pathname === item.href;
@@ -151,13 +153,15 @@ export default function Sidebar({
                 </span>
                 {!collapsed && (
                   <span
-                    className={`flex-1 truncate text-gray-600 ${item.isPremiumOnly ? "text-amber-600" : ""}`}
+                    className={`flex-1 truncate text-gray-600 ${
+                      item.isPremiumOnly ? "text-amber-600" : ""
+                    }`}
                   >
                     {item.label}
                   </span>
                 )}
                 {!collapsed && item.isPremiumOnly && (
-                  <GiQueenCrown className="w-5 h-5 text-amber-600" />
+                  <GiQueenCrown className="w-5 h-5 text-amber-600 shrink-0" />
                 )}
               </>
             );
@@ -197,6 +201,7 @@ export default function Sidebar({
           })}
         </nav>
 
+        {/* PROFILE & LOGOUT */}
         <div className="border-t border-gray-100 px-2 py-3 flex flex-col gap-1">
           <Link
             href="/dashboard/profile"
@@ -234,12 +239,12 @@ export default function Sidebar({
         </div>
       </aside>
 
-      <nav className="md:hidden fixed bottom-0 left-0 right-0 z-50 bg-white border-t border-gray-300 flex items-center justify-around px-2 py-1">
-        {navItems.slice(0, 4).map((item) => {
+      {/* MOBILE BOTTOM NAVIGATION - SEMUA 5 HALAMAN */}
+      <nav className="md:hidden fixed bottom-0 left-0 right-0 z-50 bg-white border-t border-gray-300 flex items-center justify-around px-1 py-2 h-16">
+        {navItems.map((item) => {
           const isActive = pathname === item.href;
           const icon = getNavIcon(item.href);
 
-          // Check if item is disabled (premium only but user is not premium)
           const isPremiumItem = item.isPremiumOnly;
           const isUserPremium = user?.subscription_plan === "premium";
           const isDisabled = isPremiumItem && !isUserPremium;
@@ -249,10 +254,10 @@ export default function Sidebar({
               <div
                 key={item.href}
                 title="Hanya tersedia untuk pengguna Premium"
-                className="flex flex-col items-center gap-0.5 px-3 py-2 rounded-lg text-xs font-medium transition-colors text-gray-300 cursor-not-allowed opacity-60"
+                className="flex flex-col items-center gap-1 px-2 py-1 rounded-lg text-xs font-medium transition-colors text-gray-300 cursor-not-allowed opacity-60 flex-1"
               >
                 <span className="text-gray-300">{icon}</span>
-                <span>{item.label}</span>
+                <span className="truncate text-center">{item.label}</span>
               </div>
             );
           }
@@ -261,36 +266,17 @@ export default function Sidebar({
             <Link
               key={item.href}
               href={item.href}
-              className={`flex flex-col items-center gap-0.5 px-3 py-2 rounded-lg text-xs font-medium transition-colors ${
+              className={`flex flex-col items-center gap-1 px-2 py-1 rounded-lg text-xs font-medium transition-colors flex-1 ${
                 isActive ? "text-sky-500" : "text-gray-500 hover:text-gray-800"
               }`}
             >
               <span className={isActive ? "text-sky-500" : "text-gray-400"}>
                 {icon}
               </span>
-              <span>{item.label}</span>
+              <span className="truncate text-center">{item.label}</span>
             </Link>
           );
         })}
-        <Link
-          href="/dashboard/profile"
-          className={`flex flex-col items-center gap-0.5 px-3 py-2 rounded-lg text-xs font-medium transition-colors ${
-            pathname === "/dashboard/profile"
-              ? "text-sky-500"
-              : "text-gray-500 hover:text-gray-800"
-          }`}
-        >
-          <span
-            className={
-              pathname === "/dashboard/profile"
-                ? "text-sky-500"
-                : "text-gray-400"
-            }
-          >
-            <HiOutlineUser className="w-4 h-4" />
-          </span>
-          <span>Profil</span>
-        </Link>
       </nav>
     </>
   );

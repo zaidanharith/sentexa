@@ -43,8 +43,8 @@ const socialLinks = [
 export default function Footer() {
   return (
     <footer className="w-full border-t border-gray-200 bg-white">
-      <div className="max-w-7xl mx-auto py-12">
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-10">
+      <div className="px-4 sm:px-6 md:px-8 max-w-7xl mx-auto py-12">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-8 md:gap-10">
           <div className="lg:col-span-2 flex flex-col gap-4">
             <Link href="/" className="flex items-center gap-2 w-fit">
               <Image
@@ -54,7 +54,9 @@ export default function Footer() {
                 height={28}
                 style={{ height: "auto" }}
               />
-              <span className="text-2xl font-bold text-sky-500">Sentexa</span>
+              <span className="text-xl sm:text-2xl font-bold text-sky-500">
+                Sentexa
+              </span>
             </Link>
             <p className="text-sm text-gray-500 leading-relaxed max-w-xs">
               Platform analisis sentimen berbasis AI untuk UMKM Indonesia.
@@ -105,7 +107,7 @@ export default function Footer() {
       </div>
 
       <div className="border-t border-gray-100">
-        <div className="max-w-7xl mx-auto px-5 py-4 flex flex-col sm:flex-row items-center justify-between gap-2">
+        <div className="px-4 sm:px-6 md:px-8 max-w-7xl mx-auto py-4 flex flex-col sm:flex-row items-center justify-between gap-2">
           <p className="text-xs text-gray-400">
             &copy; {new Date().getFullYear()} Sentexa. Seluruh hak cipta
             dilindungi.

@@ -231,22 +231,24 @@ export default function DashboardPage() {
   const deltaValue = Math.abs(deltaFromYesterday);
 
   return (
-    <main className="w-full mx-auto flex flex-col gap-4">
+    <main className="w-full mx-auto flex flex-col gap-3 sm:gap-4 pb-20 md:pb-4">
       <DashboardPageTitle
         title="Dashboard"
         subtitle="Selamat datang di dashboard Anda"
       />
       <DashboardPageContent>
-        <h1 className="font-bold text-3xl">
+        <h1 className="font-bold text-2xl sm:text-3xl">
           Halo, {session?.user?.name || "Pengguna"}!
         </h1>
       </DashboardPageContent>
-      <div className="flex items-center gap-4">
+
+      {/* STATS CARDS - RESPONSIVE GRID */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
         <DashboardPageContent title="Total Analisis" line={false}>
-          <h1 className="text-3xl font-black">
+          <h1 className="text-2xl sm:text-3xl font-black">
             {loading ? "-" : totalAnalyses}
           </h1>
-          <p className="text-gray-600 text-sm flex items-center gap-1 mt-1">
+          <p className="text-gray-600 text-xs sm:text-sm flex items-center gap-1 mt-1">
             {deltaIndicator === "up" ? (
               <FaArrowUp className="text-green-500" />
             ) : (
@@ -255,41 +257,49 @@ export default function DashboardPage() {
             {loading ? "Memuat..." : `${deltaValue} dari kemarin`}
           </p>
         </DashboardPageContent>
-        <DashboardPageContent title="Sentimen Positif"
+
+        <DashboardPageContent
+          title="Sentimen Positif"
           line={false}
-          className="bg-green-100!"
+          className="bg-green-50"
         >
-          <h1 className="text-3xl font-black">
+          <h1 className="text-2xl sm:text-3xl font-black text-green-600">
             {loading ? "-" : `${percent.positive}%`}
           </h1>
-          <p className="text-gray-600 text-sm mt-1">
-            {loading ? "Memuat..." : `${positiveCount} Ulasan Positif`}
+          <p className="text-gray-600 text-xs sm:text-sm mt-1">
+            {loading ? "Memuat..." : `${positiveCount} Ulasan`}
           </p>
         </DashboardPageContent>
-        <DashboardPageContent title="Sentimen Negatif"
+
+        <DashboardPageContent
+          title="Sentimen Negatif"
           line={false}
-          className="bg-red-100!"
+          className="bg-red-50"
         >
-          <h1 className="text-3xl font-black">
+          <h1 className="text-2xl sm:text-3xl font-black text-red-600">
             {loading ? "-" : `${percent.negative}%`}
           </h1>
-          <p className="text-gray-600 text-sm mt-1">
-            {loading ? "Memuat..." : `${negativeCount} Ulasan Negatif`}
+          <p className="text-gray-600 text-xs sm:text-sm mt-1">
+            {loading ? "Memuat..." : `${negativeCount} Ulasan`}
           </p>
         </DashboardPageContent>
-        <DashboardPageContent title="Sentimen Netral"
+
+        <DashboardPageContent
+          title="Sentimen Netral"
           line={false}
-          className="bg-gray-100!"
+          className="bg-gray-50"
         >
-          <h1 className="text-3xl font-black">
+          <h1 className="text-2xl sm:text-3xl font-black text-gray-600">
             {loading ? "-" : `${percent.neutral}%`}
           </h1>
-          <p className="text-gray-600 text-sm mt-1">
-            {loading ? "Memuat..." : `${neutralCount} Ulasan Netral`}
+          <p className="text-gray-600 text-xs sm:text-sm mt-1">
+            {loading ? "Memuat..." : `${neutralCount} Ulasan`}
           </p>
         </DashboardPageContent>
       </div>
-      <div className="grid gap-4 lg:grid-cols-2">
+
+      {/* CHARTS SECTION */}
+      <div className="grid gap-3 sm:gap-4 lg:grid-cols-2">
         <DashboardPageContent title="Chart" line={false}>
           <DonutChart
             positivePercent={percent.positive}
@@ -302,9 +312,11 @@ export default function DashboardPage() {
           <TrendChart data={trendData} loading={trendLoading} />
         </DashboardPageContent>
       </div>
-      <div className="grid gap-4 lg:grid-cols-2">
+
+      {/* KEYWORDS SECTION */}
+      <div className="grid gap-3 sm:gap-4 lg:grid-cols-2">
         <DashboardPageContent title="Frekuensi Keyword" line={false}>
-          <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:gap-6">
+          <div className="flex flex-col gap-3 sm:gap-4 sm:flex-row sm:items-start">
             <KeywordTable
               items={positiveKeywords}
               loading={keywordsLoading}
@@ -320,7 +332,9 @@ export default function DashboardPage() {
           </div>
         </DashboardPageContent>
         <DashboardPageContent title="Kosong dulu" line={false}>
-            <p className="text-sm text-gray-500">Konten tambahan akan hadir di sini.</p>
+          <p className="text-xs sm:text-sm text-gray-500">
+            Konten tambahan akan hadir di sini.
+          </p>
         </DashboardPageContent>
       </div>
     </main>
