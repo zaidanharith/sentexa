@@ -6,7 +6,6 @@ from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.core.database import Base
 
-
 class User(Base):
     __tablename__ = "users"
 
@@ -38,4 +37,3 @@ class User(Base):
         Integer, nullable=False, default=100, server_default="100"
     )
 
-from app.models.review import Review
