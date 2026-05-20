@@ -6,8 +6,6 @@ from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.core.database import Base
 
-if TYPE_CHECKING:
-    from app.models.review import Review
 
 class User(Base):
     __tablename__ = "users"
@@ -38,10 +36,6 @@ class User(Base):
     )
     analysis_quota: Mapped[int] = mapped_column(
         Integer, nullable=False, default=100, server_default="100"
-    )
-
-    reviews: Mapped[list["Review"]] = relationship(
-        "Review", back_populates="user", cascade="all, delete-orphan"
     )
 
 from app.models.review import Review

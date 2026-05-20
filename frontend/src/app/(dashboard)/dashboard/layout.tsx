@@ -25,11 +25,6 @@ export default function DashboardLayout({
       isPremiumOnly: false,
     },
     {
-      label: "Ulasan",
-      href: "/dashboard/reviews",
-      isPremiumOnly: false,
-    },
-    {
       label: "Riwayat",
       href: "/dashboard/history",
       isPremiumOnly: false,
