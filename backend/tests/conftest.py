@@ -142,16 +142,19 @@ def mock_app_engine():
     # Store original engines
     orig_db_engine = database.engine
     orig_health_engine = health.engine
+    orig_async_session_local = database.AsyncSessionLocal
     
     # Replace with test engine
     database.engine = test_engine
     health.engine = test_engine
+    database.AsyncSessionLocal = TestSessionLocal
     
     yield
     
     # Restore (not strictly needed for tests but good practice)
     database.engine = orig_db_engine
     health.engine = orig_health_engine
+    database.AsyncSessionLocal = orig_async_session_local
 
 
 @pytest_asyncio.fixture

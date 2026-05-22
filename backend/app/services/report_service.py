@@ -229,6 +229,25 @@ async def update_report_status(
 	return report
 
 
+async def update_report(
+	db: AsyncSession,
+	user_id: int,
+	report_id: int,
+	*,
+	title: str | None = None,
+	description: str | None = None,
+) -> Report:
+	report = await get_report(db, user_id, report_id)
+	if title is not None:
+		report.title = title
+	if description is not None:
+		report.description = description
+	report.updated_at = datetime.utcnow()
+	await db.flush()
+	await db.refresh(report)
+	return report
+
+
 async def delete_report(db: AsyncSession, user_id: int, report_id: int) -> None:
 	report = await get_report(db, user_id, report_id)
 	# Delete file if exists
@@ -236,3 +255,4 @@ async def delete_report(db: AsyncSession, user_id: int, report_id: int) -> None:
 		os.remove(report.file_path)
 	await db.delete(report)
 	await db.flush()
+

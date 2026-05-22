@@ -1,3 +1,4 @@
+from datetime import datetime
 from fastapi import APIRouter, BackgroundTasks, Depends, File, HTTPException, Query, status
 from fastapi.responses import FileResponse
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -9,6 +10,7 @@ from app.schemas.report import (
 	ReportDetailResponse,
 	ReportListResponse,
 	ReportOut,
+	UpdateReportRequest,
 )
 from app.services import report_service
 
@@ -22,8 +24,8 @@ async def _process_report_generation(
 	user_id: int,
 	*,
 	job_id: str | None = None,
-	start_date: None = None,
-	end_date: None = None,
+	start_date: datetime | None = None,
+	end_date: datetime | None = None,
 ):
 	try:
 		from app.core.database import AsyncSessionLocal
@@ -156,3 +158,32 @@ async def download_report(
 		media_type="application/pdf",
 		filename=f"{report.title}.pdf",
 	)
+
+
+@router.patch("/{report_id}", response_model=ReportDetailResponse)
+async def update_report(
+	report_id: int,
+	payload: UpdateReportRequest,
+	current_user: User = Depends(deps.require_premium_subscription),
+	db: AsyncSession = Depends(deps.get_db),
+):
+	report = await report_service.update_report(
+		db,
+		current_user.id,
+		report_id,
+		title=payload.title,
+		description=payload.description,
+	)
+	await db.commit()
+	return ReportDetailResponse(report=ReportOut.model_validate(report))
+
+
+@router.delete("/{report_id}", status_code=status.HTTP_204_NO_CONTENT)
+async def delete_report(
+	report_id: int,
+	current_user: User = Depends(deps.require_premium_subscription),
+	db: AsyncSession = Depends(deps.get_db),
+):
+	await report_service.delete_report(db, current_user.id, report_id)
+	await db.commit()
+

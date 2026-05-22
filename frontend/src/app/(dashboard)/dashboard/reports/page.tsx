@@ -1,17 +1,20 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, useCallback } from "react";
 import axios, { AxiosError } from "axios";
 import { useSession } from "next-auth/react";
 import DashboardPageTitle from "@/components/layout/dashboard/DashboardPageTitle";
 import DashboardPageContent from "@/components/layout/dashboard/DashboardPageContent";
 import { appToast } from "@/lib/toast";
+import { isPremiumSubscription } from "@/lib/subscription";
+import { UpgradeAlert } from "@/components/layout/dashboard/analysis/UpgradeAlert";
 import {
   FaArrowLeft,
   FaArrowRight,
   FaDownload,
   FaTrash,
   FaPlus,
+  FaPen,
 } from "react-icons/fa6";
 
 type Report = {
@@ -46,64 +49,117 @@ export default function ReportsDashboardPage() {
   const [searchTerm, setSearchTerm] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
 
+  // States for Create Report Modal
+  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+  const [createForm, setCreateForm] = useState({
+    title: "",
+    description: "",
+    format: "pdf",
+    sourceType: "date_range",
+    startDate: "",
+    endDate: "",
+    jobId: "",
+  });
+  const [jobs, setJobs] = useState<any[]>([]);
+  const [loadingJobs, setLoadingJobs] = useState(false);
+  const [submittingCreate, setSubmittingCreate] = useState(false);
+
+  // States for Edit Report Modal
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [selectedReport, setSelectedReport] = useState<Report | null>(null);
+  const [editForm, setEditForm] = useState({
+    title: "",
+    description: "",
+  });
+  const [submittingEdit, setSubmittingEdit] = useState(false);
+
+  const isPremium = isPremiumSubscription(session?.user?.subscription_plan);
   const totalPages = Math.max(1, Math.ceil(totalCount / PAGE_SIZE));
 
   const apiBaseUrl =
     process.env.NEXT_PUBLIC_API_URL?.replace(/\/$/, "") ??
     "http://localhost:8000/api";
 
-  useEffect(() => {
-    const accessToken = session?.accessToken;
+  const fetchReports = useCallback(async (showLoading = true) => {
+    const accessToken = session?.user?.accessToken;
     if (!accessToken || status === "loading") {
       return;
     }
 
-    let isActive = true;
-    const fetchReports = async () => {
-      setLoading(true);
-      setError(null);
-      try {
-        const offset = (currentPage - 1) * PAGE_SIZE;
-        const response = await axios.get<ReportsResponse>(
-          `${apiBaseUrl}/reports`,
-          {
-            params: { offset, limit: PAGE_SIZE },
-            headers: {
-              Authorization: `Bearer ${accessToken}`,
-            },
+    const isPremium = isPremiumSubscription(session?.user?.subscription_plan);
+    if (!isPremium) {
+      setError("Fitur Laporan hanya tersedia untuk pengguna Premium.");
+      return;
+    }
+
+    if (showLoading) setLoading(true);
+    setError(null);
+    try {
+      const offset = (currentPage - 1) * PAGE_SIZE;
+      const response = await axios.get<ReportsResponse>(
+        `${apiBaseUrl}/reports`,
+        {
+          params: { offset, limit: PAGE_SIZE },
+          headers: {
+            Authorization: `Bearer ${accessToken}`,
           },
-        );
+        },
+      );
 
-        if (!isActive) {
-          return;
-        }
+      setItems(response.data.items ?? []);
+      setTotalCount(response.data.count ?? 0);
+    } catch (err) {
+      const apiError = err as AxiosError;
+      const message =
+        typeof apiError.response?.data === "string"
+          ? apiError.response?.data
+          : apiError.message || "Gagal memuat laporan.";
+      setError(message);
+      appToast.error("Gagal memuat laporan.");
+    } finally {
+      if (showLoading) setLoading(false);
+    }
+  }, [apiBaseUrl, currentPage, session?.user?.accessToken, session?.user?.subscription_plan, status]);
 
-        setItems(response.data.items ?? []);
-        setTotalCount(response.data.count ?? 0);
-      } catch (err) {
-        if (!isActive) {
-          return;
-        }
+  useEffect(() => {
+    fetchReports(true);
+  }, [fetchReports]);
 
-        const apiError = err as AxiosError;
-        const message =
-          typeof apiError.response?.data === "string"
-            ? apiError.response?.data
-            : apiError.message || "Gagal memuat laporan.";
-        setError(message);
-        appToast.error("Gagal memuat laporan.");
-      } finally {
-        if (isActive) {
-          setLoading(false);
-        }
-      }
-    };
+  // Polling for processing/draft reports
+  useEffect(() => {
+    const hasPendingReports = items.some(
+      (item) => item.status === "processing" || item.status === "draft"
+    );
 
-    fetchReports();
-    return () => {
-      isActive = false;
-    };
-  }, [apiBaseUrl, currentPage, session?.accessToken, status]);
+    if (!hasPendingReports) return;
+
+    const interval = setInterval(() => {
+      fetchReports(false);
+    }, 5000);
+
+    return () => clearInterval(interval);
+  }, [items, fetchReports]);
+
+  const fetchJobs = async () => {
+    const accessToken = session?.user?.accessToken;
+    if (!accessToken) return;
+    setLoadingJobs(true);
+    try {
+      const response = await axios.get(`${apiBaseUrl}/sentiment/predict/jobs`, {
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+        },
+      });
+      const completedJobs = (response.data.items ?? []).filter(
+        (job: any) => job.status === "completed"
+      );
+      setJobs(completedJobs);
+    } catch {
+      appToast.error("Gagal memuat daftar job analisis sentimen.");
+    } finally {
+      setLoadingJobs(false);
+    }
+  };
 
   const filteredItems = useMemo(() => {
     const normalizedSearch = searchTerm.trim().toLowerCase();
@@ -149,7 +205,7 @@ export default function ReportsDashboardPage() {
         `${apiBaseUrl}/reports/${report.id}/download`,
         {
           headers: {
-            Authorization: `Bearer ${session?.accessToken}`,
+            Authorization: `Bearer ${session?.user?.accessToken}`,
           },
           responseType: "blob",
         },
@@ -179,7 +235,7 @@ export default function ReportsDashboardPage() {
     try {
       await axios.delete(`${apiBaseUrl}/reports/${report.id}`, {
         headers: {
-          Authorization: `Bearer ${session?.accessToken}`,
+          Authorization: `Bearer ${session?.user?.accessToken}`,
         },
       });
       setItems((prev) => prev.filter((item) => item.id !== report.id));
@@ -187,6 +243,116 @@ export default function ReportsDashboardPage() {
       appToast.success("Laporan berhasil dihapus.");
     } catch {
       appToast.error("Gagal menghapus laporan.");
+    }
+  };
+
+  const handleEditClick = (report: Report) => {
+    setSelectedReport(report);
+    setEditForm({
+      title: report.title,
+      description: report.description ?? "",
+    });
+    setIsEditModalOpen(true);
+  };
+
+  const handleEditSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!selectedReport) return;
+    if (!editForm.title.trim()) {
+      appToast.error("Judul laporan tidak boleh kosong.");
+      return;
+    }
+    setSubmittingEdit(true);
+    try {
+      const response = await axios.patch(
+        `${apiBaseUrl}/reports/${selectedReport.id}`,
+        {
+          title: editForm.title.trim(),
+          description: editForm.description.trim() || null,
+        },
+        {
+          headers: {
+            Authorization: `Bearer ${session?.user?.accessToken}`,
+          },
+        }
+      );
+      
+      setItems((prev) =>
+        prev.map((item) =>
+          item.id === selectedReport.id ? response.data.report : item
+        )
+      );
+      
+      appToast.success("Laporan berhasil diperbarui.");
+      setIsEditModalOpen(false);
+    } catch {
+      appToast.error("Gagal memperbarui laporan.");
+    } finally {
+      setSubmittingEdit(false);
+    }
+  };
+
+  const handleCreateSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!createForm.title.trim()) {
+      appToast.error("Judul laporan tidak boleh kosong.");
+      return;
+    }
+    
+    const payload: any = {
+      title: createForm.title.trim(),
+      description: createForm.description.trim() || null,
+      format: createForm.format,
+    };
+    
+    if (createForm.sourceType === "job") {
+      if (!createForm.jobId) {
+        appToast.error("Silakan pilih Job ID analisis sentimen.");
+        return;
+      }
+      payload.job_id = createForm.jobId;
+    } else {
+      if (!createForm.startDate && !createForm.endDate) {
+        appToast.error("Silakan tentukan setidaknya tanggal mulai atau tanggal selesai.");
+        return;
+      }
+      if (createForm.startDate) {
+        payload.start_date = new Date(createForm.startDate).toISOString();
+      }
+      if (createForm.endDate) {
+        payload.end_date = new Date(createForm.endDate).toISOString();
+      }
+    }
+    
+    setSubmittingCreate(true);
+    try {
+      await axios.post(
+        `${apiBaseUrl}/reports/generate`,
+        payload,
+        {
+          headers: {
+            Authorization: `Bearer ${session?.user?.accessToken}`,
+          },
+        }
+      );
+      
+      fetchReports(true);
+      appToast.success("Pembuatan laporan berhasil dimulai.");
+      setIsCreateModalOpen(false);
+      setCreateForm({
+        title: "",
+        description: "",
+        format: "pdf",
+        sourceType: "date_range",
+        startDate: "",
+        endDate: "",
+        jobId: "",
+      });
+    } catch (err: any) {
+      const message = err.response?.data?.detail || "Gagal membuat laporan baru.";
+      appToast.error(message);
+    } finally {
+      setSubmittingCreate(false);
     }
   };
 
@@ -199,6 +365,7 @@ export default function ReportsDashboardPage() {
       />
 
       <DashboardPageContent>
+        {!isPremium && <UpgradeAlert />}
         <div className="flex flex-col gap-4">
           <div className="flex items-center justify-between">
             <div className="flex-1 max-w-md">
@@ -208,12 +375,16 @@ export default function ReportsDashboardPage() {
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                disabled={!isPremium}
               />
             </div>
             <button
-              className="flex items-center gap-2 px-4 py-2 bg-sky-500 text-white rounded-md hover:bg-sky-700 transition-colors"
+              className="flex items-center gap-2 px-4 py-2 bg-sky-500 text-white rounded-md hover:bg-sky-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              disabled={!isPremium}
               onClick={() => {
-                appToast.info("Fitur buat laporan baru akan segera hadir.");
+                if (isPremium) {
+                  setIsCreateModalOpen(true);
+                }
               }}
             >
               <FaPlus className="w-4 h-4" />
@@ -314,6 +485,13 @@ export default function ReportsDashboardPage() {
                             </button>
                           )}
                           <button
+                            onClick={() => handleEditClick(item)}
+                            className="p-1 text-yellow-600 hover:text-yellow-800 transition-colors"
+                            title="Edit"
+                          >
+                            <FaPen className="w-4 h-4" />
+                          </button>
+                          <button
                             onClick={() => handleDelete(item)}
                             className="p-1 text-red-600 hover:text-red-800 transition-colors"
                             title="Hapus"
@@ -365,6 +543,301 @@ export default function ReportsDashboardPage() {
           )}
         </div>
       </DashboardPageContent>
+
+      {/* Create Report Modal */}
+      {isCreateModalOpen && (
+        <div
+          className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4 animate-in fade-in duration-200"
+          onClick={() => setIsCreateModalOpen(false)}
+        >
+          <div
+            className="bg-white rounded-2xl shadow-2xl w-full max-w-lg border border-slate-100 overflow-hidden flex flex-col max-h-[90vh] animate-in fade-in zoom-in-95 duration-200"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Modal Header */}
+            <div className="bg-slate-50 border-b border-slate-100 px-6 py-4 flex justify-between items-center">
+              <div>
+                <h3 className="text-lg font-bold text-slate-800">
+                  Buat Laporan Baru
+                </h3>
+                <p className="text-xs text-slate-500">
+                  Konfigurasikan kriteria data untuk laporan analisis Anda
+                </p>
+              </div>
+              <button
+                onClick={() => setIsCreateModalOpen(false)}
+                className="text-slate-400 hover:text-slate-600 text-lg transition-colors cursor-pointer"
+              >
+                ✕
+              </button>
+            </div>
+
+            {/* Modal Body */}
+            <form onSubmit={handleCreateSubmit} className="flex flex-col overflow-y-auto p-6 space-y-4">
+              <div>
+                <label className="block text-sm font-semibold text-slate-700 mb-1">
+                  Judul Laporan <span className="text-red-500">*</span>
+                </label>
+                <input
+                  type="text"
+                  required
+                  placeholder="Contoh: Analisis Sentimen Q2 2026"
+                  value={createForm.title}
+                  onChange={(e) =>
+                    setCreateForm((prev) => ({ ...prev, title: e.target.value }))
+                  }
+                  className="w-full px-3 py-2 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-sky-500/20 focus:border-sky-500 transition text-sm text-slate-800"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-semibold text-slate-700 mb-1">
+                  Deskripsi
+                </label>
+                <textarea
+                  placeholder="Tambahkan catatan tambahan mengenai laporan ini..."
+                  value={createForm.description}
+                  onChange={(e) =>
+                    setCreateForm((prev) => ({
+                      ...prev,
+                      description: e.target.value,
+                    }))
+                  }
+                  rows={2}
+                  className="w-full px-3 py-2 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-sky-500/20 focus:border-sky-500 transition text-sm text-slate-800"
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-semibold text-slate-700 mb-1">
+                    Format Laporan
+                  </label>
+                  <select
+                    value={createForm.format}
+                    onChange={(e) =>
+                      setCreateForm((prev) => ({ ...prev, format: e.target.value }))
+                    }
+                    className="w-full px-3 py-2 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-sky-500/20 focus:border-sky-500 transition text-sm bg-white text-slate-800"
+                  >
+                    <option value="pdf">PDF</option>
+                    <option value="csv">CSV</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-semibold text-slate-700 mb-1">
+                    Sumber Data
+                  </label>
+                  <select
+                    value={createForm.sourceType}
+                    onChange={(e) => {
+                      const type = e.target.value;
+                      setCreateForm((prev) => ({ ...prev, sourceType: type }));
+                      if (type === "job" && jobs.length === 0) {
+                        fetchJobs();
+                      }
+                    }}
+                    className="w-full px-3 py-2 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-sky-500/20 focus:border-sky-500 transition text-sm bg-white text-slate-800"
+                  >
+                    <option value="date_range">Rentang Tanggal</option>
+                    <option value="job">Sentiment Job ID</option>
+                  </select>
+                </div>
+              </div>
+
+              {createForm.sourceType === "date_range" ? (
+                <div className="bg-slate-50 p-4 rounded-xl border border-slate-100 space-y-3">
+                  <h4 className="text-xs font-bold text-slate-600 uppercase tracking-wider">
+                    Rentang Waktu Analisis
+                  </h4>
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <label className="block text-xs font-medium text-slate-500 mb-1">
+                        Tanggal Mulai
+                      </label>
+                      <input
+                        type="datetime-local"
+                        value={createForm.startDate}
+                        onChange={(e) =>
+                          setCreateForm((prev) => ({
+                            ...prev,
+                            startDate: e.target.value,
+                          }))
+                        }
+                        className="w-full px-3 py-1.5 border border-slate-200 rounded-md focus:outline-none text-xs text-slate-800"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-medium text-slate-500 mb-1">
+                        Tanggal Selesai
+                      </label>
+                      <input
+                        type="datetime-local"
+                        value={createForm.endDate}
+                        onChange={(e) =>
+                          setCreateForm((prev) => ({
+                            ...prev,
+                            endDate: e.target.value,
+                          }))
+                        }
+                        className="w-full px-3 py-1.5 border border-slate-200 rounded-md focus:outline-none text-xs text-slate-800"
+                      />
+                    </div>
+                  </div>
+                  <p className="text-[10px] text-slate-400">
+                    Laporan akan mencakup semua data analisis sentimen Anda dalam periode yang dipilih.
+                  </p>
+                </div>
+              ) : (
+                <div className="bg-slate-50 p-4 rounded-xl border border-slate-100 space-y-3">
+                  <h4 className="text-xs font-bold text-slate-600 uppercase tracking-wider">
+                    Pilih Job Analisis
+                  </h4>
+                  <div>
+                    <label className="block text-xs font-medium text-slate-500 mb-1">
+                      Job ID Analisis Batch <span className="text-red-500">*</span>
+                    </label>
+                    {loadingJobs ? (
+                      <div className="text-xs text-slate-500 py-2">
+                        Memuat daftar job...
+                      </div>
+                    ) : jobs.length === 0 ? (
+                      <div className="text-xs text-amber-600 py-2">
+                        Tidak ditemukan job analisis yang selesai. Pastikan Anda sudah menjalankan analisis batch terlebih dahulu.
+                      </div>
+                    ) : (
+                      <select
+                        value={createForm.jobId}
+                        onChange={(e) =>
+                          setCreateForm((prev) => ({ ...prev, jobId: e.target.value }))
+                        }
+                        className="w-full px-3 py-2 border border-slate-200 rounded-md focus:outline-none text-xs bg-white text-slate-800 animate-in fade-in duration-200"
+                        required
+                      >
+                        <option value="">-- Pilih Job Sentimen --</option>
+                        {jobs.map((job) => (
+                          <option key={job.job_id} value={job.job_id}>
+                            ID: {job.job_id.substring(0, 8)}... ({formatDate(job.created_at)}) - {job.total} Data
+                          </option>
+                        ))}
+                      </select>
+                    )}
+                  </div>
+                </div>
+              )}
+
+              {/* Modal Footer */}
+              <div className="pt-4 border-t border-slate-100 flex items-center justify-end gap-2">
+                <button
+                  type="button"
+                  onClick={() => setIsCreateModalOpen(false)}
+                  className="px-4 py-2 border border-slate-200 text-slate-600 rounded-lg hover:bg-slate-50 text-sm font-medium transition-colors cursor-pointer"
+                >
+                  Batal
+                </button>
+                <button
+                  type="submit"
+                  disabled={
+                    submittingCreate ||
+                    (createForm.sourceType === "job" && !createForm.jobId) ||
+                    (createForm.sourceType === "date_range" &&
+                      !createForm.startDate &&
+                      !createForm.endDate)
+                  }
+                  className="px-4 py-2 bg-sky-500 hover:bg-sky-600 text-white rounded-lg text-sm font-medium transition-colors flex items-center gap-2 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {submittingCreate ? "Membuat..." : "Generate Laporan"}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Edit Report Modal */}
+      {isEditModalOpen && selectedReport && (
+        <div
+          className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4 animate-in fade-in duration-200"
+          onClick={() => setIsEditModalOpen(false)}
+        >
+          <div
+            className="bg-white rounded-2xl shadow-2xl w-full max-w-md border border-slate-100 overflow-hidden flex flex-col animate-in fade-in zoom-in-95 duration-200"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Modal Header */}
+            <div className="bg-slate-50 border-b border-slate-100 px-6 py-4 flex justify-between items-center">
+              <div>
+                <h3 className="text-lg font-bold text-slate-800">
+                  Ubah Detail Laporan
+                </h3>
+                <p className="text-xs text-slate-500">
+                  Perbarui judul atau deskripsi dari laporan ini
+                </p>
+              </div>
+              <button
+                onClick={() => setIsEditModalOpen(false)}
+                className="text-slate-400 hover:text-slate-600 text-lg transition-colors cursor-pointer"
+              >
+                ✕
+              </button>
+            </div>
+
+            {/* Modal Body */}
+            <form onSubmit={handleEditSubmit} className="p-6 space-y-4">
+              <div>
+                <label className="block text-sm font-semibold text-slate-700 mb-1">
+                  Judul Laporan <span className="text-red-500">*</span>
+                </label>
+                <input
+                  type="text"
+                  required
+                  value={editForm.title}
+                  onChange={(e) =>
+                    setEditForm((prev) => ({ ...prev, title: e.target.value }))
+                  }
+                  className="w-full px-3 py-2 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-sky-500/20 focus:border-sky-500 transition text-sm text-slate-800"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-semibold text-slate-700 mb-1">
+                  Deskripsi
+                </label>
+                <textarea
+                  value={editForm.description}
+                  onChange={(e) =>
+                    setEditForm((prev) => ({
+                      ...prev,
+                      description: e.target.value,
+                    }))
+                  }
+                  rows={3}
+                  className="w-full px-3 py-2 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-sky-500/20 focus:border-sky-500 transition text-sm text-slate-800"
+                />
+              </div>
+
+              {/* Modal Footer */}
+              <div className="pt-4 border-t border-slate-100 flex items-center justify-end gap-2">
+                <button
+                  type="button"
+                  onClick={() => setIsEditModalOpen(false)}
+                  className="px-4 py-2 border border-slate-200 text-slate-600 rounded-lg hover:bg-slate-50 text-sm font-medium transition-colors cursor-pointer"
+                >
+                  Batal
+                </button>
+                <button
+                  type="submit"
+                  disabled={submittingEdit || !editForm.title.trim()}
+                  className="px-4 py-2 bg-sky-500 hover:bg-sky-600 text-white rounded-lg text-sm font-medium transition-colors flex items-center gap-2 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {submittingEdit ? "Menyimpan..." : "Simpan Perubahan"}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </main>
   );
 }
