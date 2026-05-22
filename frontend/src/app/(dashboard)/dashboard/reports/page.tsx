@@ -73,6 +73,10 @@ export default function ReportsDashboardPage() {
   });
   const [submittingEdit, setSubmittingEdit] = useState(false);
 
+  // State for Delete Confirmation Modal
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  const [reportToDelete, setReportToDelete] = useState<Report | null>(null);
+
   const isPremium = isPremiumSubscription(session?.user?.subscription_plan);
   const totalPages = Math.max(1, Math.ceil(totalCount / PAGE_SIZE));
 
@@ -226,25 +230,31 @@ export default function ReportsDashboardPage() {
     }
   };
 
-  const handleDelete = async (report: Report) => {
-    if (
-      !confirm(`Apakah Anda yakin ingin menghapus laporan "${report.title}"?`)
-    ) {
-      return;
-    }
-    try {
-      await axios.delete(`${apiBaseUrl}/reports/${report.id}`, {
-        headers: {
-          Authorization: `Bearer ${session?.user?.accessToken}`,
-        },
-      });
-      setItems((prev) => prev.filter((item) => item.id !== report.id));
-      setTotalCount((prev) => prev - 1);
-      appToast.success("Laporan berhasil dihapus.");
-    } catch {
-      appToast.error("Gagal menghapus laporan.");
-    }
-  };
+  const handleDelete = (report: Report) => {
+  // Open custom confirmation modal
+  setReportToDelete(report);
+  setIsDeleteModalOpen(true);
+};
+
+  // Perform actual deletion after user confirms in modal
+  const confirmDelete = async () => {
+  if (!reportToDelete) return;
+  console.log('Confirm delete called for report id:', reportToDelete.id);
+  try {
+    await axios.delete(`${apiBaseUrl}/reports/${reportToDelete.id}`, {
+      headers: { Authorization: `Bearer ${session?.user?.accessToken}` },
+    });
+    setItems((prev) => prev.filter((item) => item.id !== reportToDelete.id));
+    setTotalCount((prev) => prev - 1);
+    appToast.success("Laporan berhasil dihapus.");
+  } catch (error) {
+    console.error('Delete error:', error);
+    appToast.error("Gagal menghapus laporan.");
+  } finally {
+    setIsDeleteModalOpen(false);
+    setReportToDelete(null);
+  }
+};
 
   const handleEditClick = (report: Report) => {
     setSelectedReport(report);
@@ -835,6 +845,37 @@ export default function ReportsDashboardPage() {
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+      {/* Delete Confirmation Modal */}
+      {isDeleteModalOpen && reportToDelete && (
+        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4"
+          onClick={() => {
+            setIsDeleteModalOpen(false);
+            setReportToDelete(null);
+          }}>
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-sm border border-slate-100 overflow-hidden flex flex-col animate-in fade-in zoom-in-95 duration-200"
+            onClick={e => e.stopPropagation()}>
+            <div className="bg-slate-50 border-b border-slate-100 px-6 py-4 flex justify-between items-center">
+              <h3 className="text-lg font-bold text-slate-800">Konfirmasi Hapus</h3>
+              <button onClick={() => {
+                setIsDeleteModalOpen(false);
+                setReportToDelete(null);
+              }} className="text-slate-400 hover:text-slate-600 text-lg transition-colors cursor-pointer">✕</button>
+            </div>
+            <div className="p-6">
+              <p className="mb-4">Apakah Anda yakin ingin menghapus laporan “{reportToDelete.title}”?</p>
+              <div className="flex justify-end gap-2">
+                <button onClick={() => {
+                  setIsDeleteModalOpen(false);
+                  setReportToDelete(null);
+                }} className="px-4 py-2 border border-slate-200 text-slate-600 rounded-lg hover:bg-slate-50">Batal</button>
+                <button onClick={confirmDelete} className="px-4 py-2 bg-red-500 hover:bg-red-600 text-white rounded-lg">
+                  Hapus
+                </button>
+              </div>
+            </div>
           </div>
         </div>
       )}
