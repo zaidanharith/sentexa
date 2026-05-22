@@ -25,10 +25,16 @@ def _ensure_reports_dir():
 
 
 def _get_report_file_path(report_id: int, format: str) -> str:
-	"""Generate report file path"""
-	_ensure_reports_dir()
-	filename = f"report_{report_id}.{format}"
-	return str(REPORTS_DIR / filename)
+    """Generate report file path. PDFs are stored in a temporary file, other formats use the reports directory."""
+    if format == "pdf":
+        # Create a temporary file for PDF output (not stored in project folder)
+        import tempfile
+        temp_file = tempfile.NamedTemporaryFile(delete=False, suffix=".pdf")
+        return temp_file.name
+    # For other formats (e.g., csv), ensure the reports directory exists and use it
+    _ensure_reports_dir()
+    filename = f"report_{report_id}.{format}"
+    return str(REPORTS_DIR / filename)
 
 
 async def get_analysis_history_for_report(
