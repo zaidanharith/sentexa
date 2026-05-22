@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useSession } from "next-auth/react";
 import { useAnalysis } from "@/hooks/useAnalysis";
 import { parseFile, downloadSampleFile } from "@/lib/file-parser";
@@ -32,6 +32,13 @@ export default function AnalysisDashboardPage() {
   const [analysisResult, setAnalysisResult] = useState<AnalysisResult | null>(
     null,
   );
+  const resultRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (analysisResult && resultRef.current) {
+      resultRef.current.scrollIntoView({ behavior: "smooth" });
+    }
+  }, [analysisResult]);
 
   const subscriptionTier = getSubscriptionTier(
     session?.user?.subscription_plan,
@@ -273,7 +280,7 @@ export default function AnalysisDashboardPage() {
       {/* Analysis Result Card */}
       {analysisResult && (
         <DashboardPageContent>
-          <div className="border-2 border-sky-200 rounded-lg p-6 bg-linear-to-br from-sky-50 to-blue-50">
+          <div ref={resultRef} className="border-2 border-sky-200 rounded-lg p-6 bg-linear-to-br from-sky-50 to-blue-50">
             <h2 className="text-lg font-bold text-gray-900 mb-4">
               Hasil Analisis
             </h2>
