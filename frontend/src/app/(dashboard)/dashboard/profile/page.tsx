@@ -1,9 +1,9 @@
 "use client";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/hooks/useAuth";
 import { AuthUser } from "@/context/AuthContext";
-import { backendAuthApi } from "@/lib/api";
+import { backendAuthApi, backendSubscriptionApi } from "@/lib/api";
 import { getSubscriptionName, isPremiumSubscription } from "@/lib/subscription";
 import { appToast } from "@/lib/toast";
 import { useSession } from "next-auth/react";
@@ -42,6 +42,7 @@ function ProfileContent({ user }: { user: AuthUser }) {
   const { data: session, update: updateSession } = useSession();
   const [isEditing, setIsEditing] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
+  const [maxQuota, setMaxQuota] = useState<number | null>(null);
 
   const nameParts = user.name ? user.name.split(" ") : [];
   const [formData, setFormData] = useState({
@@ -49,6 +50,22 @@ function ProfileContent({ user }: { user: AuthUser }) {
     lastName: nameParts.slice(1).join(" ") || "",
     email: user.email || "",
   });
+
+  // Fetch subscription plans to determine max quota for the current plan
+
+
+  useEffect(() => {
+    const fetchPlans = async () => {
+      try {
+        const plans = await backendSubscriptionApi.getSubscriptionPlans();
+        const currentPlan = plans.find((p) => p.code === user.subscription_plan);
+        if (currentPlan) setMaxQuota(currentPlan.quota);
+      } catch (err) {
+        console.error('Failed to fetch subscription plans', err);
+      }
+    };
+    if (user.subscription_plan) fetchPlans();
+  }, [user.subscription_plan]);
 
   const handleSaveProfile = async () => {
     setIsSaving(true);
@@ -213,7 +230,7 @@ function ProfileContent({ user }: { user: AuthUser }) {
             <div
               className="bg-sky-500 h-2 rounded-full transition-all"
               style={{
-                width: `${Math.min(((user.analysis_quota ?? 0) / 100) * 100, 100)}%`,
+                width: `${Math.min(((user.analysis_quota ?? 0) / (maxQuota ?? 100)) * 100, 100)}%`,
               }}
             ></div>
           </div>

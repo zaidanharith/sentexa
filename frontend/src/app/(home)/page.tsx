@@ -48,9 +48,6 @@ export default async function Home() {
                 Mulai Analisis Sekarang
               </Link>
             </div>
-            <p className="text-xs text-gray-400 mt-4">
-              ✓ Tidak perlu kartu kredit &nbsp;·&nbsp; Gratis hingga 100 ulasan
-            </p>
           </div>
 
           <div className="hidden md:block select-none">
@@ -151,9 +148,6 @@ export default async function Home() {
       >
         <div className="mx-auto max-w-7xl">
           <div className="text-center mb-10">
-            <span className="inline-block bg-sky-50 border border-sky-200 text-sky-600 text-xs font-semibold px-3 py-1 rounded-full mb-3">
-              Fitur Unggulan
-            </span>
             <h2 className="text-3xl font-bold text-gray-900">
               Semua yang Kamu Butuhkan
             </h2>
@@ -219,9 +213,6 @@ export default async function Home() {
       >
         <div className="mx-auto max-w-7xl">
           <div className="text-center mb-10">
-            <span className="inline-block bg-sky-50 border border-sky-200 text-sky-600 text-xs font-semibold px-3 py-1 rounded-full mb-3">
-              Cara Kerja
-            </span>
             <h2 className="text-3xl font-bold text-gray-900">
               Mulai dalam 3 Langkah Mudah
             </h2>
@@ -284,9 +275,6 @@ async function PricingSection() {
     >
       <div className="mx-auto max-w-7xl">
         <div className="text-center mb-10">
-          <span className="inline-block bg-sky-50 border border-sky-200 text-sky-600 text-xs font-semibold px-3 py-1 rounded-full mb-3">
-            Harga Langganan
-          </span>
           <h2 className="text-3xl font-bold text-gray-900">
             Pilih Paket Sesuai Kebutuhan Bisnis
           </h2>
@@ -335,7 +323,7 @@ function SubscriptionCards({ plans }: { plans: SubscriptionPlan[] }) {
           >
             <div className="flex items-start justify-between gap-3 mb-5">
               <div>
-                <h3 className="text-2xl font-bold text-gray-900">
+                <h3 className="text-2xl font-bold text-sky-500">
                   {plan.name}
                 </h3>
                 <p className="text-sm text-gray-500 mt-1">
@@ -343,9 +331,6 @@ function SubscriptionCards({ plans }: { plans: SubscriptionPlan[] }) {
                   {plan.quota >= 999999 ? "Unlimited" : plan.quota}
                 </p>
               </div>
-              <span className="inline-flex items-center rounded-full border border-sky-200 bg-sky-50 px-3 py-1 text-xs font-semibold text-sky-700 capitalize">
-                {plan.name}
-              </span>
             </div>
 
             <div className="mb-5">

@@ -313,30 +313,22 @@ export default function DashboardPage() {
         </DashboardPageContent>
       </div>
 
-      {/* KEYWORDS SECTION */}
-      <div className="grid gap-3 sm:gap-4 lg:grid-cols-2">
-        <DashboardPageContent title="Frekuensi Keyword" line={false}>
-          <div className="flex flex-col gap-3 sm:gap-4 sm:flex-row sm:items-start">
-            <KeywordTable
-              items={positiveKeywords}
-              loading={keywordsLoading}
-              emptyLabel="Belum ada kata kunci positif"
-              tone="positive"
-            />
-            <KeywordTable
-              items={negativeKeywords}
-              loading={keywordsLoading}
-              emptyLabel="Belum ada kata kunci negatif"
-              tone="negative"
-            />
-          </div>
-        </DashboardPageContent>
-        <DashboardPageContent title="Kosong dulu" line={false}>
-          <p className="text-xs sm:text-sm text-gray-500">
-            Konten tambahan akan hadir di sini.
-          </p>
-        </DashboardPageContent>
-      </div>
+      <DashboardPageContent title="Frekuensi Keyword" line={false}>
+        <div className="flex flex-col gap-3 sm:gap-4 sm:flex-row sm:items-start">
+          <KeywordTable
+            items={positiveKeywords}
+            loading={keywordsLoading}
+            emptyLabel="Belum ada kata kunci positif"
+            tone="positive"
+          />
+          <KeywordTable
+            items={negativeKeywords}
+            loading={keywordsLoading}
+            emptyLabel="Belum ada kata kunci negatif"
+            tone="negative"
+          />
+        </div>
+      </DashboardPageContent>
     </main>
   );
 }
