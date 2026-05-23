@@ -57,6 +57,7 @@ jobs:
         uses: azure/arm-deploy@v2
         id: bicep-deploy
         with:
+          failOnStdErr: false
           resourceGroupName: ${{ env.RESOURCE_GROUP }}
           template: ./backend/deploy.bicep
           parameters: >
