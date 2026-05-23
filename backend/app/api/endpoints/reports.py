@@ -1,4 +1,5 @@
 from datetime import datetime
+import os
 from fastapi import APIRouter, BackgroundTasks, Depends, File, HTTPException, Query, status
 from fastapi.responses import FileResponse
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -141,17 +142,28 @@ async def download_report(
 			detail="Report is not ready for download",
 		)
 	
-	if not report.file_path:
-		raise HTTPException(
-			status_code=status.HTTP_400_BAD_REQUEST,
-			detail="Report file not found",
-		)
-	
 	if report.format != "pdf":
 		raise HTTPException(
 			status_code=status.HTTP_400_BAD_REQUEST,
 			detail="Only PDF report downloads are supported",
 		)
+
+	if not report.file_path or not os.path.exists(report.file_path):
+		file_path = await report_service.generate_report_file(
+			db,
+			report,
+			job_id=report.job_id,
+			start_date=report.start_date,
+			end_date=report.end_date,
+		)
+		report = await report_service.update_report_status(
+			db,
+			current_user.id,
+			report.id,
+			status="completed",
+			file_path=file_path,
+		)
+		await db.commit()
 
 	return FileResponse(
 		path=report.file_path,

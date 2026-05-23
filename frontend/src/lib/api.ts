@@ -74,6 +74,18 @@ export interface SubscriptionPlan {
   duration_options: DurationOption[];
 }
 
+export interface SubscriptionStatus {
+  plan: "free" | "premium";
+  status: "active" | "expired";
+  remaining_quota: number;
+  expires_at: string | null;
+}
+
+export interface SubscribeResponse {
+  detail: string;
+  subscription: SubscriptionStatus;
+}
+
 function mapAxiosError(error: unknown): ApiError {
   if (!(error instanceof AxiosError)) {
     return new ApiError("Terjadi kesalahan yang tidak terduga.", 500);
@@ -175,6 +187,25 @@ export const backendSubscriptionApi = {
     try {
       const response = await apiClient.get<SubscriptionPlan[]>(
         "/subscription/plans",
+      );
+      return response.data;
+    } catch (error) {
+      throw mapAxiosError(error);
+    }
+  },
+  async subscribe(
+    accessToken: string,
+    plan: "free" | "premium",
+  ): Promise<SubscribeResponse> {
+    try {
+      const response = await apiClient.post<SubscribeResponse>(
+        "/subscription/subscribe",
+        { plan },
+        {
+          headers: {
+            Authorization: `Bearer ${accessToken}`,
+          },
+        },
       );
       return response.data;
     } catch (error) {

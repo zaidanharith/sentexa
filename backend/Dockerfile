@@ -28,6 +28,17 @@ RUN groupadd -r appuser && useradd -r -g appuser appuser
 
 COPY . /app/
 
+ARG PRE_DOWNLOAD_MODEL=false
+ARG HF_MODEL=indobenchmark/indobert-base-p2
+ARG HF_TOKEN=""
+
+RUN if [ "$PRE_DOWNLOAD_MODEL" = "true" ] ; then \
+        echo "Pre-downloading Hugging Face model..." && \
+        HF_MODEL=$HF_MODEL HF_TOKEN=$HF_TOKEN python ml/scripts/download_model.py ; \
+    else \
+        echo "Model pre-download skipped. Will download dynamically at runtime." ; \
+    fi
+
 RUN sed -i 's/\r$//' /app/entrypoint.sh && \
     chmod +x /app/entrypoint.sh && \
     chown -R appuser:appuser /app

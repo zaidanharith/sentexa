@@ -1,49 +1,4 @@
 services:
-  frontend:
-    build:
-      context: ./frontend
-      dockerfile: Dockerfile
-    restart: unless-stopped
-
-    ports:
-      - "3000:3000"
-
-    networks:
-      - sentexa_network
-
-    environment:
-      - NODE_ENV=production
-      - PORT=3000
-      - NEXTAUTH_URL=${NEXTAUTH_URL:-http://localhost}
-      - NEXTAUTH_SECRET=${NEXTAUTH_SECRET:-dev-nextauth-secret-change-me-32chars}
-      - AUTH_SECRET=${AUTH_SECRET:-dev-nextauth-secret-change-me-32chars}
-      - GOOGLE_CLIENT_ID=${GOOGLE_CLIENT_ID:-}
-      - GOOGLE_CLIENT_SECRET=${GOOGLE_CLIENT_SECRET:-}
-      - NEXT_PUBLIC_API_URL=${NEXT_PUBLIC_API_URL:-http://localhost:8000/api}
-
-    volumes:
-      - ./frontend/src:/app/src
-      - ./frontend/public:/app/public
-
-    security_opt:
-      - no-new-privileges:true
-
-    develop:
-      watch:
-        - action: sync
-          path: ./frontend/src
-          target: /app/src
-
-        - action: sync
-          path: ./frontend/public
-          target: /app/public
-
-        - action: rebuild
-          path: ./frontend/package.json
-
-        - action: rebuild
-          path: ./frontend/Dockerfile
-
   backend:
     build:
       context: ./backend
@@ -52,6 +7,10 @@ services:
 
     env_file:
       - ./backend/.env
+    environment:
+      - HF_HOME=/tmp/hf
+      - TRANSFORMERS_CACHE=/tmp/hf/transformers
+      - HF_HUB_CACHE=/tmp/hf/hub
 
     ports:
       - "8000:8000"
@@ -62,7 +21,6 @@ services:
     volumes:
       - ./backend/app:/app/app
       - ./backend/ml/checkpoints:/app/ml/checkpoints
-      - hf_cache:/app/.cache/huggingface
 
     security_opt:
       - no-new-privileges:true
@@ -94,32 +52,6 @@ services:
         - action: rebuild
           path: ./backend/alembic.ini
 
-  nginx:
-    image: nginx:alpine
-    restart: unless-stopped
-    ports:
-      - "80:80"
-    volumes:
-      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
-    depends_on:
-      - frontend
-      - backend
-    networks:
-      - sentexa_network
-    read_only: true
-    tmpfs:
-      - /var/run
-      - /var/cache/nginx
-      - /tmp
-    develop:
-      watch:
-        - action: sync
-          path: ./nginx
-          target: /etc/nginx
-
 networks:
   sentexa_network:
     driver: bridge
-
-volumes:
-  hf_cache:

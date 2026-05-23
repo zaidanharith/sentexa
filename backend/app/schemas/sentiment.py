@@ -29,11 +29,6 @@ class SentimentBatchPredictRequest(BaseModel):
 	include_scores: bool = True
 
 
-class SentimentBatchPredictResponse(BaseModel):
-	items: list[SentimentPrediction]
-	count: int
-
-
 SentimentJobStatus = Literal["queued", "processing", "completed", "failed"]
 
 

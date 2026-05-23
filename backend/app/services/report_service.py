@@ -3,6 +3,7 @@ from __future__ import annotations
 import csv
 import io
 import os
+import tempfile
 from datetime import datetime
 from pathlib import Path
 from typing import Optional
@@ -16,25 +17,11 @@ from app.models.report_feedback_alert import Report
 from app.services.report_pdf_template import build_report_pdf
 
 
-REPORTS_DIR = Path("data/reports")
-
-
-def _ensure_reports_dir():
-	"""Ensure reports directory exists"""
-	REPORTS_DIR.mkdir(parents=True, exist_ok=True)
-
-
 def _get_report_file_path(report_id: int, format: str) -> str:
-    """Generate report file path. PDFs are stored in a temporary file, other formats use the reports directory."""
-    if format == "pdf":
-        # Create a temporary file for PDF output (not stored in project folder)
-        import tempfile
-        temp_file = tempfile.NamedTemporaryFile(delete=False, suffix=".pdf")
-        return temp_file.name
-    # For other formats (e.g., csv), ensure the reports directory exists and use it
-    _ensure_reports_dir()
-    filename = f"report_{report_id}.{format}"
-    return str(REPORTS_DIR / filename)
+    """Generate temporary file path for report output. All reports are stored in system temp directory."""
+    suffix = f".{format}"
+    temp_file = tempfile.NamedTemporaryFile(delete=False, suffix=suffix)
+    return temp_file.name
 
 
 async def get_analysis_history_for_report(
@@ -102,8 +89,7 @@ def _generate_csv_content(analyses: list[AnalysisHistory]) -> str:
 
 
 def _save_csv_file(content: str, file_path: str) -> None:
-	"""Save CSV content to file"""
-	Path(file_path).parent.mkdir(parents=True, exist_ok=True)
+	"""Save CSV content to temporary file"""
 	with open(file_path, "w", encoding="utf-8") as f:
 		f.write(content)
 

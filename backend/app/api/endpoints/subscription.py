@@ -31,7 +31,7 @@ async def subscribe(
 		db=db,
 		user=current_user,
 		plan_code=payload.plan,
-		duration_code=payload.duration,
+		duration_code=None,
 	)
 	return SubscribeResponse(
 		detail="Subscription updated successfully",

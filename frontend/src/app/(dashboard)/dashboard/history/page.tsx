@@ -12,10 +12,6 @@ import {
   type AnalysisHistoryItem,
   type AnalysisHistoryResponse,
   type SentimentJobItem,
-  resolveBatchTexts,
-  resolveBatchPredictions,
-  resolveAggregateLabelKey,
-  resolveAggregateScore,
   formatScore,
   resolveJobTopLabel,
   resolveJobTopLabelKey,
@@ -55,7 +51,6 @@ const SENTIMENT_LABEL_MAP: Record<string, string> = {
   neutral: "NETRAL",
 };
 
-const BATCH_TYPES = new Set(["batch"]);
 const JOB_TYPES = new Set(["job", "jobs"]);
 
 export default function HistoryDashboardPage() {
@@ -67,17 +62,10 @@ export default function HistoryDashboardPage() {
   const [jobsLoading, setJobsLoading] = useState(false);
   const [jobsError, setJobsError] = useState<string | null>(null);
   const [singlePage, setSinglePage] = useState(1);
-  const [batchPage, setBatchPage] = useState(1);
   const [jobPage, setJobPage] = useState(1);
   const [singleSort, setSingleSort] = useState<SortKey>("newest");
-  const [batchSort, setBatchSort] = useState<SortKey>("newest");
   const [jobSort, setJobSort] = useState<SortKey>("newest");
   const [singleFilter, setSingleFilter] = useState({
-    positive: true,
-    negative: true,
-    neutral: true,
-  });
-  const [batchFilter, setBatchFilter] = useState({
     positive: true,
     negative: true,
     neutral: true,
@@ -88,7 +76,6 @@ export default function HistoryDashboardPage() {
     neutral: true,
   });
   const [expandedSingleId, setExpandedSingleId] = useState<number | null>(null);
-  const [expandedBatchId, setExpandedBatchId] = useState<number | null>(null);
   const [expandedJobId, setExpandedJobId] = useState<string | null>(null);
   const [jobDetails, setJobDetails] = useState<
     Record<string, SentimentJobItem>
@@ -342,10 +329,7 @@ export default function HistoryDashboardPage() {
 
   const singleRows = useMemo(() => {
     const filtered = items.filter((item) => {
-      if (
-        BATCH_TYPES.has(item.source_type) ||
-        JOB_TYPES.has(item.source_type)
-      ) {
+      if (JOB_TYPES.has(item.source_type)) {
         return false;
       }
       return shouldIncludeLabel(item.result_label, singleFilter);
@@ -370,56 +354,12 @@ export default function HistoryDashboardPage() {
 
   const singleTotal = useMemo(() => {
     return items.filter((item) => {
-      if (
-        BATCH_TYPES.has(item.source_type) ||
-        JOB_TYPES.has(item.source_type)
-      ) {
+      if (JOB_TYPES.has(item.source_type)) {
         return false;
       }
       return shouldIncludeLabel(item.result_label, singleFilter);
     }).length;
   }, [items, singleFilter]);
-
-  const batchRows = useMemo(() => {
-    const filtered = items.filter((item) => {
-      if (!BATCH_TYPES.has(item.source_type)) {
-        return false;
-      }
-      return shouldIncludeLabel(resolveAggregateLabelKey(item), batchFilter);
-    });
-
-    const sorted = sortByKey(
-      filtered,
-      batchSort,
-      (item) => item.created_at,
-      (item) => resolveAggregateScore(item),
-    );
-
-    const start = (batchPage - 1) * PAGE_SIZE;
-    return sorted.slice(start, start + PAGE_SIZE).map((item, index) => {
-      const texts = resolveBatchTexts(item);
-      const aggregateLabel = resolveAggregateLabelKey(item);
-      const aggregateScore = resolveAggregateScore(item);
-      return {
-        ...item,
-        rowIndex: start + index + 1,
-        displayText: texts[0] ?? "-",
-        textCount: texts.length,
-        displayLabel: formatLabel(aggregateLabel),
-        aggregateLabel: aggregateLabel,
-        displayScore: formatScore(aggregateScore),
-      };
-    });
-  }, [items, batchFilter, batchSort, batchPage]);
-
-  const batchTotal = useMemo(() => {
-    return items.filter((item) => {
-      if (!BATCH_TYPES.has(item.source_type)) {
-        return false;
-      }
-      return shouldIncludeLabel(resolveAggregateLabelKey(item), batchFilter);
-    }).length;
-  }, [items, batchFilter]);
 
   const jobRows = useMemo(() => {
     const filtered = jobItems.filter((job) =>
@@ -623,210 +563,6 @@ export default function HistoryDashboardPage() {
           </div>
         )}
       </DashboardPageContent>
-
-      <DashboardPageContent
-        title="Riwayat Analisis Batch"
-        subtitle="Riwayat analisis sentimen untuk batch teks"
-      >
-        <div className="flex flex-wrap items-center justify-between gap-4 mb-4">
-          <div className="flex flex-wrap items-center gap-3 text-xs">
-            <span className="font-semibold text-slate-500">Filter:</span>
-            {(["positive", "negative", "neutral"] as const).map((label) => (
-              <button
-                key={label}
-                type="button"
-                onClick={() => {
-                  setBatchFilter((prev) => ({
-                    ...prev,
-                    [label]: !prev[label],
-                  }));
-                  setBatchPage(1);
-                }}
-                className={`px-3 py-1.5 rounded-full text-xs font-semibold transition ${
-                  batchFilter[label]
-                    ? "bg-sky-500 text-white"
-                    : "bg-slate-100 text-slate-600 hover:bg-slate-200"
-                }`}
-              >
-                {formatLabel(label)}
-              </button>
-            ))}
-          </div>
-          <div className="flex items-center gap-2 text-xs">
-            <span className="font-semibold text-slate-500">Sort:</span>
-            <select
-              value={batchSort}
-              onChange={(event) => {
-                setBatchSort(event.target.value as SortKey);
-                setBatchPage(1);
-              }}
-              className="rounded border border-slate-300 px-2 py-1 text-xs"
-            >
-              <option value="newest">Terbaru</option>
-              <option value="oldest">Terlama</option>
-              <option value="score_desc">Skor Tertinggi</option>
-              <option value="score_asc">Skor Terendah</option>
-            </select>
-          </div>
-        </div>
-        {loading ? (
-          <div className="rounded-xl border border-slate-200 bg-slate-50 px-4 py-6 text-sm text-slate-500">
-            Memuat data riwayat...
-          </div>
-        ) : batchRows.length === 0 ? (
-          <div className="rounded-xl border border-slate-200 bg-slate-50 px-4 py-6 text-sm text-slate-500">
-            Belum ada riwayat analisis batch.
-          </div>
-        ) : (
-          <div className="overflow-x-auto rounded-xl border border-slate-200">
-            <table className="min-w-full text-sm">
-              <thead className="bg-slate-50 text-slate-600">
-                <tr>
-                  <th className="px-4 py-3 text-left font-semibold">No</th>
-                  <th className="px-4 py-3 text-left font-semibold">
-                    Teks (Pertama)
-                  </th>
-                  <th className="px-4 py-3 text-left font-semibold">
-                    Label Sentimen Dominan
-                  </th>
-                  <th className="px-4 py-3 text-left font-semibold">
-                    Confidence Score Rata-rata
-                  </th>
-                  <th className="px-4 py-3 text-left font-semibold">
-                    Jumlah Teks
-                  </th>
-                  <th className="px-4 py-3 text-left font-semibold">
-                    Waktu Analisis
-                  </th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-200">
-                {batchRows.map((item) => {
-                  const isExpanded = expandedBatchId === item.id;
-                  const texts = resolveBatchTexts(item);
-                  const predictions = resolveBatchPredictions(item);
-                  return (
-                    <Fragment key={item.id}>
-                      <tr
-                        className="cursor-pointer hover:bg-slate-50"
-                        onClick={() =>
-                          setExpandedBatchId((prev) =>
-                            prev === item.id ? null : item.id,
-                          )
-                        }
-                      >
-                        <td className="px-4 py-3 text-slate-600">
-                          {item.rowIndex}
-                        </td>
-                        <td className="px-4 py-3 text-slate-900 max-w-xs">
-                          <span className="line-clamp-2">
-                            {item.displayText}
-                          </span>
-                        </td>
-                        <td className="px-4 py-3">
-                          <span
-                            className={`rounded-full px-2.5 py-1 text-xs font-semibold ${getLabelColorClasses(item.aggregateLabel)}`}
-                          >
-                            {item.displayLabel}
-                          </span>
-                        </td>
-                        <td className="px-4 py-3 text-slate-700">
-                          {item.displayScore}
-                        </td>
-                        <td className="px-4 py-3 text-slate-600">
-                          {item.textCount}
-                        </td>
-                        <td className="px-4 py-3 text-slate-600">
-                          {formatTime(item.created_at)}
-                        </td>
-                      </tr>
-                      {isExpanded && (
-                        <tr className="bg-slate-50">
-                          <td colSpan={6} className="px-4 py-3">
-                            <div className="overflow-x-auto rounded-lg border border-slate-200">
-                              <table className="min-w-full text-xs">
-                                <thead className="bg-white text-slate-600">
-                                  <tr>
-                                    <th className="px-3 py-2 text-left font-semibold">
-                                      Teks
-                                    </th>
-                                    <th className="px-3 py-2 text-left font-semibold">
-                                      Positive
-                                    </th>
-                                    <th className="px-3 py-2 text-left font-semibold">
-                                      Negative
-                                    </th>
-                                    <th className="px-3 py-2 text-left font-semibold">
-                                      Neutral
-                                    </th>
-                                  </tr>
-                                </thead>
-                                <tbody className="divide-y divide-slate-200">
-                                  {texts.map((text, index) => {
-                                    const scores = resolveScoreTriple(
-                                      predictions[index],
-                                    );
-                                    return (
-                                      <tr key={`${item.id}-${index}`}>
-                                        <td className="px-3 py-2 text-slate-700 max-w-md">
-                                          {text}
-                                        </td>
-                                        <td className="px-3 py-2 text-slate-600">
-                                          {formatScore(scores.positive)}
-                                        </td>
-                                        <td className="px-3 py-2 text-slate-600">
-                                          {formatScore(scores.negative)}
-                                        </td>
-                                        <td className="px-3 py-2 text-slate-600">
-                                          {formatScore(scores.neutral)}
-                                        </td>
-                                      </tr>
-                                    );
-                                  })}
-                                </tbody>
-                              </table>
-                            </div>
-                          </td>
-                        </tr>
-                      )}
-                    </Fragment>
-                  );
-                })}
-              </tbody>
-            </table>
-          </div>
-        )}
-        {batchTotal > PAGE_SIZE && (
-          <div className="mt-3 flex items-center justify-between text-xs text-slate-600">
-            <span>
-              Halaman {batchPage} dari {Math.ceil(batchTotal / PAGE_SIZE)}
-            </span>
-            <div className="flex gap-2">
-              <button
-                type="button"
-                onClick={() => setBatchPage((prev) => Math.max(1, prev - 1))}
-                disabled={batchPage === 1}
-                className="rounded border border-slate-200 px-2 py-1 disabled:opacity-50"
-              >
-                <FaArrowLeft />
-              </button>
-              <button
-                type="button"
-                onClick={() =>
-                  setBatchPage((prev) =>
-                    Math.min(Math.ceil(batchTotal / PAGE_SIZE), prev + 1),
-                  )
-                }
-                disabled={batchPage >= Math.ceil(batchTotal / PAGE_SIZE)}
-                className="rounded border border-slate-200 px-2 py-1 disabled:opacity-50"
-              >
-                <FaArrowRight />
-              </button>
-            </div>
-          </div>
-        )}
-      </DashboardPageContent>
-
       <DashboardPageContent
         title="Riwayat Sentiment Jobs"
         subtitle="Riwayat job analisis sentimen asinkron"

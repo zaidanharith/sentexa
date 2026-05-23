@@ -262,49 +262,6 @@ Akses Backend dapat melalui [**http://localhost:8000**](http://localhost:8000)
      }
   ```
 
-- 🔒 `POST /api/sentiment/predict/batch` : Menganalisis sentimen banyak teks atau file sekaligus secara asinkron, mengembalikan `job_id` untuk dipantau
-
-  Contoh _request_:
-
-  ```text
-     {
-       "texts": [
-         "Produknya bagus",
-         "Pengiriman lama"
-       ]
-     }
-  ```
-
-  Contoh _response_:
-
-  ```text
-     {
-       "items": [
-         {
-           "label": "positive",
-           "label_id": 2,
-           "score": 0.92,
-           "scores": {
-             "negative": 0.04,
-             "neutral": 0.04,
-             "positive": 0.92
-           }
-         },
-         {
-           "label": "negative",
-           "label_id": 0,
-           "score": 0.81,
-           "scores": {
-             "negative": 0.81,
-             "neutral": 0.12,
-             "positive": 0.07
-           }
-         }
-       ],
-       "count": 2
-     }
-  ```
-
 - 🔒 `GET /api/sentiment/predict/jobs` : Mengambil daftar semua job analisis batch milik pengguna beserta statusnya
 
   Contoh _response_:

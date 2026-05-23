@@ -30,29 +30,7 @@ _PLANS: dict[PlanCode, dict] = {
 			"Pengiriman teks tanpa batas",
 			"Akses exportable reports",
 		],
-		"duration_options": [
-			{
-				"code": "weekly",
-				"name": "Weekly",
-				"price": 29000,
-				"currency": "IDR",
-				"duration_days": 7,
-			},
-			{
-				"code": "monthly",
-				"name": "Monthly",
-				"price": 99000,
-				"currency": "IDR",
-				"duration_days": 30,
-			},
-			{
-				"code": "annual",
-				"name": "Annual",
-				"price": 899000,
-				"currency": "IDR",
-				"duration_days": 365,
-			},
-		],
+		"duration_options": [],
 	},
 }
 
@@ -64,17 +42,6 @@ def _normalized_plan(plan_value: str) -> PlanCode:
 	if plan_value in _LEGACY_PREMIUM_CODES:
 		return "premium"
 	return "free"
-
-def _get_duration_option(duration_code: PremiumDurationCode) -> DurationOption:
-	premium_options = _PLANS["premium"]["duration_options"]
-	for option in premium_options:
-		if option["code"] == duration_code:
-			return DurationOption(**option)
-
-	raise HTTPException(
-		status_code=status.HTTP_400_BAD_REQUEST,
-		detail="Invalid premium duration",
-	)
 
 def get_subscription_plans() -> list[SubscriptionPlan]:
 	return [
@@ -120,16 +87,10 @@ async def subscribe_user(
 		user.subscription_end = None
 		user.subscription_start = None
 		user.subscription_status = "active"
-	elif duration_code is None:
-		raise HTTPException(
-			status_code=status.HTTP_400_BAD_REQUEST,
-			detail="Duration is required for premium plan",
-		)
 	else:
-		duration = _get_duration_option(duration_code)
 		now = datetime.now(timezone.utc)
 		user.subscription_start = now
-		user.subscription_end = now + timedelta(days=duration.duration_days)
+		user.subscription_end = None
 		user.subscription_status = "active"
 
 	await db.flush()

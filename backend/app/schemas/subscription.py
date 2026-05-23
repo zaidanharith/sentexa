@@ -27,7 +27,6 @@ class SubscriptionStatus(BaseModel):
 
 class SubscribeRequest(BaseModel):
 	plan: PlanCode
-	duration: PremiumDurationCode | None = None
 
 class SubscribeResponse(BaseModel):
 	detail: str

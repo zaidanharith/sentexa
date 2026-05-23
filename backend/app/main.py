@@ -22,9 +22,21 @@ app = FastAPI(
     lifespan=lifespan,
 )
 
+# Configure dynamic CORS origins from settings, with safe fallback list
+# (since CORS with credentials=True does not support wildcard "*")
+raw_origins = settings.allowed_origins_list
+origins = [o.strip() for o in raw_origins if o.strip() and o.strip() != "*"]
+
+if not origins:
+    origins = [
+        "https://sentexa.vercel.app",
+        "http://localhost:3000",
+        "http://127.0.0.1:3000",
+    ]
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=settings.allowed_origins_list,
+    allow_origins=origins,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],

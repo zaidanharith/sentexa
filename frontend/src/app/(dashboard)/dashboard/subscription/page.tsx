@@ -1,14 +1,18 @@
 "use client";
 
 import { useState } from "react";
+import { useSession } from "next-auth/react";
 import { useAuth } from "@/hooks/useAuth";
 import DashboardPageTitle from "@/components/layout/dashboard/DashboardPageTitle";
 import DashboardPageContent from "@/components/layout/dashboard/DashboardPageContent";
+import { backendSubscriptionApi } from "@/lib/api";
+import { appToast } from "@/lib/toast";
 
 export default function SubscriptionPage() {
-  const { user } = useAuth();
+  const { user, refreshUser } = useAuth();
+  const { data: session, update } = useSession();
   const currentPlan = user?.subscription_plan?.toLowerCase() || "free";
-  const [selectedDuration, setSelectedDuration] = useState("monthly");
+  const [isUpgrading, setIsUpgrading] = useState(false);
 
   const freePlanFeatures = [
     "Analisis teks manual saja (tanpa unggah CSV/Excel)",
@@ -22,15 +26,26 @@ export default function SubscriptionPage() {
     "Akses laporan yang dapat diunduh (dalam format PDF)",
   ];
 
-  const durationOptions = [
-    { code: "weekly", name: "Mingguan", price: 29000, duration: "7 hari" },
-    { code: "monthly", name: "Bulanan", price: 99000, duration: "30 hari" },
-    { code: "annual", name: "Tahunan", price: 899000, duration: "365 hari" },
-  ];
-
-  const selectedDurationData =
-    durationOptions.find((d) => d.code === selectedDuration) ||
-    durationOptions[1];
+  const handleUpgrade = async () => {
+    const accessToken = session?.accessToken;
+    if (!accessToken) {
+      appToast.error("Sesi login tidak valid. Silakan login ulang.");
+      return;
+    }
+    setIsUpgrading(true);
+    try {
+      await backendSubscriptionApi.subscribe(accessToken, "premium");
+      await update({ subscription_plan: "premium" });
+      await refreshUser();
+      appToast.success("Akun Anda berhasil di-upgrade ke Premium.");
+    } catch (error) {
+      const message =
+        error instanceof Error ? error.message : "Gagal upgrade plan.";
+      appToast.error(message);
+    } finally {
+      setIsUpgrading(false);
+    }
+  };
 
   return (
     <main className="w-full max-w-4xl mx-auto flex flex-col gap-6 pb-8">
@@ -100,63 +115,14 @@ export default function SubscriptionPage() {
               </p>
             </div>
 
-            {currentPlan !== "premium" && (
-              <div className="mb-6">
-                <p className="text-sm font-semibold text-gray-900 mb-3">
-                  Pilih Durasi:
-                </p>
-                <div className="space-y-2">
-                  {durationOptions.map((option) => (
-                    <label
-                      key={option.code}
-                      className="flex items-center gap-3 cursor-pointer"
-                    >
-                      <input
-                        type="radio"
-                        name="duration"
-                        value={option.code}
-                        checked={selectedDuration === option.code}
-                        onChange={(e) => setSelectedDuration(e.target.value)}
-                        className="w-4 h-4 text-sky-600 bg-gray-100 border-gray-300 focus:ring-sky-500"
-                      />
-                      <div className="flex-1">
-                        <span className="text-sm font-medium text-gray-900">
-                          {option.name}
-                        </span>
-                        <span className="text-xs text-gray-500 ml-2">
-                          ({option.duration})
-                        </span>
-                      </div>
-                      <span className="text-sm font-semibold text-sky-600">
-                        IDR {option.price.toLocaleString()}
-                      </span>
-                    </label>
-                  ))}
-                </div>
-              </div>
-            )}
-
             <div className="mb-6">
-              <span className="text-4xl font-bold text-sky-600">
-                IDR{" "}
-                {currentPlan === "premium"
-                  ? "99.000"
-                  : selectedDurationData.price.toLocaleString()}
-              </span>
-              <span className="text-gray-600 text-sm">
-                /
-                {currentPlan === "premium"
-                  ? "bulan"
-                  : selectedDuration === "annual"
-                    ? "tahun"
-                    : selectedDuration === "monthly"
-                      ? "bulan"
-                      : "minggu"}
-              </span>
+              <span className="text-4xl font-bold text-sky-600">Premium</span>
+              <span className="text-gray-600 text-sm"> /aktif langsung</span>
             </div>
 
             <button
-              disabled={currentPlan === "premium"}
+              disabled={currentPlan === "premium" || isUpgrading}
+              onClick={handleUpgrade}
               className={`w-full font-semibold py-2.5 px-4 rounded-lg transition mb-8 ${
                 currentPlan === "premium"
                   ? "bg-sky-600 text-white cursor-not-allowed"
@@ -165,7 +131,9 @@ export default function SubscriptionPage() {
             >
               {currentPlan === "premium"
                 ? "Plan Anda Saat Ini"
-                : "Upgrade Sekarang"}
+                : isUpgrading
+                  ? "Memproses..."
+                  : "Upgrade ke Premium"}
             </button>
 
             <div className="space-y-4">
@@ -183,10 +151,6 @@ export default function SubscriptionPage() {
             </div>
           </div>
         </div>
-      </DashboardPageContent>
-
-      <DashboardPageContent title="Metode Pembayaran">
-        <p>Detail Pembayaran di sini</p>
       </DashboardPageContent>
     </main>
   );

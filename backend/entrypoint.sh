@@ -10,6 +10,9 @@ done
 echo "Running database migrations..."
 alembic upgrade head
 
+echo "Cleaning up Hugging Face cache lock files..."
+find /app/.cache/huggingface -name "*.lock" -delete 2>/dev/null || true
+
 echo "Starting application..."
 exec gunicorn app.main:app \
     --worker-class uvicorn.workers.UvicornWorker \

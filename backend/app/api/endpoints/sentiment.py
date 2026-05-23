@@ -7,32 +7,19 @@ from app.api import deps
 from app.models.user import User
 
 from app.schemas.sentiment import (
-	SentimentBatchPredictRequest,
-	SentimentBatchPredictResponse,
-	SentimentJobCreateResponse,
-	SentimentJobDetailResponse,
-	SentimentJobListResponse,
-	SentimentJobReprocessRequest,
-	SentimentJobResultsResponse,
-	SentimentPredictRequest,
-	SentimentPredictResponse,
+    SentimentBatchPredictRequest,
+    SentimentJobCreateResponse,
+    SentimentJobDetailResponse,
+    SentimentJobListResponse,
+    SentimentJobReprocessRequest,
+    SentimentJobResultsResponse,
+    SentimentPredictRequest,
+    SentimentPredictResponse,
 )
 from app.services import analysis_history_service, sentiment_job_service, sentiment_service, subscription_service
 
 
 router = APIRouter(prefix="/sentiment", tags=["sentiment"])
-
-
-def _build_label_counts(items: list[dict]) -> dict[str, int]:
-	counts: dict[str, int] = {}
-	for item in items:
-		prediction = item.get("prediction", {})
-		label = prediction.get("label")
-		if label is None:
-			continue
-		label_str = str(label)
-		counts[label_str] = counts.get(label_str, 0) + 1
-	return counts
 
 
 @router.post("/predict", response_model=SentimentPredictResponse)
@@ -60,34 +47,6 @@ async def predict_sentiment(
 	)
 	await db.commit()
 	return result
-
-
-@router.post("/predict/batch", response_model=SentimentBatchPredictResponse)
-async def predict_sentiment_batch(
-	payload: SentimentBatchPredictRequest,
-	db: AsyncSession = Depends(deps.get_db),
-	current_user: User = Depends(deps.get_current_user),
-):
-	quota_needed = len(payload.texts)
-	await subscription_service.validate_and_reduce_quota(db, current_user, quota_needed)
-	
-	items = sentiment_service.analyze_texts(
-		payload.texts,
-		include_scores=payload.include_scores,
-	)
-	await analysis_history_service.create_history(
-		db,
-		user_id=current_user.id,
-		source_type="batch",
-		input_text="\n".join(payload.texts),
-		status="completed",
-		include_scores=payload.include_scores,
-		item_count=len(items),
-		label_counts=_build_label_counts(items),
-		result_payload=items,
-	)
-	await db.commit()
-	return SentimentBatchPredictResponse(items=items, count=len(items))
 
 @router.post("/predict/jobs", response_model=SentimentJobCreateResponse)
 async def create_sentiment_job(

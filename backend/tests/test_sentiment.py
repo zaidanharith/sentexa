@@ -2,7 +2,6 @@
 ## BUNDLE PENGUJIAN 6, 7, 8 : ANALISIS SENTIMEN
 Menguji siklus bisnis inti Sentexa — prediksi sentimen teks:
   - Single Text Prediction  (POST /sentiment/predict)
-  - Batch Text Prediction   (POST /sentiment/predict/batch)
   - Job-based Prediction    (POST /sentiment/predict/jobs)
   - List & Get Job          (GET  /sentiment/predict/jobs)
 
@@ -129,76 +128,6 @@ class TestSinglePredict:
             headers=auth_headers,
         )
         assert resp.status_code == 422
-
-
-# ════════════════════════════════════════════════════════════════════════════
-# BUNDLE PENGUJIAN 7 : BATCH TEXT PREDICTION
-# ════════════════════════════════════════════════════════════════════════════
-class TestBatchPredict:
-    """Pengujian prediksi sentimen untuk banyak teks sekaligus (batch)."""
-
-    # ── Positive ─────────────────────────────────────────────────────────────
-    async def test_batch_predict_berhasil_dua_teks(
-        self, client: AsyncClient, auth_headers: dict
-    ):
-        """
-        Kondisi  : Positive
-        Aksi     : Mengirim dua teks dalam satu request batch
-        Expected : HTTP 200, jumlah item hasil sama dengan jumlah input
-        """
-        with patch(
-            "app.services.sentiment_service.predict_texts", return_value=MOCK_BATCH
-        ):
-            resp = await client.post(
-                "/api/sentiment/predict/batch",
-                json={
-                    "texts": [
-                        "Pengiriman cepat, barang sesuai deskripsi.",
-                        "Kecewa, produk tidak sesuai foto.",
-                    ],
-                    "include_scores": True,
-                },
-                headers=auth_headers,
-            )
-        assert resp.status_code == 200
-        data = resp.json()
-        assert data["count"] == 2
-        assert len(data["items"]) == 2
-        for item in data["items"]:
-            assert "label" in item
-
-    # ── Negative ─────────────────────────────────────────────────────────────
-    async def test_batch_predict_gagal_list_kosong(
-        self, client: AsyncClient, auth_headers: dict
-    ):
-        """
-        Kondisi  : Negative
-        Aksi     : Mengirim array texts yang kosong
-        Expected : HTTP 400 Bad Request
-        """
-        with patch(
-            "app.services.sentiment_service.predict_texts", return_value=[]
-        ):
-            resp = await client.post(
-                "/api/sentiment/predict/batch",
-                json={"texts": [], "include_scores": True},
-                headers=auth_headers,
-            )
-        assert resp.status_code == 400
-
-    async def test_batch_predict_gagal_tanpa_autentikasi(
-        self, client: AsyncClient
-    ):
-        """
-        Kondisi  : Negative
-        Aksi     : Batch predict tanpa header Authorization
-        Expected : HTTP 401 Unauthorized
-        """
-        resp = await client.post(
-            "/api/sentiment/predict/batch",
-            json={"texts": ["teks uji"], "include_scores": True},
-        )
-        assert resp.status_code == 401
 
 
 # ════════════════════════════════════════════════════════════════════════════
