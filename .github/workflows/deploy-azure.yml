@@ -21,7 +21,14 @@ jobs:
       run:
         working-directory: backend
     steps:
-      - uses: actions/checkout@v4
+      - name: Clear Git Config
+        run: git config --global --unset-all credential.helper || true
+
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: true
+
       - name: Setup Python
         uses: actions/setup-python@v5
         with:
@@ -44,7 +51,13 @@ jobs:
       LOCATION: eastus
 
     steps:
-      - uses: actions/checkout@v4
+      - name: Clear Git Config
+        run: git config --global --unset-all credential.helper || true
+
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: true
 
       - name: Azure Login
         uses: azure/login@v2
