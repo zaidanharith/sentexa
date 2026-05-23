@@ -38,6 +38,26 @@ type ReportsResponse = {
   limit: number;
 };
 
+type SentimentJob = {
+  job_id: string;
+  status: string;
+  total: number;
+  completed: number;
+  created_at: string;
+  updated_at: string;
+  label_counts: { positive: number; negative: number; neutral: number } | null;
+  error: string | null;
+};
+
+type ReportPayload = {
+  title: string;
+  description: string | null;
+  format: string;
+  job_id?: string;
+  start_date?: string;
+  end_date?: string;
+};
+
 const PAGE_SIZE = 10;
 
 export default function ReportsDashboardPage() {
@@ -60,7 +80,7 @@ export default function ReportsDashboardPage() {
     endDate: "",
     jobId: "",
   });
-  const [jobs, setJobs] = useState<any[]>([]);
+  const [jobs, setJobs] = useState<SentimentJob[]>([]);
   const [loadingJobs, setLoadingJobs] = useState(false);
   const [submittingCreate, setSubmittingCreate] = useState(false);
 
@@ -125,9 +145,56 @@ export default function ReportsDashboardPage() {
     }
   }, [apiBaseUrl, currentPage, session?.user?.accessToken, session?.user?.subscription_plan, status]);
 
+  // Initial load & re-fetch when page/session changes.
+  // Logic is inlined here (not via fetchReports) to satisfy react-hooks/set-state-in-effect:
+  // setState must be called inside a local async function, not at the effect body top-level.
   useEffect(() => {
-    fetchReports(true);
-  }, [fetchReports]);
+    const accessToken = session?.user?.accessToken;
+    if (!accessToken || status === "loading") return;
+
+    let isActive = true;
+
+    async function load() {
+      const isPremiumUser = isPremiumSubscription(session?.user?.subscription_plan);
+      if (!isPremiumUser) {
+        setError("Fitur Laporan hanya tersedia untuk pengguna Premium.");
+        return;
+      }
+
+      setLoading(true);
+      setError(null);
+      try {
+        const offset = (currentPage - 1) * PAGE_SIZE;
+        const response = await axios.get<ReportsResponse>(
+          `${apiBaseUrl}/reports`,
+          {
+            params: { offset, limit: PAGE_SIZE },
+            headers: { Authorization: `Bearer ${accessToken}` },
+          },
+        );
+        if (!isActive) return;
+        setItems(response.data.items ?? []);
+        setTotalCount(response.data.count ?? 0);
+      } catch (err) {
+        if (!isActive) return;
+        const apiError = err as AxiosError;
+        const message =
+          typeof apiError.response?.data === "string"
+            ? apiError.response.data
+            : apiError.message || "Gagal memuat laporan.";
+        setError(message);
+        appToast.error("Gagal memuat laporan.");
+      } finally {
+        if (isActive) setLoading(false);
+      }
+    }
+
+    void load();
+
+    return () => {
+      isActive = false;
+    };
+  }, [apiBaseUrl, currentPage, session?.user?.accessToken, session?.user?.subscription_plan, status]);
 
   // Polling for processing/draft reports
   useEffect(() => {
@@ -155,7 +222,7 @@ export default function ReportsDashboardPage() {
         },
       });
       const completedJobs = (response.data.items ?? []).filter(
-        (job: any) => job.status === "completed"
+        (job: SentimentJob) => job.status === "completed"
       );
       setJobs(completedJobs);
     } catch {
@@ -309,7 +376,7 @@ export default function ReportsDashboardPage() {
       return;
     }
     
-    const payload: any = {
+    const payload: ReportPayload = {
       title: createForm.title.trim(),
       description: createForm.description.trim() || null,
       format: createForm.format,
@@ -358,8 +425,10 @@ export default function ReportsDashboardPage() {
         endDate: "",
         jobId: "",
       });
-    } catch (err: any) {
-      const message = err.response?.data?.detail || "Gagal membuat laporan baru.";
+    } catch (err) {
+      const axiosErr = err as AxiosError<{ detail?: string }>;
+      const message =
+        axiosErr.response?.data?.detail ?? "Gagal membuat laporan baru.";
       appToast.error(message);
     } finally {
       setSubmittingCreate(false);

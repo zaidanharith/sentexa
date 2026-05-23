@@ -8,7 +8,7 @@ import { MdOutlineSpaceDashboard, MdOutlineAttachMoney } from "react-icons/md";
 import { GiQueenCrown } from "react-icons/gi";
 import {
   HiOutlineChartBar,
-  HiOutlineChatAlt2,
+  // HiOutlineChatAlt2,
   HiOutlineDocumentReport,
   HiOutlineClock,
   HiOutlineUser,
