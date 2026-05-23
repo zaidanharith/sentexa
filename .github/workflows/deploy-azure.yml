@@ -1,5 +1,4 @@
 name: Deploy Backend to Azure
-
 on:
   push:
     branches:
@@ -22,15 +21,18 @@ jobs:
         working-directory: backend
     steps:
       - uses: actions/checkout@v4
+
       - name: Setup Python
         uses: actions/setup-python@v5
         with:
           python-version: "3.11"
           cache: "pip"
+
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
           pip install -r requirements/base.txt
+
       - name: Check Python Syntax (Recursive)
         run: python -m compileall .
 
@@ -42,7 +44,6 @@ jobs:
       RESOURCE_GROUP: Sentexa-RG
       CONTAINER_APP_NAME: sentexa-api
       LOCATION: eastus
-
     steps:
       - uses: actions/checkout@v4
 
@@ -67,6 +68,7 @@ jobs:
             containerImage=${{ secrets.ACR_LOGIN_SERVER || 'sentexaregistry.azurecr.io/sentexa-backend:latest' }}
 
       - name: Set up Docker Buildx
+        id: buildx
         uses: docker/setup-buildx-action@v3
         with:
           driver: docker-container
@@ -82,6 +84,7 @@ jobs:
       - name: Build and Push Docker Image
         uses: docker/build-push-action@v6
         with:
+          builder: ${{ steps.buildx.outputs.name }}
           context: ./backend
           file: ./backend/Dockerfile
           push: true
@@ -107,7 +110,7 @@ jobs:
                         kaggle-username=${{ secrets.KAGGLE_USERNAME }} \
                         kaggle-key=${{ secrets.KAGGLE_KEY }} \
                         hf-token=${{ secrets.HF_TOKEN }}
-                                 
+
             echo "[+] Updating image..."
             az containerapp update \
               --name ${{ env.CONTAINER_APP_NAME }} \
