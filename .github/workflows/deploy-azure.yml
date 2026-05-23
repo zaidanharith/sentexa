@@ -99,14 +99,19 @@ jobs:
           azcliversion: latest
           inlineScript: |
             echo "[+] Injecting secrets..."
-            az containerapp secret set \
-              --name ${{ env.CONTAINER_APP_NAME }} \
-              --resource-group ${{ env.RESOURCE_GROUP }} \
-              --secrets database-url=${{ secrets.DATABASE_URL }} \
-                        secret-key=${{ secrets.SECRET_KEY }} \
-                        kaggle-username=${{ secrets.KAGGLE_USERNAME }} \
-                        kaggle-key=${{ secrets.KAGGLE_KEY }} \
-                        hf-token=${{ secrets.HF_TOKEN }}
+            # Cek apakah secret tersedia sebelum set agar tidak error saat kosong
+            if [ -n "${{ secrets.DATABASE_URL }}" ]; then
+              az containerapp secret set \
+                --name ${{ env.CONTAINER_APP_NAME }} \
+                --resource-group ${{ env.RESOURCE_GROUP }} \
+                --secrets database-url="${{ secrets.DATABASE_URL }}" \
+                          secret-key="${{ secrets.SECRET_KEY }}" \
+                          kaggle-username="${{ secrets.KAGGLE_USERNAME }}" \
+                          kaggle-key="${{ secrets.KAGGLE_KEY }}" \
+                          hf-token="${{ secrets.HF_TOKEN }}"
+            else
+              echo "Warning: Secrets are missing, skipping secret update."
+            fi
                                  
             echo "[+] Updating image..."
             az containerapp update \
