@@ -51,17 +51,16 @@ function ProfileContent({ user }: { user: AuthUser }) {
     email: user.email || "",
   });
 
-  // Fetch subscription plans to determine max quota for the current plan
-
-
   useEffect(() => {
     const fetchPlans = async () => {
       try {
         const plans = await backendSubscriptionApi.getSubscriptionPlans();
-        const currentPlan = plans.find((p) => p.code === user.subscription_plan);
+        const currentPlan = plans.find(
+          (p) => p.code === user.subscription_plan,
+        );
         if (currentPlan) setMaxQuota(currentPlan.quota);
       } catch (err) {
-        console.error('Failed to fetch subscription plans', err);
+        console.error("Failed to fetch subscription plans", err);
       }
     };
     if (user.subscription_plan) fetchPlans();

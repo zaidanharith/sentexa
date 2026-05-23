@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import axios, { AxiosError } from "axios";
 import { useSession } from "next-auth/react";
+import { useAuth } from "@/hooks/useAuth";
 import DashboardPageTitle from "@/components/layout/dashboard/DashboardPageTitle";
 import DashboardPageContent from "@/components/layout/dashboard/DashboardPageContent";
 import KeywordTable from "@/components/layout/dashboard/KeywordTable";
@@ -36,6 +37,7 @@ type TrendResponse = {
 
 export default function DashboardPage() {
   const { data: session, status } = useSession();
+  const { user } = useAuth();
   const [summary, setSummary] = useState<AnalysisSummaryResponse | null>(null);
   const [loading, setLoading] = useState(false);
   const [keywordsLoading, setKeywordsLoading] = useState(false);
@@ -238,7 +240,7 @@ export default function DashboardPage() {
       />
       <DashboardPageContent>
         <h1 className="font-bold text-2xl sm:text-3xl">
-          Halo, {session?.user?.name || "Pengguna"}!
+          Halo, {user?.name || "Pengguna"}!
         </h1>
       </DashboardPageContent>
 
