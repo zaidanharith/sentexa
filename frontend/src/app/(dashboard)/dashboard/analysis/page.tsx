@@ -67,7 +67,16 @@ function extractTextsFromParsedData(parsedData: {
 }): string[] {
   if (!parsedData.rows || parsedData.rows.length === 0) return [];
 
-  const textKeys = ["text", "teks", "ulasan", "review", "komentar", "comment", "content", "isi"];
+  const textKeys = [
+    "text",
+    "teks",
+    "ulasan",
+    "review",
+    "komentar",
+    "comment",
+    "content",
+    "isi",
+  ];
   const firstRow = parsedData.rows[0];
   const key =
     Object.keys(firstRow).find((k) => textKeys.includes(k.toLowerCase())) ??
@@ -87,7 +96,9 @@ export default function AnalysisDashboardPage() {
 
   // ── Tab & single-text result state ──────────────────────────────────────────
   const [activeTab, setActiveTab] = useState<"upload" | "text">("upload");
-  const [analysisResult, setAnalysisResult] = useState<AnalysisResult | null>(null);
+  const [analysisResult, setAnalysisResult] = useState<AnalysisResult | null>(
+    null,
+  );
   const resultRef = useRef<HTMLDivElement>(null);
 
   // ── Batch job state (POST /jobs + polling + POST /reprocess) ────────────────
@@ -110,7 +121,9 @@ export default function AnalysisDashboardPage() {
     };
   }, []);
 
-  const subscriptionTier = getSubscriptionTier(session?.user?.subscription_plan);
+  const subscriptionTier = getSubscriptionTier(
+    session?.user?.subscription_plan,
+  );
   const features = getFeatureAccess(session?.user?.subscription_plan);
 
   const defaultTab = !features.canUploadFile ? "text" : "upload";
@@ -124,8 +137,8 @@ export default function AnalysisDashboardPage() {
   }
 
   function authHeader() {
-    return session?.user?.accessToken
-      ? { Authorization: `Bearer ${session.user.accessToken}` }
+    return session?.accessToken
+      ? { Authorization: `Bearer ${session.accessToken}` }
       : {};
   }
 
@@ -175,7 +188,9 @@ export default function AnalysisDashboardPage() {
           clearInterval(pollingRef.current!);
           pollingRef.current = null;
           analysis.setLoading(false);
-          appToast.error("Job gagal diproses: " + (job.error ?? "unknown error"));
+          appToast.error(
+            "Job gagal diproses: " + (job.error ?? "unknown error"),
+          );
         }
       } catch {
         if (pollingRef.current) clearInterval(pollingRef.current);
@@ -225,7 +240,8 @@ export default function AnalysisDashboardPage() {
         pollingRef.current = null;
       }
     } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : "Gagal memproses file";
+      const errorMessage =
+        err instanceof Error ? err.message : "Gagal memproses file";
       appToast.error(errorMessage);
       analysis.setFile(null);
       analysis.setParsedData(null);
@@ -311,12 +327,16 @@ export default function AnalysisDashboardPage() {
           analysis.setTextInput("");
         } catch (error) {
           const err = error as AxiosError;
-          console.error("Sentiment API error:", err.response || err.message || err);
+          console.error(
+            "Sentiment API error:",
+            err.response || err.message || err,
+          );
           appToast.error("Gagal menganalisis teks.");
         }
       }
     } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : "Terjadi kesalahan";
+      const errorMessage =
+        err instanceof Error ? err.message : "Terjadi kesalahan";
       appToast.error(errorMessage);
     } finally {
       if (!keepLoading) {
@@ -358,7 +378,8 @@ export default function AnalysisDashboardPage() {
           <span className="text-sm font-medium text-gray-700">
             Paket Anda:
             <span className="ml-2 font-semibold text-sky-600">
-              {subscriptionTier.charAt(0).toUpperCase() + subscriptionTier.slice(1)}
+              {subscriptionTier.charAt(0).toUpperCase() +
+                subscriptionTier.slice(1)}
             </span>
           </span>
           {subscriptionTier === "free" && (
@@ -446,8 +467,12 @@ export default function AnalysisDashboardPage() {
                 {/* Header */}
                 <div className="flex items-center justify-between">
                   <div>
-                    <h3 className="font-semibold text-gray-900">Status Analisis Batch</h3>
-                    <p className="text-xs text-gray-500 mt-0.5">Job ID: {batchJob.job_id}</p>
+                    <h3 className="font-semibold text-gray-900">
+                      Status Analisis Batch
+                    </h3>
+                    <p className="text-xs text-gray-500 mt-0.5">
+                      Job ID: {batchJob.job_id}
+                    </p>
                   </div>
                   <span
                     className={`px-2.5 py-1 rounded text-xs font-semibold ${
@@ -460,7 +485,8 @@ export default function AnalysisDashboardPage() {
                             : "bg-yellow-100 text-yellow-700"
                     }`}
                   >
-                    {batchJob.status.charAt(0).toUpperCase() + batchJob.status.slice(1)}
+                    {batchJob.status.charAt(0).toUpperCase() +
+                      batchJob.status.slice(1)}
                   </span>
                 </div>
 
@@ -470,12 +496,16 @@ export default function AnalysisDashboardPage() {
                     <span>
                       {batchJob.completed} / {batchJob.total} teks diproses
                     </span>
-                    <span className="font-semibold">{progressPct(batchJob)}%</span>
+                    <span className="font-semibold">
+                      {progressPct(batchJob)}%
+                    </span>
                   </div>
                   <div className="w-full bg-gray-200 rounded-full h-2.5">
                     <div
                       className={`h-2.5 rounded-full transition-all duration-500 ${
-                        batchJob.status === "failed" ? "bg-red-500" : "bg-sky-500"
+                        batchJob.status === "failed"
+                          ? "bg-red-500"
+                          : "bg-sky-500"
                       }`}
                       style={{ width: `${progressPct(batchJob)}%` }}
                     />
@@ -522,30 +552,45 @@ export default function AnalysisDashboardPage() {
                 {!batchResultsLoading && batchResults.length > 0 && (
                   <div>
                     <p className="text-xs font-semibold text-gray-600 mb-2">
-                      Preview Hasil (10 pertama dari {batchResults.length} total):
+                      Preview Hasil (10 pertama dari {batchResults.length}{" "}
+                      total):
                     </p>
                     <div className="overflow-x-auto rounded-lg border border-gray-200">
                       <table className="min-w-full text-xs">
                         <thead className="bg-white text-gray-600">
                           <tr>
-                            <th className="px-3 py-2 text-left font-semibold">#</th>
-                            <th className="px-3 py-2 text-left font-semibold">Teks</th>
-                            <th className="px-3 py-2 text-left font-semibold">Label</th>
-                            <th className="px-3 py-2 text-left font-semibold">Score</th>
+                            <th className="px-3 py-2 text-left font-semibold">
+                              #
+                            </th>
+                            <th className="px-3 py-2 text-left font-semibold">
+                              Teks
+                            </th>
+                            <th className="px-3 py-2 text-left font-semibold">
+                              Label
+                            </th>
+                            <th className="px-3 py-2 text-left font-semibold">
+                              Score
+                            </th>
                           </tr>
                         </thead>
                         <tbody className="divide-y divide-gray-200">
                           {batchResults.slice(0, 10).map((result) => (
                             <tr key={result.index} className="hover:bg-gray-50">
-                              <td className="px-3 py-2 text-gray-500">{result.index + 1}</td>
+                              <td className="px-3 py-2 text-gray-500">
+                                {result.index + 1}
+                              </td>
                               <td className="px-3 py-2 text-gray-700 max-w-xs">
-                                <span className="line-clamp-2">{result.text}</span>
+                                <span className="line-clamp-2">
+                                  {result.text}
+                                </span>
                               </td>
                               <td className="px-3 py-2">
                                 <span
                                   className={`px-2 py-0.5 rounded-full font-semibold ${labelColorClass(result.prediction.label)}`}
                                 >
-                                  {result.prediction.label.charAt(0).toUpperCase() +
+                                  {result.prediction.label
+                                    .charAt(0)
+                                    .toUpperCase() +
                                     result.prediction.label.slice(1)}
                                 </span>
                               </td>
@@ -559,8 +604,12 @@ export default function AnalysisDashboardPage() {
                     </div>
                     {batchResults.length > 10 && (
                       <p className="text-xs text-gray-500 mt-1.5">
-                        +{batchResults.length - 10} hasil lainnya tersedia di halaman{" "}
-                        <span className="text-sky-600 font-medium">Riwayat Analisis</span>.
+                        +{batchResults.length - 10} hasil lainnya tersedia di
+                        halaman{" "}
+                        <span className="text-sky-600 font-medium">
+                          Riwayat Analisis
+                        </span>
+                        .
                       </p>
                     )}
                   </div>
@@ -569,7 +618,8 @@ export default function AnalysisDashboardPage() {
                 {/* Action buttons */}
                 <div className="flex items-center gap-3 pt-1">
                   {/* POST /sentiment/predict/jobs/{job_id}/reprocess */}
-                  {(batchJob.status === "completed" || batchJob.status === "failed") && (
+                  {(batchJob.status === "completed" ||
+                    batchJob.status === "failed") && (
                     <button
                       onClick={() => handleReprocess(batchJob.job_id)}
                       disabled={analysis.state.loading}
@@ -614,7 +664,8 @@ export default function AnalysisDashboardPage() {
                 disabled={analysis.state.loading}
               />
               <p className="text-xs text-gray-500 mt-2">
-                {analysis.state.textInput.length} / {features.maxTextLength || 5000} karakter
+                {analysis.state.textInput.length} /{" "}
+                {features.maxTextLength || 5000} karakter
               </p>
             </div>
           </div>
@@ -667,11 +718,15 @@ export default function AnalysisDashboardPage() {
             ref={resultRef}
             className="border-2 border-sky-200 rounded-lg p-6 bg-linear-to-br from-sky-50 to-blue-50"
           >
-            <h2 className="text-lg font-bold text-gray-900 mb-4">Hasil Analisis</h2>
+            <h2 className="text-lg font-bold text-gray-900 mb-4">
+              Hasil Analisis
+            </h2>
 
             {/* Input text */}
             <div className="mb-6 pb-4 border-b border-gray-200">
-              <p className="text-sm font-medium text-gray-600 mb-2">Teks Input:</p>
+              <p className="text-sm font-medium text-gray-600 mb-2">
+                Teks Input:
+              </p>
               <p className="text-gray-900 italic bg-white p-3 rounded border border-gray-200">
                 &ldquo;{analysisResult.text}&rdquo;
               </p>
@@ -681,7 +736,9 @@ export default function AnalysisDashboardPage() {
             <div className="mb-6 pb-4 border-b border-gray-200">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm font-medium text-gray-600 mb-2">Sentimen:</p>
+                  <p className="text-sm font-medium text-gray-600 mb-2">
+                    Sentimen:
+                  </p>
                   <div className="flex items-center gap-3">
                     <span
                       className={`px-4 py-2 rounded-full font-bold text-white ${
@@ -705,7 +762,9 @@ export default function AnalysisDashboardPage() {
 
             {/* Score details */}
             <div className="space-y-4">
-              <p className="text-sm font-medium text-gray-600 mb-4">Detail Skor:</p>
+              <p className="text-sm font-medium text-gray-600 mb-4">
+                Detail Skor:
+              </p>
 
               {(
                 [
@@ -716,7 +775,9 @@ export default function AnalysisDashboardPage() {
               ).map(({ key, label, color }) => (
                 <div key={key}>
                   <div className="flex justify-between items-center mb-2">
-                    <span className={`text-sm font-medium text-${color}-700`}>{label}</span>
+                    <span className={`text-sm font-medium text-${color}-700`}>
+                      {label}
+                    </span>
                     <span className={`text-sm font-semibold text-${color}-600`}>
                       {(analysisResult.scores[key] * 100).toFixed(2)}%
                     </span>

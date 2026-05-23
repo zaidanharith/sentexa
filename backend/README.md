@@ -148,41 +148,44 @@ Akses Backend dapat melalui [**http://localhost:8000**](http://localhost:8000)
 
   ```text
      {
-       "plan": "monthly",
-       "quota_remaining": 1200,
-       "expires_at": "2026-06-01T00:00:00Z"
+       "plan": "free",
+       "status": "active",
+       "remaining_quota": 5,
+       "expires_at": null
      }
   ```
 
-- 🌐 `GET /api/subscription/plans` : Menampilkan daftar paket langganan yang tersedia beserta detail fitur dan harga (Free, Weekly, Monthly, Annual)
+- 🌐 `GET /api/subscription/plans` : Menampilkan daftar paket langganan yang tersedia beserta detail fitur dan kuota (Free, Premium)
 
   Contoh _response_:
 
   ```text
      [
        {
-         "id": "free",
+         "code": "free",
          "name": "Free",
-         "price": 0,
-         "quota": 100
+         "quota": 5
        },
        {
-         "id": "monthly",
-         "name": "Monthly",
-         "price": 99000,
-         "quota": 2000
+         "code": "premium",
+         "name": "Premium",
+         "quota": 999999,
+         "features": [
+           "Upload file ulasan multi-format (CSV/Excel)",
+           "Pengiriman teks tanpa batas",
+           "Akses exportable reports"
+         ]
        }
      ]
   ```
 
-- 🔒 `POST /api/subscription/subscribe` : Mengaktifkan atau memperbarui paket langganan pengguna
+- 🔒 `POST /api/subscription/subscribe` : Mengubah paket langganan pengguna secara langsung tanpa proses pembayaran
 
   Contoh _request_:
 
   ```text
      {
-       "plan": "monthly",
-       "payment_method": "bank_transfer"
+       "plan": "premium"
      }
   ```
 
@@ -190,9 +193,13 @@ Akses Backend dapat melalui [**http://localhost:8000**](http://localhost:8000)
 
   ```text
      {
-       "status": "active",
-       "plan": "monthly",
-       "expires_at": "2026-06-01T00:00:00Z"
+       "detail": "Subscription updated successfully",
+       "subscription": {
+         "plan": "premium",
+         "status": "active",
+         "remaining_quota": 999999,
+         "expires_at": null
+       }
      }
   ```
 

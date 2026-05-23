@@ -91,7 +91,7 @@ export default function HistoryDashboardPage() {
 
   // Fetch analysis history
   useEffect(() => {
-    const accessToken = session?.user?.accessToken;
+    const accessToken = session?.accessToken;
     if (!accessToken || status === "loading") {
       return;
     }
@@ -138,10 +138,10 @@ export default function HistoryDashboardPage() {
     return () => {
       isActive = false;
     };
-  }, [apiBaseUrl, session?.user?.accessToken, status]);
+  }, [apiBaseUrl, session?.accessToken, status]);
 
   useEffect(() => {
-    const accessToken = session?.user?.accessToken;
+    const accessToken = session?.accessToken;
     if (!accessToken || status === "loading") {
       return;
     }
@@ -188,7 +188,7 @@ export default function HistoryDashboardPage() {
     return () => {
       isActive = false;
     };
-  }, [apiBaseUrl, session?.user?.accessToken, status]);
+  }, [apiBaseUrl, session?.accessToken, status]);
 
   function formatLabel(value?: string | null) {
     if (!value) {
@@ -284,7 +284,7 @@ export default function HistoryDashboardPage() {
       return;
     }
 
-    const accessToken = session?.user?.accessToken;
+    const accessToken = session?.accessToken;
     if (!accessToken) {
       return;
     }

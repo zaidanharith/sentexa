@@ -53,7 +53,7 @@ export default function DashboardPage() {
     "http://localhost:8000/api";
 
   useEffect(() => {
-    const accessToken = session?.user?.accessToken;
+    const accessToken = session?.accessToken;
     if (!accessToken || status === "loading") {
       return;
     }
@@ -95,10 +95,10 @@ export default function DashboardPage() {
     return () => {
       isActive = false;
     };
-  }, [apiBaseUrl, session?.user?.accessToken, status]);
+  }, [apiBaseUrl, session?.accessToken, status]);
 
   useEffect(() => {
-    const accessToken = session?.user?.accessToken;
+    const accessToken = session?.accessToken;
     if (!accessToken || status === "loading") {
       return;
     }
@@ -142,10 +142,10 @@ export default function DashboardPage() {
     return () => {
       isActive = false;
     };
-  }, [apiBaseUrl, session?.user?.accessToken, status]);
+  }, [apiBaseUrl, session?.accessToken, status]);
 
   useEffect(() => {
-    const accessToken = session?.user?.accessToken;
+    const accessToken = session?.accessToken;
     if (!accessToken || status === "loading") {
       return;
     }
@@ -200,7 +200,7 @@ export default function DashboardPage() {
     return () => {
       isActive = false;
     };
-  }, [apiBaseUrl, session?.user?.accessToken, status]);
+  }, [apiBaseUrl, session?.accessToken, status]);
 
   const totalAnalyses = summary?.total_analyses ?? 0;
   const deltaFromYesterday = summary?.delta_from_yesterday ?? 0;

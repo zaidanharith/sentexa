@@ -1,4 +1,4 @@
-import type { NextAuthOptions, DefaultSession } from "next-auth";
+import type { NextAuthOptions } from "next-auth";
 import type { DefaultJWT } from "next-auth/jwt";
 import CredentialsProvider from "next-auth/providers/credentials";
 import GoogleProvider from "next-auth/providers/google";
@@ -8,16 +8,16 @@ declare module "next-auth" {
   interface Session {
     accessToken?: string;
     refreshToken?: string;
-    user: DefaultSession["user"] & {
+    user: {
       id: string;
-      accessToken?: string;
-      refreshToken?: string;
       subscription_plan?: string;
     };
   }
 
   interface User {
     id: string;
+    name?: string;
+    email?: string;
     accessToken?: string;
     refreshToken?: string;
     subscription_plan?: string;
@@ -26,6 +26,7 @@ declare module "next-auth" {
 
 declare module "next-auth/jwt" {
   interface JWT extends DefaultJWT {
+    id?: string;
     accessToken?: string;
     refreshToken?: string;
     subscription_plan?: string;
@@ -139,11 +140,19 @@ export const authOptions: NextAuthOptions = {
       return token;
     },
 
-    async session({ session, token }) {
+    async session({ session, token, trigger, session: sessionUpdate }) {
+      const updateData = sessionUpdate as
+        | { subscription_plan?: string }
+        | undefined;
+
+      if (trigger === "update" && updateData?.subscription_plan) {
+        token.subscription_plan = updateData.subscription_plan;
+      }
+
       if (session.user) {
-        session.user.id = token.sub || "";
-        session.user.accessToken = token.accessToken;
-        session.user.refreshToken = token.refreshToken;
+        session.accessToken = token.accessToken;
+        session.refreshToken = token.refreshToken;
+        session.user.id = (token.sub || token.id || "") as string;
         session.user.subscription_plan = token.subscription_plan;
       }
       return session;

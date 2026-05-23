@@ -189,7 +189,7 @@ async def auth_headers(client: AsyncClient):
 @pytest_asyncio.fixture
 async def premium_headers(client: AsyncClient):
     """
-    Hook beforeEach: daftarkan, login, dan upgrade ke premium (weekly).
+    Hook beforeEach: daftarkan, login, dan upgrade langsung ke premium.
     Kembalikan header Authorization untuk user premium.
     """
     email = "premium_sentexa@example.com"
@@ -206,7 +206,7 @@ async def premium_headers(client: AsyncClient):
     headers = {"Authorization": f"Bearer {token}"}
     await client.post(
         "/api/subscription/subscribe",
-        json={"plan": "premium", "duration": "weekly"},
+        json={"plan": "premium"},
         headers=headers,
     )
     return headers

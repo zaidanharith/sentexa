@@ -1,6 +1,6 @@
 "use client";
 
-import { createContext } from "react";
+import { createContext, useEffect, useState } from "react";
 import { signIn, signOut, useSession } from "next-auth/react";
 
 import { ApiError, backendAuthApi } from "@/lib/api";
@@ -37,35 +37,54 @@ interface AuthProviderProps {
 
 export function AuthProvider({ children }: AuthProviderProps) {
   const { data: session, status, update } = useSession();
+  const [user, setUser] = useState<AuthUser | null>(null);
+  const [userLoading, setUserLoading] = useState(false);
 
-  const user: AuthUser | null = session?.user
-    ? {
-        id: Number(session.user.id),
-        name: session.user.name || "",
-        email: session.user.email || "",
-        analysis_quota: Number(
-          (session.user as Record<string, unknown>).analysis_quota || 100
-        ),
-        subscription_plan: String(
-          (session.user as Record<string, unknown>).subscription_plan || "free"
-        ),
-        subscription_status: String(
-          (session.user as Record<string, unknown>).subscription_status ||
-            "active"
-        ),
-        subscription_start: (session.user as Record<
-          string,
-          unknown
-        >).subscription_start as string | undefined,
-        subscription_end: (session.user as Record<string, unknown>)
-          .subscription_end as string | undefined,
+  useEffect(() => {
+    const accessToken = session?.accessToken;
+    let isActive = true;
+
+    const syncUser = async () => {
+      if (!accessToken) {
+        setUser(null);
+        setUserLoading(false);
+        return;
       }
-    : null;
 
-  const loading = status === "loading";
+      setUserLoading(true);
+
+      try {
+        const profile = await backendAuthApi.me(accessToken);
+        if (isActive) {
+          setUser(profile);
+        }
+      } catch {
+        if (isActive) {
+          setUser(null);
+        }
+      } finally {
+        if (isActive) {
+          setUserLoading(false);
+        }
+      }
+    };
+
+    void syncUser();
+
+    return () => {
+      isActive = false;
+    };
+  }, [session?.accessToken]);
+
+  const loading = status === "loading" || userLoading;
 
   const refreshUser = async () => {
     await update();
+    const accessToken = session?.accessToken;
+    if (accessToken) {
+      const profile = await backendAuthApi.me(accessToken);
+      setUser(profile);
+    }
   };
 
   const login = async (payload: LoginPayload) => {
@@ -102,13 +121,10 @@ export function AuthProvider({ children }: AuthProviderProps) {
   };
 
   const logout = async () => {
-    if (session?.user) {
-      const userWithToken = session.user as Record<string, unknown>;
-      if (userWithToken.accessToken) {
-        try {
-          await backendAuthApi.logout(userWithToken.accessToken as string);
-        } catch {}
-      }
+    if (session?.accessToken) {
+      try {
+        await backendAuthApi.logout(session.accessToken);
+      } catch {}
     }
 
     await signOut({ redirect: false });

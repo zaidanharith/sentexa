@@ -4,14 +4,14 @@ param location string = resourceGroup().location
 @description('Suffix to ensure globally unique names across resources.')
 param nameSuffix string = uniqueString(resourceGroup().id)
 
-@description('The name of the Azure Container Registry.')
-param acrName string = 'acrsentexa${nameSuffix}'
+@description('The name of your existing Azure Container Registry.')
+param acrName string = 'sentexaregistry'
 
 @description('The name of the Azure Container Apps environment.')
 param environmentName string = 'cae-sentexa-${nameSuffix}'
 
-@description('The name of the FastAPI backend Container App.')
-param containerAppName string = 'ca-sentexa-backend'
+@description('The name of the FastAPI backend Container App (Nama Service WebApp).')
+param containerAppName string = 'sentexa-api'
 
 @description('The CPU cores allocated to the container. Valid options range from 0.25 to 2.0.')
 param cpuCore string = '1.0'
@@ -28,22 +28,17 @@ param allowedOrigins string = 'https://sentexa.vercel.app,http://localhost:3000'
 @description('Specify if we should use existing secrets. If true, dummy values are used during initial deployment to be updated later.')
 param useDummySecrets bool = true
 
-// Define dummy values or placeholder environment settings for initially deploying the app securely
+@description('The container image to deploy. Defaults to actual image to prevent downtime during CI/CD.')
+param containerImage string = '${acrName}.azurecr.io/${containerAppName}:latest'
+
 var dbUrlPlaceholder = 'postgresql+asyncpg://postgres:placeholder-password@placeholder-host:5432/postgres'
 var jwtSecretPlaceholder = 'placeholder-jwt-secret-key-at-least-32-characters-long'
 var kaggleUsernamePlaceholder = 'placeholder_kaggle_username'
 var kaggleKeyPlaceholder = 'placeholder_kaggle_key'
 var hfTokenPlaceholder = 'placeholder_hf_token'
 
-resource acr 'Microsoft.ContainerRegistry/registries@2023-07-01' = {
+resource acr 'Microsoft.ContainerRegistry/registries@2023-07-01' existing = {
   name: acrName
-  location: location
-  sku: {
-    name: 'Basic'
-  }
-  properties: {
-    adminUserEnabled: true
-  }
 }
 
 resource logAnalyticsWorkspace 'Microsoft.OperationalInsights/workspaces@2022-10-01' = {
@@ -121,7 +116,7 @@ resource containerApp 'Microsoft.App/containerApps@2023-05-01' = {
       containers: [
         {
           name: 'backend'
-          image: '${acr.name}.azurecr.io/sentexa-backend:latest'
+          image: containerImage
           resources: {
             cpu: json(cpuCore)
             memory: memorySize
@@ -175,8 +170,8 @@ resource containerApp 'Microsoft.App/containerApps@2023-05-01' = {
                 path: '/api/health'
                 port: 8000
               }
-              initialDelaySeconds: 15
-              periodSeconds: 10
+              initialDelaySeconds: 45
+              periodSeconds: 15
             }
             {
               type: 'Readiness'
@@ -184,15 +179,15 @@ resource containerApp 'Microsoft.App/containerApps@2023-05-01' = {
                 path: '/api/ready'
                 port: 8000
               }
-              initialDelaySeconds: 20
-              periodSeconds: 10
+              initialDelaySeconds: 60
+              periodSeconds: 15
             }
           ]
         }
       ]
       scale: {
-        minReplicas: 0
-        maxReplicas: 5
+        minReplicas: 1
+        maxReplicas: 3
         rules: [
           {
             name: 'http-rule'

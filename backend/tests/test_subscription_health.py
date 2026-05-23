@@ -86,17 +86,17 @@ class TestSubscription:
         assert "status" in data
         assert "remaining_quota" in data
 
-    async def test_subscribe_ke_premium_weekly_berhasil(
+    async def test_subscribe_ke_premium_berhasil(
         self, client: AsyncClient, auth_headers: dict
     ):
         """
         Kondisi  : Positive
-        Aksi     : Upgrade ke paket premium (weekly) dengan durasi 'weekly'
+        Aksi     : Upgrade langsung ke paket premium tanpa pembayaran
         Expected : HTTP 200, plan berubah menjadi 'premium'
         """
         resp = await client.post(
             "/api/subscription/subscribe",
-            json={"plan": "premium", "duration": "weekly"},
+            json={"plan": "premium"},
             headers=auth_headers,
         )
         assert resp.status_code == 200
@@ -113,7 +113,7 @@ class TestSubscription:
         """
         resp = await client.post(
             "/api/subscription/subscribe",
-            json={"plan": "free", "duration": None},
+            json={"plan": "free"},
             headers=auth_headers,
         )
         assert resp.status_code == 200
@@ -129,20 +129,20 @@ class TestSubscription:
         resp = await client.get("/api/subscription")
         assert resp.status_code == 401
 
-    async def test_subscribe_premium_tanpa_durasi_gagal(
+    async def test_subscribe_premium_tanpa_durasi_tetap_berhasil(
         self, client: AsyncClient, auth_headers: dict
     ):
         """
         Kondisi  : Negative
-        Aksi     : Subscribe ke premium tanpa menyertakan field 'duration'
-        Expected : HTTP 400 Bad Request (durasi wajib untuk premium)
+        Aksi     : Subscribe ke premium tanpa detail pembayaran
+        Expected : HTTP 200, tetap berhasil karena alur dipercepat untuk development
         """
         resp = await client.post(
             "/api/subscription/subscribe",
             json={"plan": "premium"},
             headers=auth_headers,
         )
-        assert resp.status_code == 400
+        assert resp.status_code == 200
 
     async def test_akses_report_tanpa_premium_ditolak(
         self, client: AsyncClient, auth_headers: dict

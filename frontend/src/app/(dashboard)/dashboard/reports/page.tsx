@@ -104,58 +104,69 @@ export default function ReportsDashboardPage() {
     process.env.NEXT_PUBLIC_API_URL?.replace(/\/$/, "") ??
     "http://localhost:8000/api";
 
-  const fetchReports = useCallback(async (showLoading = true) => {
-    const accessToken = session?.user?.accessToken;
-    if (!accessToken || status === "loading") {
-      return;
-    }
+  const fetchReports = useCallback(
+    async (showLoading = true) => {
+      const accessToken = session?.accessToken;
+      if (!accessToken || status === "loading") {
+        return;
+      }
 
-    const isPremium = isPremiumSubscription(session?.user?.subscription_plan);
-    if (!isPremium) {
-      setError("Fitur Laporan hanya tersedia untuk pengguna Premium.");
-      return;
-    }
+      const isPremium = isPremiumSubscription(session?.user?.subscription_plan);
+      if (!isPremium) {
+        setError("Fitur Laporan hanya tersedia untuk pengguna Premium.");
+        return;
+      }
 
-    if (showLoading) setLoading(true);
-    setError(null);
-    try {
-      const offset = (currentPage - 1) * PAGE_SIZE;
-      const response = await axios.get<ReportsResponse>(
-        `${apiBaseUrl}/reports`,
-        {
-          params: { offset, limit: PAGE_SIZE },
-          headers: {
-            Authorization: `Bearer ${accessToken}`,
+      if (showLoading) setLoading(true);
+      setError(null);
+      try {
+        const offset = (currentPage - 1) * PAGE_SIZE;
+        const response = await axios.get<ReportsResponse>(
+          `${apiBaseUrl}/reports`,
+          {
+            params: { offset, limit: PAGE_SIZE },
+            headers: {
+              Authorization: `Bearer ${accessToken}`,
+            },
           },
-        },
-      );
+        );
 
-      setItems(response.data.items ?? []);
-      setTotalCount(response.data.count ?? 0);
-    } catch (err) {
-      const apiError = err as AxiosError;
-      const message =
-        typeof apiError.response?.data === "string"
-          ? apiError.response?.data
-          : apiError.message || "Gagal memuat laporan.";
-      setError(message);
-      appToast.error("Gagal memuat laporan.");
-    } finally {
-      if (showLoading) setLoading(false);
-    }
-  }, [apiBaseUrl, currentPage, session?.user?.accessToken, session?.user?.subscription_plan, status]);
+        setItems(response.data.items ?? []);
+        setTotalCount(response.data.count ?? 0);
+      } catch (err) {
+        const apiError = err as AxiosError;
+        const message =
+          typeof apiError.response?.data === "string"
+            ? apiError.response?.data
+            : apiError.message || "Gagal memuat laporan.";
+        setError(message);
+        appToast.error("Gagal memuat laporan.");
+      } finally {
+        if (showLoading) setLoading(false);
+      }
+    },
+    [
+      apiBaseUrl,
+      currentPage,
+      session?.accessToken,
+      session?.user?.subscription_plan,
+      status,
+    ],
+  );
 
   // Initial load & re-fetch when page/session changes.
   // Logic is inlined here (not via fetchReports) to satisfy react-hooks/set-state-in-effect:
   // setState must be called inside a local async function, not at the effect body top-level.
   useEffect(() => {
-    const accessToken = session?.user?.accessToken;
+    const accessToken = session?.accessToken;
     if (!accessToken || status === "loading") return;
 
     let isActive = true;
 
     async function load() {
-      const isPremiumUser = isPremiumSubscription(session?.user?.subscription_plan);
+      const isPremiumUser = isPremiumSubscription(
+        session?.user?.subscription_plan,
+      );
       if (!isPremiumUser) {
         setError("Fitur Laporan hanya tersedia untuk pengguna Premium.");
         return;
@@ -194,12 +205,18 @@ export default function ReportsDashboardPage() {
     return () => {
       isActive = false;
     };
-  }, [apiBaseUrl, currentPage, session?.user?.accessToken, session?.user?.subscription_plan, status]);
+  }, [
+    apiBaseUrl,
+    currentPage,
+    session?.accessToken,
+    session?.user?.subscription_plan,
+    status,
+  ]);
 
   // Polling for processing/draft reports
   useEffect(() => {
     const hasPendingReports = items.some(
-      (item) => item.status === "processing" || item.status === "draft"
+      (item) => item.status === "processing" || item.status === "draft",
     );
 
     if (!hasPendingReports) return;
@@ -212,7 +229,7 @@ export default function ReportsDashboardPage() {
   }, [items, fetchReports]);
 
   const fetchJobs = async () => {
-    const accessToken = session?.user?.accessToken;
+    const accessToken = session?.accessToken;
     if (!accessToken) return;
     setLoadingJobs(true);
     try {
@@ -222,7 +239,7 @@ export default function ReportsDashboardPage() {
         },
       });
       const completedJobs = (response.data.items ?? []).filter(
-        (job: SentimentJob) => job.status === "completed"
+        (job: SentimentJob) => job.status === "completed",
       );
       setJobs(completedJobs);
     } catch {
@@ -276,7 +293,7 @@ export default function ReportsDashboardPage() {
         `${apiBaseUrl}/reports/${report.id}/download`,
         {
           headers: {
-            Authorization: `Bearer ${session?.user?.accessToken}`,
+            Authorization: `Bearer ${session?.accessToken}`,
           },
           responseType: "blob",
         },
@@ -298,30 +315,30 @@ export default function ReportsDashboardPage() {
   };
 
   const handleDelete = (report: Report) => {
-  // Open custom confirmation modal
-  setReportToDelete(report);
-  setIsDeleteModalOpen(true);
-};
+    // Open custom confirmation modal
+    setReportToDelete(report);
+    setIsDeleteModalOpen(true);
+  };
 
   // Perform actual deletion after user confirms in modal
   const confirmDelete = async () => {
-  if (!reportToDelete) return;
-  console.log('Confirm delete called for report id:', reportToDelete.id);
-  try {
-    await axios.delete(`${apiBaseUrl}/reports/${reportToDelete.id}`, {
-      headers: { Authorization: `Bearer ${session?.user?.accessToken}` },
-    });
-    setItems((prev) => prev.filter((item) => item.id !== reportToDelete.id));
-    setTotalCount((prev) => prev - 1);
-    appToast.success("Laporan berhasil dihapus.");
-  } catch (error) {
-    console.error('Delete error:', error);
-    appToast.error("Gagal menghapus laporan.");
-  } finally {
-    setIsDeleteModalOpen(false);
-    setReportToDelete(null);
-  }
-};
+    if (!reportToDelete) return;
+    console.log("Confirm delete called for report id:", reportToDelete.id);
+    try {
+      await axios.delete(`${apiBaseUrl}/reports/${reportToDelete.id}`, {
+        headers: { Authorization: `Bearer ${session?.accessToken}` },
+      });
+      setItems((prev) => prev.filter((item) => item.id !== reportToDelete.id));
+      setTotalCount((prev) => prev - 1);
+      appToast.success("Laporan berhasil dihapus.");
+    } catch (error) {
+      console.error("Delete error:", error);
+      appToast.error("Gagal menghapus laporan.");
+    } finally {
+      setIsDeleteModalOpen(false);
+      setReportToDelete(null);
+    }
+  };
 
   const handleEditClick = (report: Report) => {
     setSelectedReport(report);
@@ -349,17 +366,17 @@ export default function ReportsDashboardPage() {
         },
         {
           headers: {
-            Authorization: `Bearer ${session?.user?.accessToken}`,
+            Authorization: `Bearer ${session?.accessToken}`,
           },
-        }
+        },
       );
-      
+
       setItems((prev) =>
         prev.map((item) =>
-          item.id === selectedReport.id ? response.data.report : item
-        )
+          item.id === selectedReport.id ? response.data.report : item,
+        ),
       );
-      
+
       appToast.success("Laporan berhasil diperbarui.");
       setIsEditModalOpen(false);
     } catch {
@@ -375,13 +392,13 @@ export default function ReportsDashboardPage() {
       appToast.error("Judul laporan tidak boleh kosong.");
       return;
     }
-    
+
     const payload: ReportPayload = {
       title: createForm.title.trim(),
       description: createForm.description.trim() || null,
       format: createForm.format,
     };
-    
+
     if (createForm.sourceType === "job") {
       if (!createForm.jobId) {
         appToast.error("Silakan pilih Job ID analisis sentimen.");
@@ -390,7 +407,9 @@ export default function ReportsDashboardPage() {
       payload.job_id = createForm.jobId;
     } else {
       if (!createForm.startDate && !createForm.endDate) {
-        appToast.error("Silakan tentukan setidaknya tanggal mulai atau tanggal selesai.");
+        appToast.error(
+          "Silakan tentukan setidaknya tanggal mulai atau tanggal selesai.",
+        );
         return;
       }
       if (createForm.startDate) {
@@ -400,19 +419,15 @@ export default function ReportsDashboardPage() {
         payload.end_date = new Date(createForm.endDate).toISOString();
       }
     }
-    
+
     setSubmittingCreate(true);
     try {
-      await axios.post(
-        `${apiBaseUrl}/reports/generate`,
-        payload,
-        {
-          headers: {
-            Authorization: `Bearer ${session?.user?.accessToken}`,
-          },
-        }
-      );
-      
+      await axios.post(`${apiBaseUrl}/reports/generate`, payload, {
+        headers: {
+          Authorization: `Bearer ${session?.accessToken}`,
+        },
+      });
+
       fetchReports(true);
       appToast.success("Pembuatan laporan berhasil dimulai.");
       setIsCreateModalOpen(false);
@@ -652,7 +667,10 @@ export default function ReportsDashboardPage() {
             </div>
 
             {/* Modal Body */}
-            <form onSubmit={handleCreateSubmit} className="flex flex-col overflow-y-auto p-6 space-y-4">
+            <form
+              onSubmit={handleCreateSubmit}
+              className="flex flex-col overflow-y-auto p-6 space-y-4"
+            >
               <div>
                 <label className="block text-sm font-semibold text-slate-700 mb-1">
                   Judul Laporan <span className="text-red-500">*</span>
@@ -663,7 +681,10 @@ export default function ReportsDashboardPage() {
                   placeholder="Contoh: Analisis Sentimen Q2 2026"
                   value={createForm.title}
                   onChange={(e) =>
-                    setCreateForm((prev) => ({ ...prev, title: e.target.value }))
+                    setCreateForm((prev) => ({
+                      ...prev,
+                      title: e.target.value,
+                    }))
                   }
                   className="w-full px-3 py-2 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-sky-500/20 focus:border-sky-500 transition text-sm text-slate-800"
                 />
@@ -695,7 +716,10 @@ export default function ReportsDashboardPage() {
                   <select
                     value={createForm.format}
                     onChange={(e) =>
-                      setCreateForm((prev) => ({ ...prev, format: e.target.value }))
+                      setCreateForm((prev) => ({
+                        ...prev,
+                        format: e.target.value,
+                      }))
                     }
                     className="w-full px-3 py-2 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-sky-500/20 focus:border-sky-500 transition text-sm bg-white text-slate-800"
                   >
@@ -765,7 +789,8 @@ export default function ReportsDashboardPage() {
                     </div>
                   </div>
                   <p className="text-[10px] text-slate-400">
-                    Laporan akan mencakup semua data analisis sentimen Anda dalam periode yang dipilih.
+                    Laporan akan mencakup semua data analisis sentimen Anda
+                    dalam periode yang dipilih.
                   </p>
                 </div>
               ) : (
@@ -775,7 +800,8 @@ export default function ReportsDashboardPage() {
                   </h4>
                   <div>
                     <label className="block text-xs font-medium text-slate-500 mb-1">
-                      Job ID Analisis Batch <span className="text-red-500">*</span>
+                      Job ID Analisis Batch{" "}
+                      <span className="text-red-500">*</span>
                     </label>
                     {loadingJobs ? (
                       <div className="text-xs text-slate-500 py-2">
@@ -783,13 +809,17 @@ export default function ReportsDashboardPage() {
                       </div>
                     ) : jobs.length === 0 ? (
                       <div className="text-xs text-amber-600 py-2">
-                        Tidak ditemukan job analisis yang selesai. Pastikan Anda sudah menjalankan analisis batch terlebih dahulu.
+                        Tidak ditemukan job analisis yang selesai. Pastikan Anda
+                        sudah menjalankan analisis batch terlebih dahulu.
                       </div>
                     ) : (
                       <select
                         value={createForm.jobId}
                         onChange={(e) =>
-                          setCreateForm((prev) => ({ ...prev, jobId: e.target.value }))
+                          setCreateForm((prev) => ({
+                            ...prev,
+                            jobId: e.target.value,
+                          }))
                         }
                         className="w-full px-3 py-2 border border-slate-200 rounded-md focus:outline-none text-xs bg-white text-slate-800 animate-in fade-in duration-200"
                         required
@@ -797,7 +827,8 @@ export default function ReportsDashboardPage() {
                         <option value="">-- Pilih Job Sentimen --</option>
                         {jobs.map((job) => (
                           <option key={job.job_id} value={job.job_id}>
-                            ID: {job.job_id.substring(0, 8)}... ({formatDate(job.created_at)}) - {job.total} Data
+                            ID: {job.job_id.substring(0, 8)}... (
+                            {formatDate(job.created_at)}) - {job.total} Data
                           </option>
                         ))}
                       </select>
@@ -919,28 +950,50 @@ export default function ReportsDashboardPage() {
       )}
       {/* Delete Confirmation Modal */}
       {isDeleteModalOpen && reportToDelete && (
-        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4"
+        <div
+          className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4"
           onClick={() => {
             setIsDeleteModalOpen(false);
             setReportToDelete(null);
-          }}>
-          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-sm border border-slate-100 overflow-hidden flex flex-col animate-in fade-in zoom-in-95 duration-200"
-            onClick={e => e.stopPropagation()}>
+          }}
+        >
+          <div
+            className="bg-white rounded-2xl shadow-2xl w-full max-w-sm border border-slate-100 overflow-hidden flex flex-col animate-in fade-in zoom-in-95 duration-200"
+            onClick={(e) => e.stopPropagation()}
+          >
             <div className="bg-slate-50 border-b border-slate-100 px-6 py-4 flex justify-between items-center">
-              <h3 className="text-lg font-bold text-slate-800">Konfirmasi Hapus</h3>
-              <button onClick={() => {
-                setIsDeleteModalOpen(false);
-                setReportToDelete(null);
-              }} className="text-slate-400 hover:text-slate-600 text-lg transition-colors cursor-pointer">✕</button>
-            </div>
-            <div className="p-6">
-              <p className="mb-4">Apakah Anda yakin ingin menghapus laporan “{reportToDelete.title}”?</p>
-              <div className="flex justify-end gap-2">
-                <button onClick={() => {
+              <h3 className="text-lg font-bold text-slate-800">
+                Konfirmasi Hapus
+              </h3>
+              <button
+                onClick={() => {
                   setIsDeleteModalOpen(false);
                   setReportToDelete(null);
-                }} className="px-4 py-2 border border-slate-200 text-slate-600 rounded-lg hover:bg-slate-50">Batal</button>
-                <button onClick={confirmDelete} className="px-4 py-2 bg-red-500 hover:bg-red-600 text-white rounded-lg">
+                }}
+                className="text-slate-400 hover:text-slate-600 text-lg transition-colors cursor-pointer"
+              >
+                ✕
+              </button>
+            </div>
+            <div className="p-6">
+              <p className="mb-4">
+                Apakah Anda yakin ingin menghapus laporan “
+                {reportToDelete.title}”?
+              </p>
+              <div className="flex justify-end gap-2">
+                <button
+                  onClick={() => {
+                    setIsDeleteModalOpen(false);
+                    setReportToDelete(null);
+                  }}
+                  className="px-4 py-2 border border-slate-200 text-slate-600 rounded-lg hover:bg-slate-50"
+                >
+                  Batal
+                </button>
+                <button
+                  onClick={confirmDelete}
+                  className="px-4 py-2 bg-red-500 hover:bg-red-600 text-white rounded-lg"
+                >
                   Hapus
                 </button>
               </div>
