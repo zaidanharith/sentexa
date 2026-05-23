@@ -20,18 +20,13 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
-        with:
-          persist-credentials: true
-
-      - name: Clear Git Config
-        run: git config --global --unset-all credential.helper || true
 
       - name: Setup Python
         uses: actions/setup-python@v5
         with:
           python-version: "3.11"
           cache: "pip"
-        working-directory: backend
+          cache-dependency-path: backend/requirements/base.txt
 
       - name: Install dependencies
         working-directory: backend
@@ -55,11 +50,6 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
-        with:
-          persist-credentials: true
-
-      - name: Clear Git Config
-        run: git config --global --unset-all credential.helper || true
 
       - name: Azure Login
         uses: azure/login@v2
