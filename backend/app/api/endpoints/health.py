@@ -23,7 +23,7 @@ async def ready():
     except Exception as exc:
         raise HTTPException(
             status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
-            detail="Service not ready",
+            detail=str(exc),
         ) from exc
 
     return {"status": "ready", "environment": settings.ENVIRONMENT}
