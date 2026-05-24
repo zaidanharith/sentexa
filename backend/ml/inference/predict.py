@@ -4,7 +4,7 @@ from pathlib import Path
 import json
 from typing import Dict, List, Optional, cast
 import pandas as pd
-from ml.model.config import CHECKPOINT_DIR, HF_MODEL, DEVICE, MAX_LENGTH, LABEL_MAP
+from ml.model.config import CHECKPOINT_DIR, HF_MODEL, DEVICE, MAX_LENGTH, LABEL_MAP, MODEL_NAME
 from ml.preprocessing.cleaning import clean_text
 from ml.preprocessing.normalization import normalize_text
 from ml.preprocessing.stopwords import remove_stopwords_tokens
@@ -21,37 +21,23 @@ class PredictionError(ValueError):
 def load_model():
     global model
     if model is None:
-        try:
-            model = AutoModelForSequenceClassification.from_pretrained(HF_MODEL)
-            print(f"Loaded model from Hugging Face Hub: {HF_MODEL}")
-        except Exception as e:
-            print(f"Error loading model from Hugging Face Hub: {e}")
-            config_path = CHECKPOINT_DIR / "config.json"
-            model_safetensors = CHECKPOINT_DIR / "model.safetensors"
-            model_bin = CHECKPOINT_DIR / "pytorch_model.bin"
-
-            if not config_path.exists():
-                raise FileNotFoundError(f"Model config not found in {CHECKPOINT_DIR}")
-
-            if not model_safetensors.exists() and not model_bin.exists():
-                raise FileNotFoundError(f"Model weights not found in {CHECKPOINT_DIR} (looking for model.safetensors or pytorch_model.bin)")
-
+        if CHECKPOINT_DIR.exists():
             model = AutoModelForSequenceClassification.from_pretrained(CHECKPOINT_DIR)
+            print(f"Loaded local checkpoint: {CHECKPOINT_DIR}")
+        else:
+            model = AutoModelForSequenceClassification.from_pretrained(HF_MODEL)
+            print(f"Loaded HF model: {HF_MODEL}")
 
         model.to(DEVICE)
         model.eval()
-    
+
     return model
 
 
 def load_tokenizer():
     global tokenizer
     if tokenizer is None:
-        try:
-            tokenizer = AutoTokenizer.from_pretrained(HF_MODEL)
-        except:
-            tokenizer = AutoTokenizer.from_pretrained(CHECKPOINT_DIR)
-    
+        tokenizer = AutoTokenizer.from_pretrained(MODEL_NAME)
     return tokenizer
 
 
@@ -61,7 +47,6 @@ def load_label_map() -> Dict[int, str]:
         model_instance = load_model()
         model_id2label = getattr(model_instance.config, "id2label", None)
         if model_id2label:
-            # Avoid generic labels like LABEL_0 when custom mapping is available elsewhere.
             values = [str(v) for v in model_id2label.values()]
             if not all(v.startswith("LABEL_") for v in values):
                 label_map = {int(k): str(v) for k, v in model_id2label.items()}

@@ -14,6 +14,7 @@ import matplotlib.pyplot as plt
 import matplotlib
 matplotlib.use('Agg') 
 from ml.model.config import (
+    ID_TO_LABEL,
     MODEL_NAME,
     CHECKPOINT_DIR,
     DEVICE,
@@ -44,6 +45,8 @@ def load_model():
     model = AutoModelForSequenceClassification.from_pretrained(
         MODEL_NAME,
         num_labels=num_labels,
+        id2label=ID_TO_LABEL,
+        label2id=LABEL_MAP,
     )
     return model
 

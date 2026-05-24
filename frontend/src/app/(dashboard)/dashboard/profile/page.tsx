@@ -214,16 +214,14 @@ function ProfileContent({ user }: { user: AuthUser }) {
                 Sisa Kuota
               </p>
               <p className="text-xs text-slate-500">
-                {hasPremium ? (
-                  "Anda memiliki kuota analisis tanpa batas"
-                ) : (
-                  `Anda memiliki ${user.analysis_quota ?? 0} dari 5 analisis tersisa untuk hari ini`
-                )}
+                {hasPremium
+                  ? "Anda memiliki kuota analisis tanpa batas"
+                  : `Anda memiliki ${user.analysis_quota ?? 0} dari 5 analisis tersisa untuk hari ini`}
               </p>
             </div>
             <div className="text-right">
               <div className="text-3xl font-bold text-sky-600">
-                {hasPremium ? "∞" : user.analysis_quota ?? 0}
+                {hasPremium ? "∞" : (user.analysis_quota ?? 0)}
               </div>
               <p className="text-xs text-slate-500">
                 {hasPremium ? "unlimited" : "analisis"}
