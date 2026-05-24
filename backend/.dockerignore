@@ -46,16 +46,6 @@ ml/data/raw/*
 !ml/data/raw/.gitkeep
 ml/data/processed/*.csv
 
-# ML artifacts and checkpoints
-ml/checkpoints/
-ml/models/
-ml/reports/
-ml_tuning_output/
-*.pt
-*.pth
-*.bin
-*.safetensors
-
 # Build artifacts
 dist/
 build/
