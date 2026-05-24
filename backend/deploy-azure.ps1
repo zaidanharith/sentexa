@@ -42,7 +42,6 @@ if ($CI) {
     $secrets["HF_TOKEN"] = $env:HF_TOKEN
     $secrets["HF_MODEL"] = $env:HF_MODEL
 
-    # Matikan prompt interaktif di CI, default ke runtime download
     $bakeModel = $false
 } else {
     Write-Host "`n[+] [LOCAL MODE] Loading secrets from local $envFilePath..." -ForegroundColor Yellow
@@ -64,7 +63,6 @@ if ($CI) {
     $bakeModel = ($result -eq 0)
 }
 
-# Validate essential keys are present
 $essentialKeys = @("DATABASE_URL", "SECRET_KEY", "KAGGLE_USERNAME", "KAGGLE_KEY", "HF_TOKEN", "HF_MODEL")
 foreach ($key in $essentialKeys) {
     if ([string]::IsNullOrWhiteSpace($secrets[$key])) {

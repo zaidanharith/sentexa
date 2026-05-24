@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from backend.ml.inference.predict import load_model, load_tokenizer, predict_text
 from fastapi import APIRouter, BackgroundTasks, Depends, Query
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -48,6 +49,18 @@ async def predict_sentiment(
 	await db.commit()
 	return result
 
+@router.get("/debug")
+async def debug_sentiment():
+    tok = load_tokenizer()
+    model = load_model()
+
+    return {
+        "tokenizer": tok.name_or_path,
+        "model": model.config._name_or_path,
+        "tokens": tok("jelek")["input_ids"],
+        "prediction": predict_text("jelek"),
+    }
+    
 @router.post("/predict/jobs", response_model=SentimentJobCreateResponse)
 async def create_sentiment_job(
     payload: SentimentBatchPredictRequest,

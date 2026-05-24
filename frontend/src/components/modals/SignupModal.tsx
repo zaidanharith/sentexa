@@ -104,10 +104,7 @@ export default function SignUpModal({
 
   return (
     <>
-      <div
-        className="fixed inset-0 z-9999 top-0 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4"
-        onClick={onClose}
-      >
+      <div className="fixed inset-0 z-9999 top-0 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
         <div
           className="bg-white rounded-xl shadow-xl w-full max-w-md max-h-[90vh] overflow-hidden"
           onClick={(event) => event.stopPropagation()}
