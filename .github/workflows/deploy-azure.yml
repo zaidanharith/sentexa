@@ -13,15 +13,6 @@ permissions:
   id-token: write
   contents: read
 
-env:
-  RESOURCE_GROUP: Sentexa-RG
-  CONTAINER_APP_NAME: sentexa-api
-  LOCATION: eastus
-  ACR_NAME: sentexaregistry
-  ACR_LOGIN_SERVER: sentexaregistry.azurecr.io
-  IMAGE_NAME: sentexa-backend
-  IMAGE_TAG: ${{ github.sha }}
-
 jobs:
   ci-checks:
     name: Run CI Checks
@@ -53,20 +44,18 @@ jobs:
     runs-on: ubuntu-latest
     needs: ci-checks
 
+    env:
+      RESOURCE_GROUP: Sentexa-RG
+      CONTAINER_APP_NAME: sentexa-api
+      LOCATION: eastus
+      ACR_NAME: sentexaregistry
+      ACR_LOGIN_SERVER: sentexaregistry.azurecr.io
+      IMAGE_NAME: sentexa-backend
+      IMAGE_TAG: ${{ github.sha }}
+
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
-
-      - name: Validate required secrets
-        run: |
-          test -n "${{ secrets.AZURE_CLIENT_ID }}" || (echo "AZURE_CLIENT_ID missing" && exit 1)
-          test -n "${{ secrets.AZURE_TENANT_ID }}" || (echo "AZURE_TENANT_ID missing" && exit 1)
-          test -n "${{ secrets.AZURE_SUBSCRIPTION_ID }}" || (echo "AZURE_SUBSCRIPTION_ID missing" && exit 1)
-          test -n "${{ secrets.DATABASE_URL }}" || (echo "DATABASE_URL missing" && exit 1)
-          test -n "${{ secrets.SECRET_KEY }}" || (echo "SECRET_KEY missing" && exit 1)
-          test -n "${{ secrets.KAGGLE_USERNAME }}" || (echo "KAGGLE_USERNAME missing" && exit 1)
-          test -n "${{ secrets.KAGGLE_KEY }}" || (echo "KAGGLE_KEY missing" && exit 1)
-          test -n "${{ secrets.HF_TOKEN }}" || (echo "HF_TOKEN missing" && exit 1)
 
       - name: Azure Login
         uses: azure/login@v2
@@ -74,6 +63,28 @@ jobs:
           client-id: ${{ secrets.AZURE_CLIENT_ID }}
           tenant-id: ${{ secrets.AZURE_TENANT_ID }}
           subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+
+      - name: Log in to Azure Container Registry
+        uses: azure/docker-login@v1
+        with:
+          login-server: ${{ env.ACR_LOGIN_SERVER }}
+          username: sentexaregistry
+          password: ${{ secrets.AZURE_ACR_PASSWORD }}
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build and Push Docker Image
+        uses: docker/build-push-action@v6
+        with:
+          context: ./backend
+          file: ./backend/Dockerfile
+          push: true
+          tags: ${{ env.ACR_LOGIN_SERVER }}/${{ env.IMAGE_NAME }}:${{ env.IMAGE_TAG }}
+          build-args: |
+            PRE_DOWNLOAD_MODEL=true
+            HF_MODEL=${{ secrets.HF_MODEL || 'zaidanharith/sentexa-indobert' }}
+            HF_TOKEN=${{ secrets.HF_TOKEN }}
 
       - name: Deploy Azure Infrastructure
         uses: azure/arm-deploy@v2
@@ -84,37 +95,17 @@ jobs:
           parameters: >
             location=${{ env.LOCATION }}
             allowedOrigins="https://sentexa.vercel.app,http://localhost:3000"
-            hfModel="zaidanharith/sentexa-indobert"
+            hfModel="${{ secrets.HF_MODEL || 'zaidanharith/sentexa-indobert' }}"
             containerImage=${{ env.ACR_LOGIN_SERVER }}/${{ env.IMAGE_NAME }}:${{ env.IMAGE_TAG }}
 
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
-
-      - name: Login to Azure Container Registry
-        run: az acr login --name ${{ env.ACR_NAME }}
-
-      - name: Build and Push Docker Image
-        uses: docker/build-push-action@v6
-        with:
-          context: ./backend
-          file: ./backend/Dockerfile
-          push: true
-          tags: ${{ env.ACR_LOGIN_SERVER }}/${{ env.IMAGE_NAME }}:${{ env.IMAGE_TAG }}
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
-          build-args: |
-            PRE_DOWNLOAD_MODEL=true
-            HF_MODEL=zaidanharith/sentexa-indobert
-            HF_TOKEN=${{ secrets.HF_TOKEN }}
-
-      - name: Update Container App Secrets
+      - name: Set Container App Secrets
         uses: azure/CLI@v2
         with:
           azcliversion: latest
           inlineScript: |
             az containerapp secret set \
-              --name ${{ env.CONTAINER_APP_NAME }} \
-              --resource-group ${{ env.RESOURCE_GROUP }} \
+              --name $CONTAINER_APP_NAME \
+              --resource-group $RESOURCE_GROUP \
               --secrets \
                 database-url="${{ secrets.DATABASE_URL }}" \
                 secret-key="${{ secrets.SECRET_KEY }}" \
@@ -122,23 +113,12 @@ jobs:
                 kaggle-key="${{ secrets.KAGGLE_KEY }}" \
                 hf-token="${{ secrets.HF_TOKEN }}"
 
-      - name: Deploy Latest Revision
+      - name: Update Container App Image
         uses: azure/CLI@v2
         with:
           azcliversion: latest
           inlineScript: |
             az containerapp update \
-              --name ${{ env.CONTAINER_APP_NAME }} \
-              --resource-group ${{ env.RESOURCE_GROUP }} \
-              --image ${{ env.ACR_LOGIN_SERVER }}/${{ env.IMAGE_NAME }}:${{ env.IMAGE_TAG }}
-
-      - name: Verify Deployment
-        uses: azure/CLI@v2
-        with:
-          azcliversion: latest
-          inlineScript: |
-            az containerapp show \
-              --name ${{ env.CONTAINER_APP_NAME }} \
-              --resource-group ${{ env.RESOURCE_GROUP }} \
-              --query "properties.template.containers[0].image" \
-              -o tsv
+              --name $CONTAINER_APP_NAME \
+              --resource-group $RESOURCE_GROUP \
+              --image $ACR_LOGIN_SERVER/$IMAGE_NAME:$IMAGE_TAG
