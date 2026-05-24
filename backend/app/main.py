@@ -9,6 +9,7 @@ from app.core.metrics import metrics_state
 from app.api.router import api_router
 from app.middleware.error_handler import register_error_handlers
 from app.middleware.request_context import register_request_context_middleware
+from ml.inference.predict import load_model, load_tokenizer
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -22,8 +23,6 @@ app = FastAPI(
     lifespan=lifespan,
 )
 
-# Configure dynamic CORS origins from settings, with safe fallback list
-# (since CORS with credentials=True does not support wildcard "*")
 raw_origins = settings.allowed_origins_list
 origins = [o.strip() for o in raw_origins if o.strip() and o.strip() != "*"]
 
@@ -60,6 +59,10 @@ register_error_handlers(app)
 async def root_redirect():
     return RedirectResponse(url="/api", status_code=307)
 
+@app.on_event("startup")
+def startup():
+    load_model()
+    load_tokenizer()
 
 if __name__ == "__main__":
     import uvicorn
