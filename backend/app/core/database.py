@@ -6,11 +6,16 @@ from sqlalchemy.orm import DeclarativeBase
 from app.core.config import settings
 
 connect_args = {}
-if settings.PGBOUNCER:
+db_url = settings.DATABASE_URL
+if settings.PGBOUNCER or ":6543" in db_url:
     connect_args["statement_cache_size"] = 0
+    if "?" in db_url:
+        db_url += "&prepared_statement_cache_size=0"
+    else:
+        db_url += "?prepared_statement_cache_size=0"
 
 engine = create_async_engine(
-    settings.DATABASE_URL,
+    db_url,
     echo=settings.ENVIRONMENT == "development",
     pool_pre_ping=True,
     connect_args=connect_args,
