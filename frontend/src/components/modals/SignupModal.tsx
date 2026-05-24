@@ -33,10 +33,12 @@ export default function SignUpModal({
 
   const handleGoogleSignUp = async () => {
     try {
+      sessionStorage.setItem("google_login_pending", "true");
       await signIn("google", {
-        callbackUrl: "/dashboard?from=google",
+        callbackUrl: "/dashboard",
       });
     } catch (error) {
+      sessionStorage.removeItem("google_login_pending");
       console.error("Google sign up error:", error);
       appToast.error("Terjadi kesalahan. Coba lagi.");
     }

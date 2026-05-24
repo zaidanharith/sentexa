@@ -11,19 +11,14 @@ import TrendChart from "@/components/layout/dashboard/TrendChart";
 import DonutChart from "@/components/layout/dashboard/DonutChart";
 import { FaArrowUp, FaArrowDown } from "react-icons/fa";
 import { appToast } from "@/lib/toast";
-import { Suspense } from "react";
-import { useSearchParams, useRouter } from "next/navigation";
 
 function GoogleLoginToast() {
-  const searchParams = useSearchParams();
-  const router = useRouter();
-
   useEffect(() => {
-    if (searchParams.get("from") === "google") {
+    if (sessionStorage.getItem("google_login_pending") === "true") {
+      sessionStorage.removeItem("google_login_pending");
       appToast.success("Login dengan Google berhasil!");
-      router.replace("/dashboard");
     }
-  }, [searchParams, router]);
+  }, []); // hanya jalan sekali saat mount
 
   return null;
 }
@@ -250,9 +245,7 @@ export default function DashboardPage() {
 
   return (
     <main className="w-full mx-auto flex flex-col gap-3 sm:gap-4 pb-20 md:pb-4">
-      <Suspense fallback={null}>
-        <GoogleLoginToast />
-      </Suspense>
+      <GoogleLoginToast />
 
       <DashboardPageTitle
         title="Dashboard"

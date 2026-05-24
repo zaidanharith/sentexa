@@ -66,18 +66,17 @@ export default function LoginModal({
   };
 
   const handleGoogleLogin = async () => {
-  try {
-    // Hapus redirect:false — biarkan NextAuth menangani
-    // full OAuth flow (browser → Google → callback → dashboard).
-    // Toast ditampilkan di dashboard setelah redirect selesai.
-    await signIn("google", {
-      callbackUrl: "/dashboard?from=google",
-    });
-  } catch (error) {
-    console.error("Google login error:", error);
-    appToast.error("Terjadi kesalahan. Coba lagi.");
-  }
-};
+    try {
+      sessionStorage.setItem("google_login_pending", "true");
+      await signIn("google", {
+        callbackUrl: "/dashboard",
+      });
+    } catch (error) {
+      sessionStorage.removeItem("google_login_pending");
+      console.error("Google login error:", error);
+      appToast.error("Terjadi kesalahan. Coba lagi.");
+    }
+  };
 
   return (
     <>
@@ -144,8 +143,6 @@ export default function LoginModal({
                   className="w-full border border-gray-300 rounded px-3 py-2.5 text-sm focus:outline-none focus:border-sky-500 focus:ring-1 focus:ring-sky-200 transition"
                 />
               </div>
-
-              
 
               <button
                 type="submit"
