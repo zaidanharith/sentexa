@@ -130,7 +130,7 @@ $acrPassword = az acr credential show --name $acrUsername --resource-group $reso
 docker login --username $acrUsername --password $acrPassword $acrLoginServer
 
 # 9. Build the Docker image
-$imageTag = "$acrLoginServer/sentexa-backend:latest"
+$imageTag = "$acrLoginServer/sentexa-backend:$env:GITHUB_SHA"
 Write-Host "`n[+] Building Docker image ($imageTag)..." -ForegroundColor Yellow
 
 if ($bakeModel) {
