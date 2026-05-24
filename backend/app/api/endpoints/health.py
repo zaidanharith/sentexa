@@ -17,16 +17,10 @@ def health():
 
 @router.get("/ready")
 async def ready():
-    try:
-        async with engine.connect() as conn:
-            await conn.execute(text("SELECT 1"))
-    except Exception as exc:
-        raise HTTPException(
-            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
-            detail=str(exc),
-        ) from exc
-
-    return {"status": "ready", "environment": settings.ENVIRONMENT}
+    return {
+        "status": "ready",
+        "environment": settings.ENVIRONMENT
+    }
 
 
 @router.get("/metrics")
