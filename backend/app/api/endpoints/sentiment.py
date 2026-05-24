@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from backend.ml.inference.predict import load_model, load_tokenizer, predict_text
+from ml.inference.predict import load_model, load_tokenizer, predict_text
 from fastapi import APIRouter, BackgroundTasks, Depends, Query
 from sqlalchemy.ext.asyncio import AsyncSession
 
