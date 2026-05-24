@@ -4,7 +4,6 @@ import { useEffect, useMemo, useState } from "react";
 import axios, { AxiosError } from "axios";
 import { useSession } from "next-auth/react";
 import { useAuth } from "@/hooks/useAuth";
-import { useSearchParams, useRouter } from "next/navigation";
 import DashboardPageTitle from "@/components/layout/dashboard/DashboardPageTitle";
 import DashboardPageContent from "@/components/layout/dashboard/DashboardPageContent";
 import KeywordTable from "@/components/layout/dashboard/KeywordTable";
@@ -12,6 +11,22 @@ import TrendChart from "@/components/layout/dashboard/TrendChart";
 import DonutChart from "@/components/layout/dashboard/DonutChart";
 import { FaArrowUp, FaArrowDown } from "react-icons/fa";
 import { appToast } from "@/lib/toast";
+import { Suspense } from "react";
+import { useSearchParams, useRouter } from "next/navigation";
+
+function GoogleLoginToast() {
+  const searchParams = useSearchParams();
+  const router = useRouter();
+
+  useEffect(() => {
+    if (searchParams.get("from") === "google") {
+      appToast.success("Login dengan Google berhasil!");
+      router.replace("/dashboard");
+    }
+  }, [searchParams, router]);
+
+  return null;
+}
 
 type AnalysisSummaryResponse = {
   total_analyses: number;
@@ -51,19 +66,9 @@ export default function DashboardPage() {
   const [trendLoading, setTrendLoading] = useState(false);
   const [trendData, setTrendData] = useState<TrendItem[]>([]);
 
-  const searchParams = useSearchParams();
-  const router = useRouter();
-
   const apiBaseUrl =
     process.env.NEXT_PUBLIC_API_URL?.replace(/\/$/, "") ??
     "http://localhost:8000/api";
-
-  useEffect(() => {
-  if (searchParams.get("from") === "google") {
-    appToast.success("Login dengan Google berhasil!");
-    router.replace("/dashboard");
-  }
-}, [searchParams, router]);
 
   useEffect(() => {
     const accessToken = session?.accessToken;
@@ -245,6 +250,10 @@ export default function DashboardPage() {
 
   return (
     <main className="w-full mx-auto flex flex-col gap-3 sm:gap-4 pb-20 md:pb-4">
+      <Suspense fallback={null}>
+        <GoogleLoginToast />
+      </Suspense>
+
       <DashboardPageTitle
         title="Dashboard"
         subtitle="Selamat datang di dashboard Anda"
