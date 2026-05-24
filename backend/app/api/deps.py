@@ -52,6 +52,10 @@ async def get_current_user(
 			headers={"WWW-Authenticate": "Bearer"},
 		)
 
+	from app.services import subscription_service
+	if await subscription_service.check_and_reset_quota(db, user):
+		await db.commit()
+
 	return user
 
 async def require_premium_subscription(

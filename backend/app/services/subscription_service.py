@@ -98,11 +98,47 @@ async def subscribe_user(
 	return get_user_subscription_status(user)
 
 
+async def check_and_reset_quota(db: AsyncSession, user: User) -> bool:
+	if user.subscription_plan != "free":
+		return False
+
+	WIB = timezone(timedelta(hours=7))
+	now_utc = datetime.now(timezone.utc)
+	now_wib = now_utc.astimezone(WIB)
+	current_date_wib = now_wib.date()
+
+	last_reset = user.last_quota_reset
+	should_reset = False
+
+	if last_reset is None:
+		should_reset = True
+	else:
+		if last_reset.tzinfo is None:
+			last_reset = last_reset.replace(tzinfo=timezone.utc)
+		last_reset_wib = last_reset.astimezone(WIB)
+		if last_reset_wib.date() < current_date_wib:
+			should_reset = True
+
+	if should_reset:
+		user.analysis_quota = 5
+		user.last_quota_reset = now_utc
+		await db.flush()
+		await db.refresh(user)
+		return True
+
+	return False
+
+
 async def validate_and_reduce_quota(
 	db: AsyncSession,
 	user: User,
 	amount_needed: int,
 ) -> None:
+	if user.subscription_plan == "premium":
+		return
+
+	await check_and_reset_quota(db, user)
+
 	if user.analysis_quota < amount_needed:
 		raise HTTPException(
 			status_code=status.HTTP_429_TOO_MANY_REQUESTS,

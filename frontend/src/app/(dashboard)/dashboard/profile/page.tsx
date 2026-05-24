@@ -214,22 +214,27 @@ function ProfileContent({ user }: { user: AuthUser }) {
                 Sisa Kuota
               </p>
               <p className="text-xs text-slate-500">
-                Anda memiliki {user.analysis_quota} analisis tersisa untuk
-                digunakan
+                {hasPremium ? (
+                  "Anda memiliki kuota analisis tanpa batas"
+                ) : (
+                  `Anda memiliki ${user.analysis_quota ?? 0} dari 5 analisis tersisa untuk hari ini`
+                )}
               </p>
             </div>
             <div className="text-right">
               <div className="text-3xl font-bold text-sky-600">
-                {user.analysis_quota}
+                {hasPremium ? "∞" : user.analysis_quota ?? 0}
               </div>
-              <p className="text-xs text-slate-500">analisis</p>
+              <p className="text-xs text-slate-500">
+                {hasPremium ? "unlimited" : "analisis"}
+              </p>
             </div>
           </div>
           <div className="w-full bg-slate-200 rounded-full h-2">
             <div
               className="bg-sky-500 h-2 rounded-full transition-all"
               style={{
-                width: `${Math.min(((user.analysis_quota ?? 0) / (maxQuota ?? 100)) * 100, 100)}%`,
+                width: `${hasPremium ? 100 : Math.min(((user.analysis_quota ?? 0) / 5) * 100, 100)}%`,
               }}
             ></div>
           </div>

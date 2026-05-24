@@ -34,6 +34,9 @@ class User(Base):
         DateTime(timezone=True), nullable=True
     )
     analysis_quota: Mapped[int] = mapped_column(
-        Integer, nullable=False, default=100, server_default="100"
+        Integer, nullable=False, default=5, server_default="5"
+    )
+    last_quota_reset: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True
     )
 
