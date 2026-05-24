@@ -186,16 +186,16 @@ export default function SignUpModal({
               </button>
             </form>
 
-            <div className="flex items-center gap-3 my-4">
+            {/* <div className="flex items-center gap-3 my-4">
               <div className="flex-1 border-t border-gray-300" />
               <span className="text-xs text-gray-400">atau</span>
               <div className="flex-1 border-t border-gray-300" />
-            </div>
+            </div> */}
 
-            <button className="w-full border border-gray-300 text-gray-700 font-semibold py-2 rounded-lg hover:bg-gray-100 transition-colors flex items-center justify-center gap-2 cursor-pointer">
+            {/* <button className="w-full border border-gray-300 text-gray-700 font-semibold py-2 rounded-lg hover:bg-gray-100 transition-colors flex items-center justify-center gap-2 cursor-pointer">
               <Image src="/google.png" alt="Google" width={20} height={20} />
               Daftar dengan Google
-            </button>
+            </button> */}
 
             <p className="text-center text-sm text-gray-600 mt-4">
               Sudah punya akun?{" "}

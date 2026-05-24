@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import axios, { AxiosError } from "axios";
 import { useSession } from "next-auth/react";
 import { useAuth } from "@/hooks/useAuth";
+import { useSearchParams, useRouter } from "next/navigation";
 import DashboardPageTitle from "@/components/layout/dashboard/DashboardPageTitle";
 import DashboardPageContent from "@/components/layout/dashboard/DashboardPageContent";
 import KeywordTable from "@/components/layout/dashboard/KeywordTable";
@@ -50,9 +51,19 @@ export default function DashboardPage() {
   const [trendLoading, setTrendLoading] = useState(false);
   const [trendData, setTrendData] = useState<TrendItem[]>([]);
 
+  const searchParams = useSearchParams();
+  const router = useRouter();
+
   const apiBaseUrl =
     process.env.NEXT_PUBLIC_API_URL?.replace(/\/$/, "") ??
     "http://localhost:8000/api";
+
+  useEffect(() => {
+  if (searchParams.get("from") === "google") {
+    appToast.success("Login dengan Google berhasil!");
+    router.replace("/dashboard");
+  }
+}, [searchParams, router]);
 
   useEffect(() => {
     const accessToken = session?.accessToken;

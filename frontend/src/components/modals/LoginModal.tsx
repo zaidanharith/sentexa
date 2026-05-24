@@ -26,7 +26,6 @@ export default function LoginModal({
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [rememberMe, setRememberMe] = useState(false);
   const [submitting, setSubmitting] = useState(false);
 
   useEffect(() => {
@@ -67,25 +66,18 @@ export default function LoginModal({
   };
 
   const handleGoogleLogin = async () => {
-    try {
-      const result = await signIn("google", {
-        redirect: false,
-        callbackUrl: "/dashboard",
-      });
-
-      if (result?.error) {
-        appToast.error("Login Google gagal. Coba lagi.");
-      } else {
-        appToast.success("Login dengan Google berhasil!");
-        onClose();
-        router.push("/dashboard");
-        router.refresh();
-      }
-    } catch (error) {
-      console.error("Google login error:", error);
-      appToast.error("Terjadi kesalahan. Coba lagi.");
-    }
-  };
+  try {
+    // Hapus redirect:false — biarkan NextAuth menangani
+    // full OAuth flow (browser → Google → callback → dashboard).
+    // Toast ditampilkan di dashboard setelah redirect selesai.
+    await signIn("google", {
+      callbackUrl: "/dashboard?from=google",
+    });
+  } catch (error) {
+    console.error("Google login error:", error);
+    appToast.error("Terjadi kesalahan. Coba lagi.");
+  }
+};
 
   return (
     <>
@@ -153,23 +145,7 @@ export default function LoginModal({
                 />
               </div>
 
-              <div className="flex items-center justify-between text-sm">
-                <label className="flex items-center gap-2 text-gray-600 cursor-pointer">
-                  <input
-                    type="checkbox"
-                    checked={rememberMe}
-                    onChange={(e) => setRememberMe(e.target.checked)}
-                    className="w-4 h-4 border border-gray-300 rounded cursor-pointer"
-                  />
-                  Ingat saya
-                </label>
-                <a
-                  href="#"
-                  className="text-sky-500 hover:underline font-medium"
-                >
-                  Lupa kata sandi?
-                </a>
-              </div>
+              
 
               <button
                 type="submit"
