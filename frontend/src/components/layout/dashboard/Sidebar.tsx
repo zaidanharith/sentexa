@@ -11,7 +11,6 @@ import {
   // HiOutlineChatAlt2,
   HiOutlineDocumentReport,
   HiOutlineClock,
-  HiOutlineUser,
   HiOutlineLogout,
   HiChevronDoubleLeft,
   HiChevronDoubleRight,
@@ -201,27 +200,6 @@ export default function Sidebar({
 
         {/* PROFILE & LOGOUT */}
         <div className="border-t border-gray-100 px-2 py-3 flex flex-col gap-1">
-          <Link
-            href="/dashboard/profile"
-            title={collapsed ? "Profil" : undefined}
-            className={`flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors ${
-              pathname === "/dashboard/profile"
-                ? "bg-sky-50 text-sky-600"
-                : "text-gray-600 hover:bg-gray-100 hover:text-gray-900"
-            } ${collapsed ? "justify-center" : ""}`}
-          >
-            <span
-              className={
-                pathname === "/dashboard/profile"
-                  ? "text-sky-500"
-                  : "text-gray-400"
-              }
-            >
-              <HiOutlineUser className="w-4 h-4" />
-            </span>
-            {!collapsed && <span className="truncate">Profil</span>}
-          </Link>
-
           <button
             type="button"
             onClick={handleLogout}
