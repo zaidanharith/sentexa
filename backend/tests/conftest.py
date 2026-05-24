@@ -170,9 +170,10 @@ async def client():
 async def auth_headers(client: AsyncClient):
     """
     Hook beforeEach: daftarkan & login user free.
-    Kembalikan header Authorization siap pakai.
+    Kembalikan header Authorization berisi Bearer token user uji
     """
-    email = "testuser_sentexa@example.com"
+    import uuid
+    email = f"testuser_{uuid.uuid4().hex}@example.com"
     password = "TestPass1"
     await client.post(
         "/api/auth/register",
@@ -192,7 +193,8 @@ async def premium_headers(client: AsyncClient):
     Hook beforeEach: daftarkan, login, dan upgrade langsung ke premium.
     Kembalikan header Authorization untuk user premium.
     """
-    email = "premium_sentexa@example.com"
+    import uuid
+    email = f"premium_{uuid.uuid4().hex}@example.com"
     password = "PremPass2"
     await client.post(
         "/api/auth/register",

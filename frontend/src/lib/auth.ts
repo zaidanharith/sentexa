@@ -152,8 +152,10 @@ export const authOptions: NextAuthOptions = {
       if (session.user) {
         session.accessToken = token.accessToken;
         session.refreshToken = token.refreshToken;
-        session.user.id = (token.sub || token.id || "") as string;
-        session.user.subscription_plan = token.subscription_plan;
+        session.user = {
+          id: (token.sub || token.id || "") as string,
+          subscription_plan: token.subscription_plan,
+        };
       }
       return session;
     },
