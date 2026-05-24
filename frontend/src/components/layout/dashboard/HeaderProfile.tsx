@@ -38,7 +38,6 @@ export default function HeaderProfile() {
     }
   };
 
-  // Close dropdown when clicking outside
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
       if (
@@ -63,17 +62,15 @@ export default function HeaderProfile() {
         onClick={() => setShowDropdown(!showDropdown)}
         aria-label="Profil Menu"
         title="Profil"
-        className="rounded-full p-1 hover:bg-gray-100 transition-colors focus:outline-none focus:ring-2 focus:ring-sky-500 focus:ring-offset-2"
+        className="rounded-full p-1 hover:bg-gray-100 transition-colors focus:outline-none focus:ring-2 focus:ring-sky-500 focus:ring-offset-2 cursor-pointer"
       >
         <div className="w-10 h-10 rounded-full bg-sky-100 flex items-center justify-center text-sky-600 text-md font-bold shrink-0">
           {avatarInitial}
         </div>
       </button>
 
-      {/* DROPDOWN MENU */}
       {showDropdown && (
         <div className="absolute right-0 mt-2 w-56 bg-white border border-gray-200 rounded-lg shadow-lg z-50">
-          {/* USER INFO */}
           <div className="px-4 py-3 border-b border-gray-100">
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 rounded-full bg-sky-100 flex items-center justify-center text-sky-600 font-bold shrink-0">
@@ -88,7 +85,6 @@ export default function HeaderProfile() {
             </div>
           </div>
 
-          {/* MENU ITEMS */}
           <Link
             href="/dashboard/profile"
             onClick={() => setShowDropdown(false)}
