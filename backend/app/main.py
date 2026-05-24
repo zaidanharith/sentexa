@@ -57,7 +57,7 @@ register_error_handlers(app)
 
 @app.get("/", include_in_schema=False)
 async def root_redirect():
-    return RedirectResponse(url="/api", status_code=307)
+    return RedirectResponse(url="/api/", status_code=302)
 
 @app.on_event("startup")
 def startup():
