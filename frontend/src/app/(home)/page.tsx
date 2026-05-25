@@ -118,7 +118,7 @@ export default async function Home() {
       </section>
 
       <section className="border-b border-gray-200 py-8 bg-white w-full">
-        <div className="mx-auto w-fit px-6 grid grid-cols-3 gap-4 text-center flex-wrap">
+        <div className="mx-auto w-fit px-6 flex flex-wrap justify-center gap-4 text-center">
           {[
             {
               val: "10.000+",
@@ -126,13 +126,17 @@ export default async function Home() {
               accent: "text-sky-500",
             },
             {
-              val: "95%",
+              val: "91%",
               label: "Akurasi Model NLP",
               accent: "text-green-500",
             },
-            { val: "500+", label: "UMKM Terbantu", accent: "text-purple-500" },
+            {
+              val: "500+",
+              label: "UMKM Terbantu",
+              accent: "text-purple-500",
+            },
           ].map((s, i) => (
-            <div key={i} className="py-4 px-2">
+            <div key={i} className="py-4 px-6 flex flex-col items-center">
               <p className={`text-3xl font-extrabold ${s.accent}`}>{s.val}</p>
               <p className="text-xs text-gray-500 mt-1 font-medium">
                 {s.label}
