@@ -33,6 +33,8 @@ if not origins:
         "http://127.0.0.1:3000",
     ]
 
+register_request_context_middleware(app)
+
 app.add_middleware(
     CORSMiddleware,
     allow_origins=origins,
@@ -40,8 +42,6 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
-
-register_request_context_middleware(app)
 
 @app.middleware("http")
 async def collect_metrics(request, call_next):

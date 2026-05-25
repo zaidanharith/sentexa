@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState, useCallback } from "react";
 import axios, { AxiosError } from "axios";
 import { useSession } from "next-auth/react";
+import { useAuth } from "@/hooks/useAuth";
 import DashboardPageTitle from "@/components/layout/dashboard/DashboardPageTitle";
 import DashboardPageContent from "@/components/layout/dashboard/DashboardPageContent";
 import { appToast } from "@/lib/toast";
@@ -62,6 +63,7 @@ const PAGE_SIZE = 10;
 
 export default function ReportsDashboardPage() {
   const { data: session, status } = useSession();
+  const { user } = useAuth();
   const [items, setItems] = useState<Report[]>([]);
   const [totalCount, setTotalCount] = useState(0);
   const [loading, setLoading] = useState(false);
@@ -97,7 +99,7 @@ export default function ReportsDashboardPage() {
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [reportToDelete, setReportToDelete] = useState<Report | null>(null);
 
-  const isPremium = isPremiumSubscription(session?.user?.subscription_plan);
+  const isPremium = isPremiumSubscription(user?.subscription_plan);
   const totalPages = Math.max(1, Math.ceil(totalCount / PAGE_SIZE));
 
   const apiBaseUrl =
@@ -111,8 +113,8 @@ export default function ReportsDashboardPage() {
         return;
       }
 
-      const isPremium = isPremiumSubscription(session?.user?.subscription_plan);
-      if (!isPremium) {
+      const isPremiumUser = isPremiumSubscription(user?.subscription_plan);
+      if (!isPremiumUser) {
         setError("Fitur Laporan hanya tersedia untuk pengguna Premium.");
         return;
       }
@@ -149,7 +151,7 @@ export default function ReportsDashboardPage() {
       apiBaseUrl,
       currentPage,
       session?.accessToken,
-      session?.user?.subscription_plan,
+      user?.subscription_plan,
       status,
     ],
   );
@@ -164,9 +166,7 @@ export default function ReportsDashboardPage() {
     let isActive = true;
 
     async function load() {
-      const isPremiumUser = isPremiumSubscription(
-        session?.user?.subscription_plan,
-      );
+      const isPremiumUser = isPremiumSubscription(user?.subscription_plan);
       if (!isPremiumUser) {
         setError("Fitur Laporan hanya tersedia untuk pengguna Premium.");
         return;
@@ -209,7 +209,7 @@ export default function ReportsDashboardPage() {
     apiBaseUrl,
     currentPage,
     session?.accessToken,
-    session?.user?.subscription_plan,
+    user?.subscription_plan,
     status,
   ]);
 

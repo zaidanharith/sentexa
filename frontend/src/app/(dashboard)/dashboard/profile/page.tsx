@@ -12,7 +12,7 @@ import DashboardPageTitle from "@/components/layout/dashboard/DashboardPageTitle
 import DashboardPageContent from "@/components/layout/dashboard/DashboardPageContent";
 
 export default function ProfilePage() {
-  const { user, loading } = useAuth();
+  const { user, loading, refreshUser } = useAuth();
 
   if (loading) {
     return (
@@ -34,10 +34,10 @@ export default function ProfilePage() {
     );
   }
 
-  return <ProfileContent user={user} />;
+  return <ProfileContent user={user} refreshUser={refreshUser} />;
 }
 
-function ProfileContent({ user }: { user: AuthUser }) {
+function ProfileContent({ user, refreshUser }: { user: AuthUser; refreshUser: () => Promise<void> }) {
   const router = useRouter();
   const { data: session, update: updateSession } = useSession();
   const [isEditing, setIsEditing] = useState(false);
@@ -79,9 +79,8 @@ function ProfileContent({ user }: { user: AuthUser }) {
       }
 
       await backendAuthApi.updateProfile(accessToken, formData);
-      await updateSession();
+      await refreshUser();
       setIsEditing(false);
-      router.refresh();
       appToast.success("Profil berhasil diperbarui.");
     } catch (err: unknown) {
       const errorMessage =
