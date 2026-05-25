@@ -9,19 +9,10 @@ from app.core.config import settings
 db_url = settings.DATABASE_URL
 use_pgbouncer = settings.PGBOUNCER or ":6543" in db_url
 
-connect_args = {}
-
-if use_pgbouncer:
-    connect_args = {
-        "statement_cache_size": 0,
-        "prepared_statement_cache_size": 0,
-    }
-
 engine = create_async_engine(
     db_url,
     echo=settings.ENVIRONMENT == "development",
     pool_pre_ping=True,
-    connect_args=connect_args,
     poolclass=NullPool if use_pgbouncer else None,
 )
 

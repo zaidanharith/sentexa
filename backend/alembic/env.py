@@ -20,7 +20,7 @@ target_metadata = Base.metadata
 
 config.set_main_option(
     "sqlalchemy.url",
-    settings.DATABASE_URL.replace("+asyncpg", "+psycopg2"),
+    settings.DATABASE_URL,
 )
 
 
