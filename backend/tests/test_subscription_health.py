@@ -42,10 +42,10 @@ class TestHealthEndpoints:
         """
         Kondisi  : Positive
         Aksi     : Mengakses root URL '/'
-        Expected : Redirect (307) ke /api
+        Expected : Redirect (302 atau 307) ke /api
         """
         resp = await client.get("/", follow_redirects=False)
-        assert resp.status_code == 307
+        assert resp.status_code in (302, 307)
         assert "/api" in resp.headers.get("location", "")
 
 

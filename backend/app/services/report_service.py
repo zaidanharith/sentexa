@@ -1,7 +1,5 @@
 from __future__ import annotations
 
-import csv
-import io
 import os
 import tempfile
 from datetime import datetime
@@ -52,48 +50,6 @@ async def get_analysis_history_for_report(
 	return list(result.scalars().all())
 
 
-def _generate_csv_content(analyses: list[AnalysisHistory]) -> str:
-	"""Generate CSV content from analysis history"""
-	output = io.StringIO()
-	writer = csv.writer(output)
-	
-	# Write header
-	writer.writerow([
-		"ID",
-		"Source Type",
-		"Source Name",
-		"Input Text",
-		"Status",
-		"Result Label",
-		"Result Score",
-		"Label Counts",
-		"Created At",
-	])
-	
-	# Write data rows
-	for analysis in analyses:
-		label_counts_str = str(analysis.label_counts) if analysis.label_counts else ""
-		writer.writerow([
-			analysis.id,
-			analysis.source_type,
-			analysis.source_name or "",
-			analysis.input_text or "",
-			analysis.status,
-			analysis.result_label or "",
-			f"{analysis.result_score:.4f}" if analysis.result_score else "",
-			label_counts_str,
-			analysis.created_at.isoformat(),
-		])
-	
-	return output.getvalue()
-
-
-def _save_csv_file(content: str, file_path: str) -> None:
-	"""Save CSV content to temporary file"""
-	with open(file_path, "w", encoding="utf-8") as f:
-		f.write(content)
-
-
 async def generate_report_file(
 	db: AsyncSession,
 	report: Report,
@@ -120,10 +76,7 @@ async def generate_report_file(
 	
 	file_path = _get_report_file_path(report.id, report.format)
 	
-	if report.format == "csv":
-		csv_content = _generate_csv_content(analyses)
-		_save_csv_file(csv_content, file_path)
-	elif report.format == "pdf":
+	if report.format == "pdf":
 		build_report_pdf(report, analyses, file_path)
 	else:
 		raise HTTPException(
@@ -143,7 +96,7 @@ async def create_report(
 	job_id: str | None = None,
 	start_date: datetime | None = None,
 	end_date: datetime | None = None,
-	format: str = "csv",
+	format: str = "pdf",
 ) -> Report:
 	report = Report(
 		user_id=user_id,

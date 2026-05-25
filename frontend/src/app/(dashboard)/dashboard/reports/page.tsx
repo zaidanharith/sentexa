@@ -708,45 +708,24 @@ export default function ReportsDashboardPage() {
                 />
               </div>
 
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-semibold text-slate-700 mb-1">
-                    Format Laporan
-                  </label>
-                  <select
-                    value={createForm.format}
-                    onChange={(e) =>
-                      setCreateForm((prev) => ({
-                        ...prev,
-                        format: e.target.value,
-                      }))
+              <div>
+                <label className="block text-sm font-semibold text-slate-700 mb-1">
+                  Sumber Data
+                </label>
+                <select
+                  value={createForm.sourceType}
+                  onChange={(e) => {
+                    const type = e.target.value;
+                    setCreateForm((prev) => ({ ...prev, sourceType: type }));
+                    if (type === "job" && jobs.length === 0) {
+                      fetchJobs();
                     }
-                    className="w-full px-3 py-2 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-sky-500/20 focus:border-sky-500 transition text-sm bg-white text-slate-800"
-                  >
-                    <option value="pdf">PDF</option>
-                    <option value="csv">CSV</option>
-                  </select>
-                </div>
-
-                <div>
-                  <label className="block text-sm font-semibold text-slate-700 mb-1">
-                    Sumber Data
-                  </label>
-                  <select
-                    value={createForm.sourceType}
-                    onChange={(e) => {
-                      const type = e.target.value;
-                      setCreateForm((prev) => ({ ...prev, sourceType: type }));
-                      if (type === "job" && jobs.length === 0) {
-                        fetchJobs();
-                      }
-                    }}
-                    className="w-full px-3 py-2 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-sky-500/20 focus:border-sky-500 transition text-sm bg-white text-slate-800"
-                  >
-                    <option value="date_range">Rentang Tanggal</option>
-                    <option value="job">Sentiment Job ID</option>
-                  </select>
-                </div>
+                  }}
+                  className="w-full px-3 py-2 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-sky-500/20 focus:border-sky-500 transition text-sm bg-white text-slate-800"
+                >
+                  <option value="date_range">Rentang Tanggal</option>
+                  <option value="job">Sentiment Job ID</option>
+                </select>
               </div>
 
               {createForm.sourceType === "date_range" ? (

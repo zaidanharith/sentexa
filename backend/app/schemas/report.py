@@ -7,7 +7,7 @@ from pydantic import BaseModel, ConfigDict, Field
 
 
 ReportStatus = Literal["draft", "processing", "completed", "failed"]
-ReportFormat = Literal["csv", "pdf"]
+ReportFormat = Literal["pdf"]
 
 
 class ReportOut(BaseModel):
