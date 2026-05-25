@@ -28,17 +28,8 @@ param hfModel string = 'zaidanharith/sentexa-indobert'
 @description('The allowed CORS origins comma-separated.')
 param allowedOrigins string = 'https://sentexa.vercel.app,http://localhost:3000'
 
-@description('Specify if dummy secrets should be used.')
-param useDummySecrets bool = true
-
 @description('The container image to deploy.')
 param containerImage string = '${acrName}.azurecr.io/${imageRepository}:latest'
-
-var dbUrlPlaceholder = 'postgresql+asyncpg://postgres:placeholder-password@placeholder-host:5432/postgres'
-var jwtSecretPlaceholder = 'placeholder-jwt-secret-key-at-least-32-characters-long'
-var kaggleUsernamePlaceholder = 'placeholder_kaggle_username'
-var kaggleKeyPlaceholder = 'placeholder_kaggle_key'
-var hfTokenPlaceholder = 'placeholder_hf_token'
 
 resource acr 'Microsoft.ContainerRegistry/registries@2023-07-01' existing = {
   name: acrName
@@ -95,26 +86,6 @@ resource containerApp 'Microsoft.App/containerApps@2023-05-01' = {
         {
           name: 'registry-password'
           value: acr.listCredentials().passwords[0].value
-        }
-        {
-          name: 'database-url'
-          value: useDummySecrets ? dbUrlPlaceholder : 'SET_BY_USER'
-        }
-        {
-          name: 'secret-key'
-          value: useDummySecrets ? jwtSecretPlaceholder : 'SET_BY_USER'
-        }
-        {
-          name: 'kaggle-username'
-          value: useDummySecrets ? kaggleUsernamePlaceholder : 'SET_BY_USER'
-        }
-        {
-          name: 'kaggle-key'
-          value: useDummySecrets ? kaggleKeyPlaceholder : 'SET_BY_USER'
-        }
-        {
-          name: 'hf-token'
-          value: useDummySecrets ? hfTokenPlaceholder : 'SET_BY_USER'
         }
       ]
     }
