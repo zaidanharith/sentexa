@@ -30,7 +30,7 @@ if (-not $account -and -not $CI) {
 }
 if ($account) { Write-Host "[OK] Logged in to Azure subscription: $account" -ForegroundColor Green }
 
-# 3 & 4. Setup Secrets & Mode berdasarkan Lingkungan (Lokal vs CI/CD)
+# 3 dan 4. Setup Secrets & Mode berdasarkan Lingkungan (Lokal vs CI/CD)
 $secrets = @{}
 
 if ($CI) {
