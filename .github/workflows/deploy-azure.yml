@@ -68,7 +68,7 @@ jobs:
         uses: azure/docker-login@v1
         with:
           login-server: ${{ env.ACR_LOGIN_SERVER }}
-          username: sentexaregistry
+          username: ${{ env.ACR_NAME }}
           password: ${{ secrets.AZURE_ACR_PASSWORD }}
 
       - name: Set up Docker Buildx
@@ -97,28 +97,8 @@ jobs:
             allowedOrigins="https://sentexa.vercel.app,http://localhost:3000"
             hfModel="${{ secrets.HF_MODEL || 'zaidanharith/sentexa-indobert' }}"
             containerImage=${{ env.ACR_LOGIN_SERVER }}/${{ env.IMAGE_NAME }}:${{ env.IMAGE_TAG }}
-
-      - name: Set Container App Secrets
-        uses: azure/CLI@v2
-        with:
-          azcliversion: latest
-          inlineScript: |
-            az containerapp secret set \
-              --name $CONTAINER_APP_NAME \
-              --resource-group $RESOURCE_GROUP \
-              --secrets \
-                database-url="${{ secrets.DATABASE_URL }}" \
-                secret-key="${{ secrets.SECRET_KEY }}" \
-                kaggle-username="${{ secrets.KAGGLE_USERNAME }}" \
-                kaggle-key="${{ secrets.KAGGLE_KEY }}" \
-                hf-token="${{ secrets.HF_TOKEN }}"
-
-      - name: Update Container App Image
-        uses: azure/CLI@v2
-        with:
-          azcliversion: latest
-          inlineScript: |
-            az containerapp update \
-              --name $CONTAINER_APP_NAME \
-              --resource-group $RESOURCE_GROUP \
-              --image $ACR_LOGIN_SERVER/$IMAGE_NAME:$IMAGE_TAG
+            databaseUrl="${{ secrets.DATABASE_URL }}"
+            secretKey="${{ secrets.SECRET_KEY }}"
+            kaggleUsername="${{ secrets.KAGGLE_USERNAME }}"
+            kaggleKey="${{ secrets.KAGGLE_KEY }}"
+            hfToken="${{ secrets.HF_TOKEN }}"

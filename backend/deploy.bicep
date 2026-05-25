@@ -31,6 +31,21 @@ param allowedOrigins string = 'https://sentexa.vercel.app,http://localhost:3000'
 @description('The container image to deploy.')
 param containerImage string = '${acrName}.azurecr.io/${imageRepository}:latest'
 
+@secure()
+param databaseUrl string = ''
+
+@secure()
+param secretKey string = ''
+
+@secure()
+param kaggleUsername string = ''
+
+@secure()
+param kaggleKey string = ''
+
+@secure()
+param hfToken string = ''
+
 resource acr 'Microsoft.ContainerRegistry/registries@2023-07-01' existing = {
   name: acrName
 }
@@ -86,6 +101,26 @@ resource containerApp 'Microsoft.App/containerApps@2023-05-01' = {
         {
           name: 'registry-password'
           value: acr.listCredentials().passwords[0].value
+        }
+        {
+          name: 'database-url'
+          value: databaseUrl
+        }
+        {
+          name: 'secret-key'
+          value: secretKey
+        }
+        {
+          name: 'kaggle-username'
+          value: kaggleUsername
+        }
+        {
+          name: 'kaggle-key'
+          value: kaggleKey
+        }
+        {
+          name: 'hf-token'
+          value: hfToken
         }
       ]
     }
