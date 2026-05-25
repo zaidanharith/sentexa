@@ -21,7 +21,7 @@ class PredictionError(ValueError):
 def load_model():
     global model
     if model is None:
-        if CHECKPOINT_DIR.exists():
+        if (CHECKPOINT_DIR / "config.json").exists():
             model = AutoModelForSequenceClassification.from_pretrained(CHECKPOINT_DIR)
             print(f"Loaded local checkpoint: {CHECKPOINT_DIR}")
         else:
