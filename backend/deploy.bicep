@@ -10,13 +10,16 @@ param acrName string = 'sentexaregistry'
 @description('The name of the Azure Container Apps environment.')
 param environmentName string = 'cae-sentexa-${nameSuffix}'
 
-@description('The name of the FastAPI backend Container App (Nama Service WebApp).')
+@description('The name of the FastAPI backend Container App.')
 param containerAppName string = 'sentexa-api'
 
-@description('The CPU cores allocated to the container. Valid options range from 0.25 to 2.0.')
+@description('The container image repository name.')
+param imageRepository string = 'sentexa-backend'
+
+@description('The CPU cores allocated to the container.')
 param cpuCore string = '1.0'
 
-@description('The Memory allocated to the container. Valid options range from 0.5Gi to 4.0Gi. Must match CPU options.')
+@description('The Memory allocated to the container.')
 param memorySize string = '2.0Gi'
 
 @description('The Hugging Face model identifier.')
@@ -25,11 +28,11 @@ param hfModel string = 'zaidanharith/sentexa-indobert'
 @description('The allowed CORS origins comma-separated.')
 param allowedOrigins string = 'https://sentexa.vercel.app,http://localhost:3000'
 
-@description('Specify if we should use existing secrets. If true, dummy values are used during initial deployment to be updated later.')
+@description('Specify if dummy secrets should be used.')
 param useDummySecrets bool = true
 
-@description('The container image to deploy. Defaults to actual image to prevent downtime during CI/CD.')
-param containerImage string = '${acrName}.azurecr.io/${containerAppName}:latest'
+@description('The container image to deploy.')
+param containerImage string = '${acrName}.azurecr.io/${imageRepository}:latest'
 
 var dbUrlPlaceholder = 'postgresql+asyncpg://postgres:placeholder-password@placeholder-host:5432/postgres'
 var jwtSecretPlaceholder = 'placeholder-jwt-secret-key-at-least-32-characters-long'
@@ -71,6 +74,7 @@ resource containerApp 'Microsoft.App/containerApps@2023-05-01' = {
   location: location
   properties: {
     managedEnvironmentId: containerAppEnv.id
+
     configuration: {
       ingress: {
         external: true
@@ -78,6 +82,7 @@ resource containerApp 'Microsoft.App/containerApps@2023-05-01' = {
         allowInsecure: false
         transport: 'auto'
       }
+
       registries: [
         {
           server: '${acr.name}.azurecr.io'
@@ -85,6 +90,7 @@ resource containerApp 'Microsoft.App/containerApps@2023-05-01' = {
           passwordSecretRef: 'registry-password'
         }
       ]
+
       secrets: [
         {
           name: 'registry-password'
@@ -112,15 +118,18 @@ resource containerApp 'Microsoft.App/containerApps@2023-05-01' = {
         }
       ]
     }
+
     template: {
       containers: [
         {
           name: 'backend'
           image: containerImage
+
           resources: {
             cpu: json(cpuCore)
             memory: memorySize
           }
+
           env: [
             {
               name: 'ENVIRONMENT'
@@ -163,6 +172,7 @@ resource containerApp 'Microsoft.App/containerApps@2023-05-01' = {
               value: hfModel
             }
           ]
+
           probes: [
             {
               type: 'Liveness'
@@ -170,8 +180,10 @@ resource containerApp 'Microsoft.App/containerApps@2023-05-01' = {
                 path: '/api/health'
                 port: 8000
               }
-              initialDelaySeconds: 45
+              initialDelaySeconds: 60
               periodSeconds: 15
+              timeoutSeconds: 5
+              failureThreshold: 5
             }
             {
               type: 'Readiness'
@@ -179,12 +191,15 @@ resource containerApp 'Microsoft.App/containerApps@2023-05-01' = {
                 path: '/api/ready'
                 port: 8000
               }
-              initialDelaySeconds: 60
+              initialDelaySeconds: 120
               periodSeconds: 15
+              timeoutSeconds: 10
+              failureThreshold: 5
             }
           ]
         }
       ]
+
       scale: {
         minReplicas: 1
         maxReplicas: 3
