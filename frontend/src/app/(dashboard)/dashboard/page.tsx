@@ -251,7 +251,7 @@ export default function DashboardPage() {
         title="Dashboard"
         subtitle="Selamat datang di dashboard Anda"
       />
-      <DashboardPageContent>
+      <DashboardPageContent className="md:hidden">
         <h1 className="font-bold text-2xl sm:text-3xl">
           Halo, {user?.name || "Pengguna"}!
         </h1>

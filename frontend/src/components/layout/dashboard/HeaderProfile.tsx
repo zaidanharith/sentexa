@@ -18,6 +18,11 @@ export default function HeaderProfile() {
   const displayName = user?.name?.trim() || "Pengguna";
   const avatarInitial = displayName.charAt(0).toUpperCase();
 
+  const nameWords = displayName.split(/\s+/);
+  const greetingName = nameWords.length > 2
+    ? `${nameWords[0]} ${nameWords[1]}`
+    : displayName;
+
   const handleLogout = async () => {
     if (isLoggingOut) {
       return;
@@ -57,19 +62,24 @@ export default function HeaderProfile() {
   }, [showDropdown]);
 
   return (
-    <div className="relative" ref={dropdownRef}>
-      <button
-        onClick={() => setShowDropdown(!showDropdown)}
-        aria-label="Profil Menu"
-        title="Profil"
-        className="rounded-full p-1 hover:bg-gray-100 transition-colors focus:outline-none focus:ring-2 focus:ring-sky-500 focus:ring-offset-2 cursor-pointer"
-      >
-        <div className="w-10 h-10 rounded-full bg-sky-100 flex items-center justify-center text-sky-600 text-md font-bold shrink-0">
-          {avatarInitial}
-        </div>
-      </button>
+    <div className="flex items-center gap-3">
+      <span className="hidden md:inline text-sm font-medium text-gray-600 select-none whitespace-nowrap">
+        Halo, <span className="font-semibold text-gray-800">{greetingName}</span>
+      </span>
 
-      {showDropdown && (
+      <div className="relative" ref={dropdownRef}>
+        <button
+          onClick={() => setShowDropdown(!showDropdown)}
+          aria-label="Profil Menu"
+          title="Profil"
+          className="rounded-full p-1 hover:bg-gray-100 transition-colors focus:outline-none focus:ring-2 focus:ring-sky-500 focus:ring-offset-2 cursor-pointer"
+        >
+          <div className="w-10 h-10 rounded-full bg-sky-100 flex items-center justify-center text-sky-600 text-md font-bold shrink-0">
+            {avatarInitial}
+          </div>
+        </button>
+
+        {showDropdown && (
         <div className="absolute right-0 mt-2 w-56 bg-white border border-gray-200 rounded-lg shadow-lg z-50">
           <div className="px-4 py-3 border-b border-gray-100">
             <div className="flex items-center gap-3">
@@ -104,6 +114,7 @@ export default function HeaderProfile() {
           </button>
         </div>
       )}
+      </div>
     </div>
   );
 }

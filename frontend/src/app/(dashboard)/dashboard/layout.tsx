@@ -40,7 +40,7 @@ export default function DashboardLayout({
     <div className="flex min-h-screen bg-gray-50">
       <Sidebar navItems={navItems} />
       <div className="flex min-h-screen min-w-0 flex-1 flex-col">
-        <header className="h-16 mb-6 border-b border-gray-200 px-6 flex items-center justify-between gap-4">
+        <header className="sticky top-0 z-20 h-16 bg-white border-b border-gray-200 px-6 flex items-center justify-between gap-4 mb-6">
           <Breadcrumbs navItems={navItems} />
           <HeaderProfile />
         </header>
