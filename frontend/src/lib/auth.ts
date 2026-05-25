@@ -16,8 +16,6 @@ declare module "next-auth" {
 
   interface User {
     id: string;
-    name?: string;
-    email?: string;
     accessToken?: string;
     refreshToken?: string;
     subscription_plan?: string;
@@ -68,8 +66,6 @@ const providers: NextAuthOptions["providers"] = [
 
         return {
           id: userData.id.toString(),
-          name: userData.name,
-          email: userData.email,
           accessToken: response.access_token,
           refreshToken: response.refresh_token ?? undefined,
           subscription_plan: userData.subscription_plan || "free",
@@ -81,7 +77,6 @@ const providers: NextAuthOptions["providers"] = [
   }),
 ];
 
-// Only add Google provider if credentials are configured
 if (process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET) {
   providers.push(
     GoogleProvider({

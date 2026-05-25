@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
 import { useAuth } from "@/hooks/useAuth";
 import DashboardPageTitle from "@/components/layout/dashboard/DashboardPageTitle";
@@ -9,8 +10,9 @@ import { backendSubscriptionApi } from "@/lib/api";
 import { appToast } from "@/lib/toast";
 
 export default function SubscriptionPage() {
-  const { user, refreshUser } = useAuth();
-  const { data: session, update } = useSession();
+  const router = useRouter();
+  const { user, logout } = useAuth();
+  const { data: session } = useSession();
   const currentPlan = user?.subscription_plan?.toLowerCase() || "free";
   const [isUpgrading, setIsUpgrading] = useState(false);
 
@@ -35,14 +37,16 @@ export default function SubscriptionPage() {
     setIsUpgrading(true);
     try {
       await backendSubscriptionApi.subscribe(accessToken, "premium");
-      await update({ subscription_plan: "premium" });
-      await refreshUser();
-      appToast.success("Akun Anda berhasil di-upgrade ke Premium.");
+      appToast.success(
+        "Akun Anda berhasil di-upgrade ke Premium! Silakan login kembali.",
+      );
+      // Logout dan redirect ke home agar session diperbarui dengan plan baru
+      await logout();
+      router.push("/");
     } catch (error) {
       const message =
         error instanceof Error ? error.message : "Gagal upgrade plan.";
       appToast.error(message);
-    } finally {
       setIsUpgrading(false);
     }
   };

@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef } from "react";
 import { useSession } from "next-auth/react";
 import { useAnalysis } from "@/hooks/useAnalysis";
+import { useAuth } from "@/hooks/useAuth";
 import { parseFile, downloadSampleFile } from "@/lib/file-parser";
 import { getFeatureAccess, getSubscriptionTier } from "@/lib/subscription";
 import { DataPreview } from "@/components/layout/dashboard/analysis/DataPreview";
@@ -13,8 +14,6 @@ import axios, { AxiosError } from "axios";
 import { appToast } from "@/lib/toast";
 import DashboardPageTitle from "@/components/layout/dashboard/DashboardPageTitle";
 import DashboardPageContent from "@/components/layout/dashboard/DashboardPageContent";
-
-// ─── Types ────────────────────────────────────────────────────────────────────
 
 interface AnalysisResult {
   text: string;
@@ -27,7 +26,6 @@ interface AnalysisResult {
   };
 }
 
-/** Shape of a job returned by POST /jobs and GET /jobs/{id} */
 interface BatchJob {
   job_id: string;
   status: "queued" | "processing" | "completed" | "failed";
@@ -43,7 +41,6 @@ interface BatchJob {
   error: string | null;
 }
 
-/** Shape of a single result item from GET /jobs/{id}/results */
 interface BatchResultItem {
   index: number;
   text: string;
@@ -56,12 +53,6 @@ interface BatchResultItem {
   };
 }
 
-// ─── Helper ───────────────────────────────────────────────────────────────────
-
-/**
- * Tries to find the text column in the parsed file rows.
- * Falls back to the first column if no well-known key is found.
- */
 function extractTextsFromParsedData(parsedData: {
   rows: Record<string, unknown>[];
 }): string[] {
@@ -88,48 +79,39 @@ function extractTextsFromParsedData(parsedData: {
     .filter((t) => t.trim() !== "");
 }
 
-// ─── Component ────────────────────────────────────────────────────────────────
-
 export default function AnalysisDashboardPage() {
   const { data: session } = useSession();
+  const { user, refreshUser } = useAuth();
   const analysis = useAnalysis();
 
-  // ── Tab & single-text result state ──────────────────────────────────────────
   const [activeTab, setActiveTab] = useState<"upload" | "text">("upload");
   const [analysisResult, setAnalysisResult] = useState<AnalysisResult | null>(
     null,
   );
   const resultRef = useRef<HTMLDivElement>(null);
 
-  // ── Batch job state (POST /jobs + polling + POST /reprocess) ────────────────
   const [batchJob, setBatchJob] = useState<BatchJob | null>(null);
   const [batchResults, setBatchResults] = useState<BatchResultItem[]>([]);
   const [batchResultsLoading, setBatchResultsLoading] = useState(false);
   const pollingRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
-  // Scroll to single-text result when it appears
   useEffect(() => {
     if (analysisResult && resultRef.current) {
       resultRef.current.scrollIntoView({ behavior: "smooth" });
     }
   }, [analysisResult]);
 
-  // Cleanup polling on unmount
   useEffect(() => {
     return () => {
       if (pollingRef.current) clearInterval(pollingRef.current);
     };
   }, []);
 
-  const subscriptionTier = getSubscriptionTier(
-    session?.user?.subscription_plan,
-  );
-  const features = getFeatureAccess(session?.user?.subscription_plan);
+  const subscriptionTier = getSubscriptionTier(user?.subscription_plan);
+  const features = getFeatureAccess(user?.subscription_plan);
 
   const defaultTab = !features.canUploadFile ? "text" : "upload";
   const displayTab = features.canUploadFile ? activeTab : "text";
-
-  // ── Helpers ─────────────────────────────────────────────────────────────────
 
   function buildUrl(path: string) {
     const base = process.env.NEXT_PUBLIC_API_URL;
@@ -142,12 +124,6 @@ export default function AnalysisDashboardPage() {
       : {};
   }
 
-  // ── Batch API functions ──────────────────────────────────────────────────────
-
-  /**
-   * GET /sentiment/predict/jobs/{job_id}/results
-   * Called automatically after polling detects status === "completed".
-   */
   const fetchBatchResults = async (jobId: string) => {
     setBatchResultsLoading(true);
     try {
@@ -163,10 +139,6 @@ export default function AnalysisDashboardPage() {
     }
   };
 
-  /**
-   * Polls GET /sentiment/predict/jobs/{job_id} every 3 seconds.
-   * Stops and fetches results when status reaches "completed" or "failed".
-   */
   const startPolling = (jobId: string) => {
     if (pollingRef.current) clearInterval(pollingRef.current);
 
@@ -184,6 +156,8 @@ export default function AnalysisDashboardPage() {
           pollingRef.current = null;
           analysis.setLoading(false);
           fetchBatchResults(jobId);
+          // Refresh data user agar kuota analisis di profil langsung terupdate
+          void refreshUser();
         } else if (job.status === "failed") {
           clearInterval(pollingRef.current!);
           pollingRef.current = null;
@@ -201,10 +175,6 @@ export default function AnalysisDashboardPage() {
     }, 3000);
   };
 
-  /**
-   * POST /sentiment/predict/jobs/{job_id}/reprocess
-   * Re-queues an existing job and restarts polling.
-   */
   const handleReprocess = async (jobId: string) => {
     analysis.setLoading(true);
     setBatchResults([]);
@@ -224,15 +194,12 @@ export default function AnalysisDashboardPage() {
     }
   };
 
-  // ── Existing handlers (modified) ─────────────────────────────────────────────
-
   const handleFileSelected = async (file: File) => {
     analysis.setLoading(true);
     try {
       const parsed = await parseFile(file);
       analysis.setFile(file);
       analysis.setParsedData(parsed);
-      // Clear previous batch result when a new file is selected
       setBatchJob(null);
       setBatchResults([]);
       if (pollingRef.current) {
@@ -253,7 +220,6 @@ export default function AnalysisDashboardPage() {
   const handleReset = () => {
     analysis.reset();
     setActiveTab(defaultTab);
-    // Clear batch state
     setBatchJob(null);
     setBatchResults([]);
     if (pollingRef.current) {
@@ -266,11 +232,16 @@ export default function AnalysisDashboardPage() {
 
   const handleAnalyze = async () => {
     analysis.setLoading(true);
-    // When uploading, loading stays true until polling finishes
     let keepLoading = false;
 
     try {
-      // ── Validation ──────────────────────────────────────────────────────────
+      if (subscriptionTier === "free" && (user?.analysis_quota ?? 0) <= 0) {
+        appToast.error(
+          "Kuota analisis sudah habis. Silakan upgrade ke premium untuk kuota lebih banyak.",
+        );
+        return;
+      }
+
       if (displayTab === "text" && !analysis.state.textInput.trim()) {
         appToast.warning("Masukkan teks untuk dianalisis");
         return;
@@ -280,7 +251,6 @@ export default function AnalysisDashboardPage() {
         return;
       }
 
-      // ── POST /sentiment/predict/jobs (Upload tab) ────────────────────────────
       if (displayTab === "upload") {
         const texts = extractTextsFromParsedData(
           analysis.state.parsedData as { rows: Record<string, unknown>[] },
@@ -306,11 +276,10 @@ export default function AnalysisDashboardPage() {
         setBatchJob(res.data.job);
         setBatchResults([]);
         startPolling(res.data.job.job_id);
-        keepLoading = true; // polling manages loading state from here
+        keepLoading = true;
         return;
       }
 
-      // ── POST /sentiment/predict (Text tab — unchanged) ───────────────────────
       if (displayTab === "text") {
         try {
           const res = await axios.post(
@@ -325,6 +294,7 @@ export default function AnalysisDashboardPage() {
             scores: res.data.scores,
           });
           analysis.setTextInput("");
+          void refreshUser();
         } catch (error) {
           const err = error as AxiosError;
           console.error(
@@ -345,21 +315,15 @@ export default function AnalysisDashboardPage() {
     }
   };
 
-  // ── Label color helper ───────────────────────────────────────────────────────
   function labelColorClass(label: string) {
     if (label === "positive") return "bg-green-100 text-green-700";
     if (label === "negative") return "bg-red-100 text-red-700";
     return "bg-gray-100 text-gray-700";
   }
 
-  // ── Progress percentage ──────────────────────────────────────────────────────
   function progressPct(job: BatchJob) {
     return job.total > 0 ? Math.round((job.completed / job.total) * 100) : 0;
   }
-
-  // ─────────────────────────────────────────────────────────────────────────────
-  // JSX
-  // ─────────────────────────────────────────────────────────────────────────────
 
   return (
     <main className="w-full max-w-4xl mx-auto flex flex-col gap-4">
@@ -373,23 +337,6 @@ export default function AnalysisDashboardPage() {
       />
 
       <DashboardPageContent>
-        {/* Subscription badge */}
-        <div className="mb-6 p-3 bg-sky-50 rounded-lg border border-sky-200 flex items-center justify-between">
-          <span className="text-sm font-medium text-gray-700">
-            Paket Anda:
-            <span className="ml-2 font-semibold text-sky-600">
-              {subscriptionTier.charAt(0).toUpperCase() +
-                subscriptionTier.slice(1)}
-            </span>
-          </span>
-          {subscriptionTier === "free" && (
-            <button className="text-xs font-semibold text-sky-600 hover:text-sky-700 transition-colors">
-              Upgrade Sekarang
-            </button>
-          )}
-        </div>
-
-        {/* Tabs — only visible for premium users */}
         {features.canUploadFile && (
           <div className="mb-6 border-b border-gray-300">
             <div className="flex gap-1">
@@ -423,7 +370,6 @@ export default function AnalysisDashboardPage() {
           </div>
         )}
 
-        {/* ── Tab: Upload File ──────────────────────────────────────────────── */}
         {displayTab === "upload" && features.canUploadFile && (
           <div className="space-y-6">
             <UploadArea
@@ -439,7 +385,6 @@ export default function AnalysisDashboardPage() {
               <FaFileDownload className="w-6 h-6" /> Contoh File Input
             </button>
 
-            {/* File preview */}
             {analysis.state.parsedData && (
               <div className="space-y-4">
                 <div>

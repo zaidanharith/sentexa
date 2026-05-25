@@ -79,8 +79,8 @@ export function AuthProvider({ children }: AuthProviderProps) {
   const loading = status === "loading" || userLoading;
 
   const refreshUser = async () => {
-    await update();
-    const accessToken = session?.accessToken;
+    const updatedSession = await update();
+    const accessToken = updatedSession?.accessToken ?? session?.accessToken;
     if (accessToken) {
       const profile = await backendAuthApi.me(accessToken);
       setUser(profile);
