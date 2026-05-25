@@ -180,10 +180,8 @@ resource containerApp 'Microsoft.App/containerApps@2023-05-01' = {
                 path: '/api/health'
                 port: 8000
               }
-              initialDelaySeconds: 60
+              initialDelaySeconds: 30
               periodSeconds: 15
-              timeoutSeconds: 5
-              failureThreshold: 5
             }
             {
               type: 'Readiness'
@@ -191,10 +189,8 @@ resource containerApp 'Microsoft.App/containerApps@2023-05-01' = {
                 path: '/api/ready'
                 port: 8000
               }
-              initialDelaySeconds: 120
+              initialDelaySeconds: 60
               periodSeconds: 15
-              timeoutSeconds: 10
-              failureThreshold: 5
             }
           ]
         }
