@@ -2,18 +2,13 @@ from typing import AsyncGenerator
 
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
 from sqlalchemy.orm import DeclarativeBase
-from sqlalchemy.pool import NullPool
 
 from app.core.config import settings
 
-db_url = settings.DATABASE_URL
-use_pgbouncer = settings.PGBOUNCER or ":6543" in db_url
-
 engine = create_async_engine(
-    db_url,
+    settings.DATABASE_URL,
     echo=settings.ENVIRONMENT == "development",
     pool_pre_ping=True,
-    poolclass=NullPool if use_pgbouncer else None,
 )
 
 AsyncSessionLocal = async_sessionmaker(
