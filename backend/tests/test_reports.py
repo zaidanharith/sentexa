@@ -126,3 +126,61 @@ class TestReports:
         """
         resp = await client.get("/api/reports", headers=auth_headers)
         assert resp.status_code in (403, 400)
+
+    async def test_generate_report_dengan_job_id(
+        self, client: AsyncClient, premium_headers: dict
+    ):
+        """
+        Kondisi  : User premium, memiliki job_id yang terdaftar
+        Aksi     : 1. Mock get_analysis_history_for_report untuk mengembalikan data job tiruan
+                   2. Buat laporan baru dengan job_id
+                   3. Ambil/unduh laporan dan verifikasi statusnya
+        """
+        mock_payload = [
+            {
+                "index": 0,
+                "text": "sangat bagus sekali",
+                "prediction": {
+                    "label": "positive",
+                    "label_id": 2,
+                    "score": 0.95,
+                    "scores": {"negative": 0.02, "neutral": 0.03, "positive": 0.95},
+                }
+            }
+        ]
+        from app.models.analysis_history import AnalysisHistory
+        from datetime import datetime
+        mock_history = AnalysisHistory(
+            id=123,
+            user_id=1,
+            source_type="job",
+            source_name="Job #21",
+            job_id="21",
+            status="completed",
+            result_payload=mock_payload,
+            created_at=datetime.utcnow(),
+        )
+
+        with patch("app.services.report_service.get_analysis_history_for_report", return_value=[mock_history]):
+            # 2. Buat Laporan Baru berdasarkan job_id
+            create_resp = await client.post(
+                "/api/reports/generate",
+                json={
+                    "title": "Laporan Job Test",
+                    "description": "Laporan analisis sentimen job",
+                    "job_id": "21",
+                    "format": "pdf",
+                },
+                headers=premium_headers,
+            )
+            assert create_resp.status_code == 201
+            report = create_resp.json()["report"]
+            report_id = report["id"]
+
+            # 3. Download & proses report
+            download_resp = await client.get(
+                f"/api/reports/{report_id}/download",
+                headers=premium_headers,
+            )
+            assert download_resp.status_code == 200
+            assert download_resp.headers["content-type"] == "application/pdf"

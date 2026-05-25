@@ -50,6 +50,37 @@ async def get_analysis_history_for_report(
 	return list(result.scalars().all())
 
 
+def _expand_analyses(analyses: list[AnalysisHistory]) -> list[AnalysisHistory]:
+	expanded = []
+	for a in analyses:
+		if a.source_type == "job" and a.result_payload:
+			payload_items = a.result_payload
+			if isinstance(payload_items, list):
+				for item in payload_items:
+					if not isinstance(item, dict):
+						continue
+					pred = item.get("prediction", {})
+					virtual_a = AnalysisHistory(
+						id=item.get("index", 0) + 1,
+						user_id=a.user_id,
+						source_type="job",
+						source_name=a.source_name or f"Job #{a.job_id}",
+						input_text=item.get("text", ""),
+						status="completed",
+						result_label=pred.get("label"),
+						result_score=pred.get("score"),
+						label_counts=pred.get("scores"),
+						created_at=a.created_at,
+						updated_at=a.updated_at,
+					)
+					expanded.append(virtual_a)
+			else:
+				expanded.append(a)
+		else:
+			expanded.append(a)
+	return expanded
+
+
 async def generate_report_file(
 	db: AsyncSession,
 	report: Report,
@@ -67,6 +98,8 @@ async def generate_report_file(
 		start_date=start_date,
 		end_date=end_date,
 	)
+	
+	analyses = _expand_analyses(analyses)
 	
 	if not analyses:
 		raise HTTPException(
